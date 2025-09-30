@@ -4,7 +4,6 @@ import dbConnect from "@/backend/config/dbConnect";
 import User from "@/backend/models/user";
 import { validateRegister } from "@/helpers/validation/schemas/auth";
 import { captureException } from "@/monitoring/sentry";
-import { sendVerificationEmail } from "@/backend/utils/emailService";
 import { withAuthRateLimit } from "@/utils/rateLimit";
 
 /**
@@ -125,64 +124,10 @@ export const POST = withAuthRateLimit(
         verified: user.verified,
       });
 
-      // Envoyer email de vérification avec le vrai service
-      let emailSent = false;
-      let emailError = null;
-
-      try {
-        const emailResult = await sendVerificationEmail(
-          user.email,
-          user.name,
-          verificationToken,
-        );
-
-        if (emailResult.success) {
-          emailSent = true;
-          console.log("📧 Verification email sent successfully:", {
-            to: user.email?.substring(0, 3) + "***",
-            messageId: emailResult.messageId,
-          });
-        } else {
-          emailError = emailResult.error;
-          console.warn(
-            "⚠️ Failed to send verification email:",
-            emailResult.error,
-          );
-        }
-      } catch (error) {
-        emailError = error.message;
-        console.error("❌ Email service error:", error);
-
-        // Ne pas faire échouer l'inscription si l'email ne part pas
-        captureException(error, {
-          tags: { component: "email", action: "verification" },
-          user: { id: user._id, email: user.email?.substring(0, 3) + "***" },
-          extra: {
-            verificationToken: verificationToken.substring(0, 8) + "...",
-          },
-        });
-      }
-
-      // Log de sécurité pour audit
-      console.log("🔒 Security event - User registered:", {
-        userId: user._id,
-        email: user.email?.substring(0, 3) + "***",
-        name: user.name,
-        emailSent,
-        timestamp: new Date().toISOString(),
-        userAgent:
-          req.headers.get("user-agent")?.substring(0, 100) || "unknown",
-        ip:
-          req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-          "unknown",
-      });
-
       // Réponse enrichie avec informations complètes
       const response = {
         success: true,
-        message: emailSent
-          ? "Inscription réussie ! Vérifiez votre email pour activer votre compte."
-          : "Inscription réussie ! Email de vérification en cours d'envoi.",
+        message: "Inscription réussie !",
         data: {
           user: {
             _id: user._id,
@@ -195,23 +140,6 @@ export const POST = withAuthRateLimit(
             createdAt: user.createdAt,
             avatar: user.avatar,
           },
-          emailSent,
-          // Instructions pour l'utilisateur
-          nextSteps: emailSent
-            ? [
-                "Consultez votre boîte email",
-                "Cliquez sur le lien de vérification",
-                "Connectez-vous à votre compte",
-              ]
-            : [
-                "Votre compte a été créé",
-                "L'email de vérification va arriver sous peu",
-                "Consultez vos spams si nécessaire",
-              ],
-          ...(emailError &&
-            process.env.NODE_ENV === "development" && {
-              emailError,
-            }),
         },
       };
 
@@ -293,13 +221,6 @@ export const POST = withAuthRateLimit(
       // Capturer toutes les autres erreurs système
       captureException(error, {
         tags: { component: "api", route: "auth/register" },
-        extra: {
-          userData: {
-            email: userData?.email?.substring(0, 3) + "***",
-            name: userData?.name,
-            phone: userData?.phone?.substring(0, 3) + "***",
-          },
-        },
       });
 
       return NextResponse.json(

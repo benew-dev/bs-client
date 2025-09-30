@@ -320,18 +320,6 @@ export const POST = withAuthRateLimit(
       // Capturer toutes les autres erreurs système
       captureException(error, {
         tags: { component: "api", route: "auth/reset-password" },
-        extra: {
-          body: body
-            ? {
-                hasToken: !!body.token,
-                tokenLength: body.token?.length,
-              }
-            : null,
-          userAgent: request.headers.get("user-agent"),
-          ip:
-            request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-            "unknown",
-        },
         level: "error",
       });
 

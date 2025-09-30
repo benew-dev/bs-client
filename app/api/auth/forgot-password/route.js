@@ -243,13 +243,6 @@ export const POST = withAuthRateLimit(
       // Capturer l'erreur pour monitoring
       captureException(error, {
         tags: { component: "api", route: "auth/forgot-password" },
-        extra: {
-          body: body ? { email: body.email?.substring(0, 3) + "***" } : null,
-          userAgent: request.headers.get("user-agent"),
-          ip:
-            request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-            "unknown",
-        },
         level: "error",
       });
 
