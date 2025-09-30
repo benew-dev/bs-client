@@ -3,14 +3,14 @@
  * Optimisé pour ~500 visiteurs/jour
  */
 
-const isBrowser = typeof window !== "undefined";
+const isBrowser = typeof window !== 'undefined';
 
 /**
  * Cache simple avec expiration
  */
 export function memoize(fn, ttlMs = 60000) {
-  if (typeof fn !== "function") {
-    throw new Error("memoize: Premier argument doit être une fonction");
+  if (typeof fn !== 'function') {
+    throw new Error('memoize: Premier argument doit être une fonction');
   }
 
   const cache = new Map();
@@ -82,8 +82,8 @@ export function preloadImage(src, lazy = false) {
     const img = new Image();
 
     // Support du lazy loading natif (2025 standard)
-    if (lazy && "loading" in img) {
-      img.loading = "lazy";
+    if (lazy && 'loading' in img) {
+      img.loading = 'lazy';
     }
 
     img.onload = () => resolve(img);
@@ -128,8 +128,8 @@ export function isOnline() {
 export function onConnectionChange(callback) {
   if (!isBrowser) return;
 
-  window.addEventListener("online", () => callback(true));
-  window.addEventListener("offline", () => callback(false));
+  window.addEventListener('online', () => callback(true));
+  window.addEventListener('offline', () => callback(false));
 }
 
 /**
@@ -142,8 +142,8 @@ export function isSlowConnection() {
   if (!connection) return false;
 
   return (
-    connection.effectiveType === "slow-2g" ||
-    connection.effectiveType === "2g" ||
+    connection.effectiveType === 'slow-2g' ||
+    connection.effectiveType === '2g' ||
     (connection.downlink && connection.downlink < 1)
   );
 }
@@ -154,7 +154,7 @@ export function isSlowConnection() {
 export function prefersReducedMotion() {
   if (!isBrowser) return false;
 
-  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 }
 
 /**

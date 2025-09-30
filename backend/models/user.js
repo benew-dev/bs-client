@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
-import { captureException } from "@/monitoring/sentry";
-import logger from "@/utils/logger";
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import { captureException } from '@/monitoring/sentry';
+import logger from '@/utils/logger';
 
 /**
  * Schéma utilisateur avancé avec validation, indexation et méthodes d'instance
@@ -10,10 +10,10 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Please enter your name"],
+      required: [true, 'Please enter your name'],
       trim: true,
-      maxLength: [50, "Name cannot exceed 50 characters"],
-      minLength: [2, "Name should have at least 2 characters"],
+      maxLength: [50, 'Name cannot exceed 50 characters'],
+      minLength: [2, 'Name should have at least 2 characters'],
       validate: {
         validator: function (v) {
           // Interdire les caractères spéciaux potentiellement dangereux
@@ -24,10 +24,10 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: [true, "Please enter your email"],
+      required: [true, 'Please enter your email'],
       trim: true,
       lowercase: true, // Stocke toujours en minuscules pour éviter les doublons
-      maxLength: [100, "Email cannot exceed 100 characters"],
+      maxLength: [100, 'Email cannot exceed 100 characters'],
       validate: {
         validator: function (v) {
           // Validation basique d'email - peut être améliorée si nécessaire
@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: [true, "Please enter your mobile number"],
+      required: [true, 'Please enter your mobile number'],
       trim: true,
       validate: {
         validator: function (v) {
@@ -53,15 +53,15 @@ const userSchema = new mongoose.Schema(
     // Modification de la validation du mot de passe dans le schéma
     password: {
       type: String,
-      required: [true, "Please enter your password"],
-      minLength: [8, "Password must be at least 8 characters"],
-      maxLength: [100, "Password cannot exceed 100 characters"],
+      required: [true, 'Please enter your password'],
+      minLength: [8, 'Password must be at least 8 characters'],
+      maxLength: [100, 'Password cannot exceed 100 characters'],
       select: false, // Ne pas inclure par défaut dans les requêtes
       validate: {
         validator: function (v) {
           // Validation de force du mot de passe - exécutée uniquement lors de la création/modification
           // Au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial
-          if (this.isModified("password")) {
+          if (this.isModified('password')) {
             return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/.test(
               v,
             );
@@ -69,7 +69,7 @@ const userSchema = new mongoose.Schema(
           return true;
         },
         message:
-          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&#)",
+          'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&#)',
       },
     },
     avatar: {
@@ -88,17 +88,17 @@ const userSchema = new mongoose.Schema(
               v,
             );
           },
-          message: "Invalid URL format",
+          message: 'Invalid URL format',
         },
       },
     },
     role: {
       type: String,
       enum: {
-        values: ["user", "admin"],
-        message: "Role must be user or admin",
+        values: ['user', 'admin'],
+        message: 'Role must be user or admin',
       },
-      default: "user",
+      default: 'user',
       index: true, // Indexation pour accélérer les requêtes par rôle
     },
     lastLogin: {
@@ -123,6 +123,11 @@ const userSchema = new mongoose.Schema(
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    verificationToken: String,
+    verified: {
+      type: Boolean,
+      default: false,
+    },
     createdAt: {
       type: Date,
       default: Date.now,
@@ -135,7 +140,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: {
-      updatedAt: "updatedAt", // Met à jour automatiquement updatedAt
+      updatedAt: 'updatedAt', // Met à jour automatiquement updatedAt
       createdAt: false, // Utilise notre champ createdAt personnalisé
     },
     toJSON: {
@@ -146,30 +151,31 @@ const userSchema = new mongoose.Schema(
         delete ret.lockUntil;
         delete ret.resetPasswordToken;
         delete ret.resetPasswordExpire;
+        delete ret.verificationToken;
         delete ret.__v;
         return ret;
       },
       virtuals: true,
     },
     toObject: { virtuals: true },
-    collection: "users", // Force le nom de la collection
+    collection: 'users', // Force le nom de la collection
   },
 );
 
 // Indexes pour optimiser les performances
 userSchema.index(
   { email: 1 },
-  { unique: true, collation: { locale: "en", strength: 2 } },
+  { unique: true, collation: { locale: 'en', strength: 2 } },
 ); // Index insensible à la casse
 userSchema.index({ createdAt: -1 });
 userSchema.index({ updatedAt: -1 });
 userSchema.index({ phone: 1 }, { sparse: true });
 
 // Middleware avant la sauvegarde
-userSchema.pre("save", async function (next) {
+userSchema.pre('save', async function (next) {
   try {
     // Si le mot de passe n'a pas été modifié, passer à la suite
-    if (!this.isModified("password")) {
+    if (!this.isModified('password')) {
       return next();
     }
 
@@ -178,24 +184,24 @@ userSchema.pre("save", async function (next) {
 
     // Hasher le mot de passe avec un coût adaptatif
     // En production, on pourrait augmenter à 12 pour plus de sécurité
-    const saltRounds = process.env.NODE_ENV === "production" ? 12 : 10;
+    const saltRounds = process.env.NODE_ENV === 'production' ? 12 : 10;
     this.password = await bcrypt.hash(this.password, saltRounds);
 
     next();
   } catch (error) {
-    logger.error("Error hashing password", {
+    logger.error('Error hashing password', {
       userId: this._id,
       error: error.message,
     });
     captureException(error, {
-      tags: { component: "user-model", operation: "password-hashing" },
+      tags: { component: 'user-model', operation: 'password-hashing' },
     });
     next(error);
   }
 });
 
 // Middleware avant la mise à jour
-userSchema.pre("findOneAndUpdate", function (next) {
+userSchema.pre('findOneAndUpdate', function (next) {
   // Définir updatedAt à chaque mise à jour
   this.set({ updatedAt: Date.now() });
   next();
@@ -206,12 +212,12 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
   try {
     return await bcrypt.compare(enteredPassword, this.password);
   } catch (error) {
-    logger.error("Error comparing password", {
+    logger.error('Error comparing password', {
       userId: this._id,
       error: error.message,
     });
     captureException(error, {
-      tags: { component: "user-model", operation: "password-compare" },
+      tags: { component: 'user-model', operation: 'password-compare' },
     });
     return false;
   }
@@ -235,14 +241,14 @@ userSchema.methods.incrementLoginAttempts = async function () {
 
     if (this.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
       this.lockUntil = Date.now() + LOCK_TIME;
-      logger.info("Account locked due to multiple failed attempts", {
+      logger.info('Account locked due to multiple failed attempts', {
         userId: this._id,
       });
     }
 
     return await this.save();
   } catch (error) {
-    logger.error("Error incrementing login attempts", {
+    logger.error('Error incrementing login attempts', {
       userId: this._id,
       error: error.message,
     });
@@ -259,7 +265,7 @@ userSchema.methods.resetLoginAttempts = async function () {
     this.lastLogin = Date.now();
     return await this.save();
   } catch (error) {
-    logger.error("Error resetting login attempts", {
+    logger.error('Error resetting login attempts', {
       userId: this._id,
       error: error.message,
     });
@@ -276,12 +282,12 @@ userSchema.statics.findByEmail = async function (
   try {
     // Ajouter '+password' à la sélection quand includePassword est true
     return includePassword
-      ? await this.findOne({ email: email.toLowerCase() }).select("+password")
+      ? await this.findOne({ email: email.toLowerCase() }).select('+password')
       : await this.findOne({ email: email.toLowerCase() });
   } catch (error) {
-    logger.error("Error finding user by email", {
+    logger.error('Error finding user by email', {
       error: error.message,
-      email: email.substring(0, 3) + "***", // Anonymisation partielle
+      email: email.substring(0, 3) + '***', // Anonymisation partielle
     });
     captureException(error);
     return null;
@@ -306,13 +312,13 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
 userSchema.methods.createPasswordResetToken = async function () {
   try {
     // Créer un token aléatoire
-    const resetToken = require("crypto").randomBytes(32).toString("hex");
+    const resetToken = require('crypto').randomBytes(32).toString('hex');
 
     // Hasher le token et le stocker dans la base de données
-    this.resetPasswordToken = require("crypto")
-      .createHash("sha256")
+    this.resetPasswordToken = require('crypto')
+      .createHash('sha256')
       .update(resetToken)
-      .digest("hex");
+      .digest('hex');
 
     // Définir l'expiration à 10 minutes
     this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
@@ -321,21 +327,21 @@ userSchema.methods.createPasswordResetToken = async function () {
 
     return resetToken;
   } catch (error) {
-    logger.error("Error creating password reset token", {
+    logger.error('Error creating password reset token', {
       userId: this._id,
       error: error.message,
     });
     captureException(error);
-    throw new Error("Failed to generate reset token");
+    throw new Error('Failed to generate reset token');
   }
 };
 
 // Virtualiser le nom complet (exemple de propriété virtuelle)
-userSchema.virtual("fullName").get(function () {
+userSchema.virtual('fullName').get(function () {
   return this.name;
 });
 
 // Gestion optimisée du modèle avec vérification pour éviter les redéfinitions
-const User = mongoose.models.User || mongoose.model("User", userSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 export default User;

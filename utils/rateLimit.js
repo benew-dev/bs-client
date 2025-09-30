@@ -14,7 +14,7 @@
  * @date 2025-09-23
  */
 
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
 /**
  * Classe LRU Cache optimisée pour le rate limiting
@@ -113,8 +113,8 @@ class SlidingWindowRateLimiter {
 
     // Whitelist et configuration
     this.whitelist = new Set([
-      "127.0.0.1",
-      "::1",
+      '127.0.0.1',
+      '::1',
       // Ajouter IPs de monitoring, CDN, etc.
     ]);
 
@@ -131,24 +131,24 @@ class SlidingWindowRateLimiter {
   extractIP(req) {
     // Headers dans l'ordre de priorité
     const headers = [
-      "cf-connecting-ip", // Cloudflare
-      "x-real-ip", // Nginx proxy
-      "x-forwarded-for", // Standard proxy
-      "x-client-ip", // Autres proxies
+      'cf-connecting-ip', // Cloudflare
+      'x-real-ip', // Nginx proxy
+      'x-forwarded-for', // Standard proxy
+      'x-client-ip', // Autres proxies
     ];
 
     for (const header of headers) {
       const value = req.headers.get(header);
       if (value) {
         // Prendre la première IP valide (IPv4 ou IPv6)
-        const ips = value.split(",").map((ip) => ip.trim());
+        const ips = value.split(',').map((ip) => ip.trim());
         const validIP = ips.find((ip) => this.isValidIP(ip));
         if (validIP) return validIP;
       }
     }
 
     // Fallback
-    return req.ip || "0.0.0.0";
+    return req.ip || '0.0.0.0';
   }
 
   /**
@@ -166,7 +166,7 @@ class SlidingWindowRateLimiter {
   /**
    * Génération d'un identifiant unique pour le rate limiting
    */
-  generateKey(ip, userId = null, endpoint = "api") {
+  generateKey(ip, userId = null, endpoint = 'api') {
     if (userId) {
       // Pour les utilisateurs authentifiés, combiner IP + userId
       return `${endpoint}:user:${userId}:${ip}`;
@@ -257,7 +257,7 @@ class SlidingWindowRateLimiter {
   /**
    * Bloquer une IP
    */
-  blockIP(ip, duration, reason = "rate_limit_exceeded") {
+  blockIP(ip, duration, reason = 'rate_limit_exceeded') {
     const until = Date.now() + duration;
     this.blocked.set(ip, {
       until,
@@ -266,7 +266,7 @@ class SlidingWindowRateLimiter {
     });
 
     // Log pour Sentry
-    this.logMetric("ip_blocked", { ip, reason, duration });
+    this.logMetric('ip_blocked', { ip, reason, duration });
   }
 
   /**
@@ -289,7 +289,7 @@ class SlidingWindowRateLimiter {
     this.metrics.set(key, metrics);
 
     // Hook pour Sentry (à implémenter selon votre config)
-    if (event === "ip_blocked" || event === "ddos_detected") {
+    if (event === 'ip_blocked' || event === 'ddos_detected') {
       console.warn(`[RATE_LIMIT] ${event}:`, data);
       // TODO: Sentry.captureMessage(`Rate limit: ${event}`, 'warning', { extra: data });
     }
@@ -317,7 +317,7 @@ class SlidingWindowRateLimiter {
    * Nettoyage automatique périodique
    */
   startCleanupInterval() {
-    if (typeof setInterval === "undefined") return;
+    if (typeof setInterval === 'undefined') return;
 
     // Nettoyage toutes les 2 minutes
     setInterval(() => {
@@ -337,7 +337,7 @@ class SlidingWindowRateLimiter {
 
       // Log de santé
       if (this.requests.size > this.requests.maxSize * 0.8) {
-        console.warn("[RATE_LIMIT] Cache requests proche de la limite:", {
+        console.warn('[RATE_LIMIT] Cache requests proche de la limite:', {
           current: this.requests.size,
           max: this.requests.maxSize,
         });
@@ -354,8 +354,8 @@ const rateLimiter = new SlidingWindowRateLimiter();
  */
 export function withRateLimit(handler, options = {}) {
   const {
-    type = "public",
-    endpoint = "api",
+    type = 'public',
+    endpoint = 'api',
     customLimit = null,
     getUserRole = null,
     skipWhitelist = false,
@@ -375,15 +375,15 @@ export function withRateLimit(handler, options = {}) {
       if (blockInfo) {
         return NextResponse.json(
           {
-            error: "Access temporarily blocked",
+            error: 'Access temporarily blocked',
             reason: blockInfo.reason,
             retryAfter: blockInfo.retryAfter,
           },
           {
             status: 429,
             headers: {
-              "Retry-After": blockInfo.retryAfter.toString(),
-              "X-RateLimit-Policy": "429-blocked",
+              'Retry-After': blockInfo.retryAfter.toString(),
+              'X-RateLimit-Policy': '429-blocked',
             },
           },
         );
@@ -391,11 +391,11 @@ export function withRateLimit(handler, options = {}) {
 
       // Détection d'activité suspecte
       if (rateLimiter.detectSuspiciousActivity(ip)) {
-        rateLimiter.blockIP(ip, 1800000, "suspicious_activity"); // 30min
-        rateLimiter.logMetric("ddos_detected", { ip });
+        rateLimiter.blockIP(ip, 1800000, 'suspicious_activity'); // 30min
+        rateLimiter.logMetric('ddos_detected', { ip });
 
         return NextResponse.json(
-          { error: "Suspicious activity detected" },
+          { error: 'Suspicious activity detected' },
           { status: 429 },
         );
       }
@@ -404,7 +404,7 @@ export function withRateLimit(handler, options = {}) {
       let userRole = type;
       let userId = null;
 
-      if (getUserRole && typeof getUserRole === "function") {
+      if (getUserRole && typeof getUserRole === 'function') {
         const roleInfo = await getUserRole(req);
         if (roleInfo) {
           userRole = roleInfo.role || type;
@@ -432,12 +432,12 @@ export function withRateLimit(handler, options = {}) {
 
         // Bloquer si trop de violations
         if (violations > 10) {
-          rateLimiter.blockIP(ip, limit.blockDuration, "repeated_violations");
+          rateLimiter.blockIP(ip, limit.blockDuration, 'repeated_violations');
         }
 
         return NextResponse.json(
           {
-            error: "Rate limit exceeded",
+            error: 'Rate limit exceeded',
             limit: limit.points,
             window: `${limit.duration / 1000}s`,
             retryAfter: result.retryAfter,
@@ -446,15 +446,15 @@ export function withRateLimit(handler, options = {}) {
             status: 429,
             headers: {
               // Headers legacy pour rétrocompatibilité
-              "X-RateLimit-Limit": limit.points.toString(),
-              "X-RateLimit-Remaining": "0",
-              "X-RateLimit-Reset": new Date(result.resetAt).toISOString(),
-              "Retry-After": result.retryAfter.toString(),
+              'X-RateLimit-Limit': limit.points.toString(),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': new Date(result.resetAt).toISOString(),
+              'Retry-After': result.retryAfter.toString(),
               // Headers IETF draft-ietf-httpapi-ratelimit-headers-09 (2025 standard)
-              "RateLimit-Limit": limit.points.toString(),
-              "RateLimit-Remaining": "0",
-              "RateLimit-Reset": result.retryAfter.toString(),
-              "RateLimit-Policy": `"default";q=${limit.points};w=${limit.duration / 1000}`,
+              'RateLimit-Limit': limit.points.toString(),
+              'RateLimit-Remaining': '0',
+              'RateLimit-Reset': result.retryAfter.toString(),
+              'RateLimit-Policy': `"default";q=${limit.points};w=${limit.duration / 1000}`,
             },
           },
         );
@@ -466,35 +466,35 @@ export function withRateLimit(handler, options = {}) {
       // Ajouter les headers de rate limit à la réponse
       if (response instanceof NextResponse) {
         // Headers legacy pour rétrocompatibilité
-        response.headers.set("X-RateLimit-Limit", limit.points.toString());
+        response.headers.set('X-RateLimit-Limit', limit.points.toString());
         response.headers.set(
-          "X-RateLimit-Remaining",
+          'X-RateLimit-Remaining',
           result.remaining.toString(),
         );
         response.headers.set(
-          "X-RateLimit-Reset",
+          'X-RateLimit-Reset',
           new Date(result.resetAt).toISOString(),
         );
         // Headers IETF draft-ietf-httpapi-ratelimit-headers-09 (2025)
-        response.headers.set("RateLimit-Limit", limit.points.toString());
+        response.headers.set('RateLimit-Limit', limit.points.toString());
         response.headers.set(
-          "RateLimit-Remaining",
+          'RateLimit-Remaining',
           result.remaining.toString(),
         );
         response.headers.set(
-          "RateLimit-Reset",
+          'RateLimit-Reset',
           Math.ceil(result.resetAt / 1000).toString(),
         );
         response.headers.set(
-          "RateLimit-Policy",
+          'RateLimit-Policy',
           `"default";q=${limit.points};w=${limit.duration / 1000}`,
         );
       }
 
       return response;
     } catch (error) {
-      console.error("[RATE_LIMIT] Error:", error);
-      rateLimiter.logMetric("error", {
+      console.error('[RATE_LIMIT] Error:', error);
+      rateLimiter.logMetric('error', {
         message: error.message,
         stack: error.stack,
       });
@@ -509,19 +509,19 @@ export function withRateLimit(handler, options = {}) {
  * Helpers pré-configurés pour différents cas d'usage
  */
 export const withAuthRateLimit = (handler, options = {}) =>
-  withRateLimit(handler, { ...options, type: "critical", endpoint: "auth" });
+  withRateLimit(handler, { ...options, type: 'critical', endpoint: 'auth' });
 
 export const withApiRateLimit = (handler, options = {}) =>
-  withRateLimit(handler, { ...options, type: "public", endpoint: "api" });
+  withRateLimit(handler, { ...options, type: 'public', endpoint: 'api' });
 
 export const withPaymentRateLimit = (handler, options = {}) =>
-  withRateLimit(handler, { ...options, type: "critical", endpoint: "payment" });
+  withRateLimit(handler, { ...options, type: 'critical', endpoint: 'payment' });
 
 export const withUploadRateLimit = (handler, options = {}) =>
   withRateLimit(handler, {
     ...options,
-    type: "authenticated",
-    endpoint: "upload",
+    type: 'authenticated',
+    endpoint: 'upload',
   });
 
 /**
@@ -546,18 +546,18 @@ export function createRateLimitMiddleware(config = {}) {
     const { pathname } = req.nextUrl;
 
     // Déterminer le type d'endpoint basé sur le path
-    let type = "public";
-    let endpoint = "api";
+    let type = 'public';
+    let endpoint = 'api';
 
-    if (pathname.startsWith("/api/auth")) {
-      type = "critical";
-      endpoint = "auth";
-    } else if (pathname.startsWith("/api/payment")) {
-      type = "critical";
-      endpoint = "payment";
-    } else if (pathname.startsWith("/api/upload")) {
-      type = "authenticated";
-      endpoint = "upload";
+    if (pathname.startsWith('/api/auth')) {
+      type = 'critical';
+      endpoint = 'auth';
+    } else if (pathname.startsWith('/api/payment')) {
+      type = 'critical';
+      endpoint = 'payment';
+    } else if (pathname.startsWith('/api/upload')) {
+      type = 'authenticated';
+      endpoint = 'upload';
     }
 
     // Appliquer le rate limiting

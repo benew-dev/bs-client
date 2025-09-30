@@ -4,12 +4,12 @@
  * @returns {boolean} - True si l'URI est valide
  */
 export function isValidMongoURI(uri) {
-  if (!uri || typeof uri !== "string") {
+  if (!uri || typeof uri !== 'string') {
     return false;
   }
 
   // Vérifier si l'URI commence par mongodb:// ou mongodb+srv://
-  const validProtocols = ["mongodb://", "mongodb+srv://"];
+  const validProtocols = ['mongodb://', 'mongodb+srv://'];
   const hasValidProtocol = validProtocols.some((protocol) =>
     uri.startsWith(protocol),
   );
@@ -38,7 +38,7 @@ export function isValidMongoURI(uri) {
 
     // Vérifier si un nom de base de données est spécifié (après le premier slash)
     // Non obligatoire, mais typique dans une URI MongoDB
-    const pathParts = url.pathname.split("/").filter(Boolean);
+    const pathParts = url.pathname.split('/').filter(Boolean);
     if (pathParts.length === 0) {
       // C'est OK, pas de base de données spécifiée
     }

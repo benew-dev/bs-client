@@ -8,7 +8,7 @@
  * La validation complète est faite par Yup
  */
 export const sanitizeEmail = (email) => {
-  if (!email || typeof email !== "string") return "";
+  if (!email || typeof email !== 'string') return '';
   return email.trim().toLowerCase();
 };
 
@@ -17,8 +17,8 @@ export const sanitizeEmail = (email) => {
  * La validation complète est faite par Yup
  */
 export const sanitizeName = (name) => {
-  if (!name || typeof name !== "string") return "";
-  return name.trim().replace(/\s+/g, " ");
+  if (!name || typeof name !== 'string') return '';
+  return name.trim().replace(/\s+/g, ' ');
 };
 
 /**
@@ -26,14 +26,14 @@ export const sanitizeName = (name) => {
  * La validation complète est faite par Yup
  */
 export const sanitizePhone = (phone) => {
-  if (!phone || typeof phone !== "string") return "";
+  if (!phone || typeof phone !== 'string') return '';
 
   const trimmed = phone.trim();
   // Garder le + du début si présent, puis que les chiffres
-  if (trimmed.startsWith("+")) {
-    return "+" + trimmed.substring(1).replace(/\D/g, "");
+  if (trimmed.startsWith('+')) {
+    return '+' + trimmed.substring(1).replace(/\D/g, '');
   }
-  return trimmed.replace(/\D/g, "");
+  return trimmed.replace(/\D/g, '');
 };
 
 /**
@@ -42,7 +42,7 @@ export const sanitizePhone = (phone) => {
  */
 export const sanitizePassword = (password) => {
   // Retourner tel quel - la validation est faite par Yup
-  return password || "";
+  return password || '';
 };
 
 /**
