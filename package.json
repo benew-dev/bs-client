@@ -6,7 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "format": "prettier --write .",
+    "lint:fix": "next lint --fix",
+    "analyze": "cross-env ANALYZE=true next build",
+    "postbuild": "next-sitemap"
   },
   "dependencies": {
     "@next/bundle-analyzer": "^15.5.4",
@@ -43,5 +47,9 @@
     "eslint-plugin-security": "^3.0.1",
     "prettier": "^3.6.2",
     "tailwindcss": "^4"
-  }
+  },
+  "browserslist": [
+    "defaults and fully supports es6-module",
+    "maintained node versions"
+  ]
 }
