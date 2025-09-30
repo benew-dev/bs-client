@@ -57,21 +57,21 @@ export const SECURITY_PATTERNS = {
  * Listes de mots de passe communs (optimisé avec Set pour performance O(1))
  */
 export const COMMON_PASSWORDS = new Set([
-  "password",
-  "password123",
-  "123456",
-  "qwerty",
-  "abc123",
-  "welcome",
-  "admin",
-  "letmein",
-  "welcome1",
-  "monkey",
-  "111111",
-  "1234567890",
-  "azerty",
-  "soleil",
-  "motdepasse",
+  'password',
+  'password123',
+  '123456',
+  'qwerty',
+  'abc123',
+  'welcome',
+  'admin',
+  'letmein',
+  'welcome1',
+  'monkey',
+  '111111',
+  '1234567890',
+  'azerty',
+  'soleil',
+  'motdepasse',
 ]);
 
 /**
@@ -142,7 +142,7 @@ export const validationUtils = {
     }
 
     // Vérifier l'email
-    const emailUsername = email ? email.split("@")[0] : "";
+    const emailUsername = email ? email.split('@')[0] : '';
     if (
       emailUsername &&
       emailUsername.length > 3 &&
@@ -167,7 +167,7 @@ export const validationUtils = {
    */
   isValidPhone: (value) => {
     if (!value) return false;
-    const cleaned = value.replace(/\D/g, "");
+    const cleaned = value.replace(/\D/g, '');
     return cleaned.length >= 6 && cleaned.length <= 15;
   },
 
@@ -176,7 +176,7 @@ export const validationUtils = {
    */
   sanitizeString: (value) => {
     if (!value) return value;
-    return value.trim().replace(/\s+/g, " ");
+    return value.trim().replace(/\s+/g, ' ');
   },
 };
 
@@ -189,18 +189,18 @@ export const createBaseFields = (yup) => ({
       .string()
       .transform(validationUtils.sanitizeString)
       .lowercase()
-      .required("Email is required")
-      .max(100, "Email must be at most 100 characters")
-      .email("Please enter a valid email address")
-      .matches(REGEX.EMAIL, "Invalid email format")
+      .required('Email is required')
+      .max(100, 'Email must be at most 100 characters')
+      .email('Please enter a valid email address')
+      .matches(REGEX.EMAIL, 'Invalid email format')
       .test(
-        "no-sql-injection",
-        "Invalid email format",
+        'no-sql-injection',
+        'Invalid email format',
         validationUtils.noSqlInjection,
       )
       .test(
-        "no-nosql-injection",
-        "Invalid email format",
+        'no-nosql-injection',
+        'Invalid email format',
         validationUtils.noNoSqlInjection,
       ),
 
@@ -208,18 +208,18 @@ export const createBaseFields = (yup) => ({
     yup
       .string()
       .transform(validationUtils.sanitizeString)
-      .required("Name is required")
-      .min(2, "Name must be at least 2 characters")
-      .max(50, "Name must be at most 50 characters")
-      .matches(REGEX.SAFE_NAME, "Name contains invalid characters")
+      .required('Name is required')
+      .min(2, 'Name must be at least 2 characters')
+      .max(50, 'Name must be at most 50 characters')
+      .matches(REGEX.SAFE_NAME, 'Name contains invalid characters')
       .test(
-        "no-sql-injection",
-        "Name contains invalid characters",
+        'no-sql-injection',
+        'Name contains invalid characters',
         validationUtils.noSqlInjection,
       )
       .test(
-        "no-nosql-injection",
-        "Name contains invalid characters",
+        'no-nosql-injection',
+        'Name contains invalid characters',
         validationUtils.noNoSqlInjection,
       ),
 
@@ -227,11 +227,11 @@ export const createBaseFields = (yup) => ({
     yup
       .string()
       .transform(validationUtils.sanitizeString)
-      .required("Phone number is required")
-      .matches(REGEX.PHONE, "Invalid phone number format")
+      .required('Phone number is required')
+      .matches(REGEX.PHONE, 'Invalid phone number format')
       .test(
-        "is-valid-phone",
-        "Phone number must be valid",
+        'is-valid-phone',
+        'Phone number must be valid',
         validationUtils.isValidPhone,
       ),
 
@@ -239,22 +239,22 @@ export const createBaseFields = (yup) => ({
     yup
       .string()
       .trim()
-      .required("Password is required")
-      .min(8, "Password must be at least 8 characters")
-      .max(100, "Password must be at most 100 characters")
+      .required('Password is required')
+      .min(8, 'Password must be at least 8 characters')
+      .max(100, 'Password must be at most 100 characters')
       .test(
-        "no-whitespace",
-        "Password should not contain spaces",
+        'no-whitespace',
+        'Password should not contain spaces',
         (value) => !/\s/.test(value),
       )
       .test(
-        "no-common-sequences",
-        "Password contains common sequences",
+        'no-common-sequences',
+        'Password contains common sequences',
         (value) => !REGEX.COMMON_SEQUENCES.test(value),
       )
       .test(
-        "not-common-password",
-        "Password is too common",
+        'not-common-password',
+        'Password is too common',
         validationUtils.isNotCommonPassword,
       ),
 
@@ -262,10 +262,10 @@ export const createBaseFields = (yup) => ({
     yup
       .string()
       .trim()
-      .required("ID is required")
+      .required('ID is required')
       .test(
-        "is-valid-object-id",
-        "Invalid ID format",
+        'is-valid-object-id',
+        'Invalid ID format',
         validationUtils.isValidObjectId,
       ),
 });

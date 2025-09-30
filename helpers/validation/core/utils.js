@@ -3,7 +3,7 @@
  * Adapté pour 500 visiteurs/jour
  */
 
-import * as yup from "yup";
+import * as yup from 'yup';
 
 // Regex communs
 export const REGEX = {
@@ -19,27 +19,27 @@ export const REGEX = {
 
 // Mots de passe communs à éviter
 export const COMMON_PASSWORDS = new Set([
-  "password",
-  "password123",
-  "123456",
-  "qwerty",
-  "abc123",
-  "welcome",
-  "admin",
-  "letmein",
-  "welcome1",
-  "monkey",
-  "111111",
-  "1234567890",
-  "azerty",
-  "soleil",
-  "motdepasse",
+  'password',
+  'password123',
+  '123456',
+  'qwerty',
+  'abc123',
+  'welcome',
+  'admin',
+  'letmein',
+  'welcome1',
+  'monkey',
+  '111111',
+  '1234567890',
+  'azerty',
+  'soleil',
+  'motdepasse',
 ]);
 
 // Nettoie et normalise une chaîne
 export const sanitizeString = (value) => {
   if (!value) return value;
-  return value.trim().replace(/\s+/g, " ");
+  return value.trim().replace(/\s+/g, ' ');
 };
 
 // Validation ObjectId MongoDB
@@ -51,14 +51,14 @@ export const isValidObjectId = (value) => {
 // Validation téléphone
 export const isValidPhone = (value) => {
   if (!value) return false;
-  const cleaned = value.replace(/\D/g, "");
+  const cleaned = value.replace(/\D/g, '');
   return cleaned.length >= 6 && cleaned.length <= 15;
 };
 
 // Validation téléphone djiboutien
 export const isValidDjiboutiPhone = (phone) => {
   if (!phone) return false;
-  const cleaned = phone.replace(/\s|-/g, "");
+  const cleaned = phone.replace(/\s|-/g, '');
   return REGEX.DJIBOUTI_PHONE.test(cleaned);
 };
 
@@ -83,7 +83,7 @@ export const passwordContainsPersonalInfo = (password, context) => {
     return false;
   }
 
-  const emailUsername = email ? email.split("@")[0] : "";
+  const emailUsername = email ? email.split('@')[0] : '';
   if (
     emailUsername &&
     emailUsername.length > 3 &&
@@ -140,7 +140,7 @@ export const formatValidationErrors = (error) => {
   } else if (error.path && error.message) {
     formattedErrors[error.path] = error.message;
   } else {
-    formattedErrors.general = error.message || "Erreur de validation inconnue";
+    formattedErrors.general = error.message || 'Erreur de validation inconnue';
   }
 
   return formattedErrors;
@@ -154,40 +154,40 @@ export const createBaseFields = () => ({
     .string()
     .transform(sanitizeString)
     .lowercase()
-    .required("Email requis")
-    .max(100, "Email trop long")
-    .email("Format email invalide")
-    .matches(REGEX.EMAIL, "Format email invalide")
-    .test("no-nosql", "Format invalide", noNoSqlInjection),
+    .required('Email requis')
+    .max(100, 'Email trop long')
+    .email('Format email invalide')
+    .matches(REGEX.EMAIL, 'Format email invalide')
+    .test('no-nosql', 'Format invalide', noNoSqlInjection),
 
   name: yup
     .string()
     .transform(sanitizeString)
-    .required("Nom requis")
-    .min(2, "Nom trop court")
-    .max(50, "Nom trop long")
-    .matches(REGEX.SAFE_NAME, "Caractères non autorisés")
-    .test("no-nosql", "Format invalide", noNoSqlInjection),
+    .required('Nom requis')
+    .min(2, 'Nom trop court')
+    .max(50, 'Nom trop long')
+    .matches(REGEX.SAFE_NAME, 'Caractères non autorisés')
+    .test('no-nosql', 'Format invalide', noNoSqlInjection),
 
   phone: yup
     .string()
     .transform(sanitizeString)
-    .required("Téléphone requis")
-    .matches(REGEX.PHONE, "Format téléphone invalide")
-    .test("valid-phone", "Téléphone invalide", isValidPhone),
+    .required('Téléphone requis')
+    .matches(REGEX.PHONE, 'Format téléphone invalide')
+    .test('valid-phone', 'Téléphone invalide', isValidPhone),
 
   password: yup
     .string()
     .trim()
-    .required("Mot de passe requis")
-    .min(8, "Minimum 8 caractères")
-    .max(100, "Maximum 100 caractères")
-    .test("no-spaces", "Pas d'espaces autorisés", (val) => !/\s/.test(val))
-    .test("not-common", "Mot de passe trop commun", isNotCommonPassword),
+    .required('Mot de passe requis')
+    .min(8, 'Minimum 8 caractères')
+    .max(100, 'Maximum 100 caractères')
+    .test('no-spaces', "Pas d'espaces autorisés", (val) => !/\s/.test(val))
+    .test('not-common', 'Mot de passe trop commun', isNotCommonPassword),
 
   objectId: yup
     .string()
     .trim()
-    .required("ID requis")
-    .test("valid-id", "Format ID invalide", isValidObjectId),
+    .required('ID requis')
+    .test('valid-id', 'Format ID invalide', isValidObjectId),
 });

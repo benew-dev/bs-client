@@ -2,13 +2,13 @@
  * Schémas d'authentification simplifiés
  */
 
-import * as yup from "yup";
+import * as yup from 'yup';
 import {
   createBaseFields,
   REGEX,
   passwordContainsPersonalInfo,
   validate,
-} from "../core/utils";
+} from '../core/utils';
 
 const baseFields = createBaseFields();
 
@@ -18,9 +18,9 @@ export const loginSchema = yup.object().shape({
   password: yup
     .string()
     .trim()
-    .required("Mot de passe requis")
-    .min(6, "Minimum 6 caractères")
-    .max(100, "Maximum 100 caractères"),
+    .required('Mot de passe requis')
+    .min(6, 'Minimum 6 caractères')
+    .max(100, 'Maximum 100 caractères'),
 });
 
 // Schéma d'inscription
@@ -31,11 +31,11 @@ export const registerSchema = yup.object().shape({
   password: baseFields.password
     .matches(
       REGEX.STRONG_PASSWORD,
-      "Le mot de passe doit contenir: majuscule, minuscule, chiffre et caractère spécial",
+      'Le mot de passe doit contenir: majuscule, minuscule, chiffre et caractère spécial',
     )
     .test(
-      "no-personal-info",
-      "Le mot de passe ne doit pas contenir votre nom ou email",
+      'no-personal-info',
+      'Le mot de passe ne doit pas contenir votre nom ou email',
       passwordContainsPersonalInfo,
     ),
 });
@@ -45,14 +45,14 @@ export const updatePasswordSchema = yup.object().shape({
   currentPassword: yup
     .string()
     .trim()
-    .required("Mot de passe actuel requis")
-    .min(6, "Minimum 6 caractères"),
+    .required('Mot de passe actuel requis')
+    .min(6, 'Minimum 6 caractères'),
 
   newPassword: baseFields.password
-    .matches(REGEX.STRONG_PASSWORD, "Mot de passe pas assez fort")
+    .matches(REGEX.STRONG_PASSWORD, 'Mot de passe pas assez fort')
     .test(
-      "different",
-      "Doit être différent du mot de passe actuel",
+      'different',
+      'Doit être différent du mot de passe actuel',
       function (value) {
         return value !== this.parent.currentPassword;
       },
@@ -60,8 +60,8 @@ export const updatePasswordSchema = yup.object().shape({
 
   confirmPassword: yup
     .string()
-    .required("Confirmation requise")
-    .test("match", "Les mots de passe ne correspondent pas", function (value) {
+    .required('Confirmation requise')
+    .test('match', 'Les mots de passe ne correspondent pas', function (value) {
       return value === this.parent.newPassword;
     }),
 });
@@ -75,19 +75,19 @@ export const forgotPasswordSchema = yup.object().shape({
 export const resetPasswordSchema = yup.object().shape({
   token: yup
     .string()
-    .required("Token requis")
-    .min(10, "Token invalide")
-    .max(200, "Token invalide"),
+    .required('Token requis')
+    .min(10, 'Token invalide')
+    .max(200, 'Token invalide'),
 
   newPassword: baseFields.password.matches(
     REGEX.STRONG_PASSWORD,
-    "Mot de passe pas assez fort",
+    'Mot de passe pas assez fort',
   ),
 
   confirmPassword: yup
     .string()
-    .required("Confirmation requise")
-    .test("match", "Les mots de passe ne correspondent pas", function (value) {
+    .required('Confirmation requise')
+    .test('match', 'Les mots de passe ne correspondent pas', function (value) {
       return value === this.parent.newPassword;
     }),
 });
