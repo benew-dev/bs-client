@@ -32,31 +32,14 @@ const CART_LOAD_DELAY = 500;
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 // ✅ NOUVEAU: Bouton panier avec gestion des utilisateurs non vérifiés
-const CartButton = memo(({ cartCount, isVerified = true }) => {
-  const handleCartClick = (e) => {
-    if (!isVerified) {
-      e.preventDefault();
-      toast.warning("Veuillez vérifier votre email pour accéder au panier");
-      return false;
-    }
-  };
-
+const CartButton = memo(({ cartCount }) => {
   return (
     <Link
       href="/cart"
-      onClick={handleCartClick}
-      className={`px-3 py-2 flex flex-row text-gray-700 bg-white shadow-sm border border-gray-200 rounded-md transition-colors relative ${
-        isVerified
-          ? "hover:bg-blue-50 hover:border-blue-200 cursor-pointer"
-          : "opacity-60 cursor-not-allowed hover:bg-gray-50"
-      }`}
+      className="px-3 py-2 flex flex-row text-gray-700 bg-white shadow-sm border border-gray-200 rounded-md transition-colors relative hover:bg-blue-50 hover:border-blue-200 cursor-pointer"
       aria-label="Panier"
       data-testid="cart-button"
-      title={
-        isVerified
-          ? "Accéder au panier"
-          : "Vérifiez votre email pour accéder au panier"
-      }
+      title="Accéder au panier"
     >
       <ShoppingCart className="text-gray-400 w-5" />
       <span className="ml-1">Panier ({cartCount > 0 ? cartCount : 0})</span>
@@ -65,10 +48,6 @@ const CartButton = memo(({ cartCount, isVerified = true }) => {
           {cartCount}
         </span>
       )}
-      {/* ✅ NOUVEAU: Icône d'avertissement pour utilisateurs non vérifiés */}
-      {!isVerified && (
-        <AlertCircle className="absolute -top-1 -right-1 w-4 h-4 text-orange-500 bg-white rounded-full" />
-      )}
     </Link>
   );
 });
@@ -76,52 +55,22 @@ const CartButton = memo(({ cartCount, isVerified = true }) => {
 CartButton.displayName = "CartButton";
 
 // ✅ NOUVEAU: Dropdown utilisateur avec gestion vérification
-const UserDropdown = memo(({ user, isVerified = true }) => {
-  // Menus différents selon le statut de vérification
-  const verifiedMenuItems = useMemo(
-    () => [
-      { href: "/me", label: "Mon profil" },
-      { href: "/me/orders", label: "Mes commandes" },
-      { href: "/me/contact", label: "Contactez le vendeur" },
-    ],
-    [],
-  );
-
-  const unverifiedMenuItems = useMemo(
-    () => [
-      {
-        href: "/auth/verify",
-        label: "📧 Vérifier mon email",
-        className: "text-orange-600 font-medium bg-orange-50",
-      },
-      {
-        href: "/help/verification",
-        label: "Aide à la vérification",
-        className: "text-blue-600",
-      },
-    ],
-    [],
-  );
-
-  const menuItems = isVerified ? verifiedMenuItems : unverifiedMenuItems;
+const UserDropdown = memo(({ user }) => {
+  const menuItems = [
+    { href: "/me", label: "Mon profil" },
+    { href: "/me/orders", label: "Mes commandes" },
+    { href: "/me/contact", label: "Contactez le vendeur" },
+  ];
 
   return (
     <div className="relative group">
       <Link
-        href={isVerified ? "/me" : "/auth/verify"}
-        className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
-          isVerified
-            ? "hover:bg-blue-50"
-            : "hover:bg-orange-50 border border-orange-200"
-        }`}
+        href="/me"
+        className="flex items-center space-x-2 px-3 py-2 rounded-md transition-colors hover:bg-blue-50"
         aria-expanded="false"
         aria-haspopup="true"
         id="user-menu-button"
-        title={
-          isVerified
-            ? "Menu utilisateur"
-            : "Email non vérifié - Cliquez pour vérifier"
-        }
+        title="Menu utilisateur"
       >
         <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-200">
           <Image
@@ -133,21 +82,10 @@ const UserDropdown = memo(({ user, isVerified = true }) => {
             className="object-cover"
             priority={false}
           />
-          {/* ✅ NOUVEAU: Badge de vérification */}
-          {!isVerified && (
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
-              <AlertCircle className="w-3 h-3 text-white" />
-            </div>
-          )}
         </div>
         <div className="hidden lg:block">
           <div className="flex items-center space-x-1">
             <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-            {!isVerified && (
-              <span className="text-xs bg-orange-100 text-orange-700 px-1 py-0.5 rounded">
-                Non vérifié
-              </span>
-            )}
           </div>
           <p className="text-xs text-gray-500 truncate max-w-[150px]">
             {user?.email}
@@ -162,18 +100,6 @@ const UserDropdown = memo(({ user, isVerified = true }) => {
         className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200 z-50"
       >
         <div className="py-1">
-          {/* ✅ NOUVEAU: Message pour utilisateurs non vérifiés */}
-          {!isVerified && (
-            <div className="px-4 py-2 border-b border-orange-100 bg-orange-50">
-              <p className="text-xs text-orange-700 font-medium">
-                ⚠️ Email non vérifié
-              </p>
-              <p className="text-xs text-orange-600">
-                Fonctionnalités limitées
-              </p>
-            </div>
-          )}
-
           {menuItems.map((item, index) => (
             <Link
               key={`menu-item-${index}`}
@@ -221,7 +147,7 @@ const Header = () => {
   const isCartLoadingRef = useRef(false);
 
   // ✅ NOUVEAU: Déterminer si l'utilisateur est vérifié
-  const isUserVerified = useMemo(() => {
+  const isUserActive = useMemo(() => {
     return user?.isActive === true;
   }, [user?.isActive]);
 
@@ -238,7 +164,7 @@ const Header = () => {
   // Fonction loadCart optimisée avec debounce
   const loadCart = useCallback(async () => {
     // ✅ NOUVEAU: Ne charger le panier que pour les utilisateurs vérifiés
-    if (!isUserVerified) return;
+    if (!isUserActive) return;
 
     // Éviter les chargements multiples
     if (isCartLoadingRef.current) return;
@@ -262,7 +188,7 @@ const Header = () => {
       setIsLoadingCart(false);
       isCartLoadingRef.current = false;
     }
-  }, [setCartToState, isUserVerified]);
+  }, [setCartToState, isUserActive]);
 
   // useEffect optimisé pour la gestion de session
   useEffect(() => {
@@ -278,7 +204,7 @@ const Header = () => {
         }
 
         // ✅ MODIFICATION: Charger le panier seulement si vérifié
-        if (isUserVerified) {
+        if (isUserActive) {
           if (data?.isNewLogin) {
             loadCartTimeoutRef.current = setTimeout(() => {
               if (mounted) loadCart();
@@ -302,7 +228,7 @@ const Header = () => {
     return () => {
       mounted = false;
     };
-  }, [data, setUser, loadCart, isUserVerified]);
+  }, [data, setUser, loadCart, isUserActive]);
 
   // Fermer le menu mobile si on clique en dehors
   useEffect(() => {
@@ -366,7 +292,7 @@ const Header = () => {
 
   // ✅ NOUVEAU: Handler pour les clics sur le panier mobile
   const handleMobileCartClick = (e) => {
-    if (!isUserVerified) {
+    if (!isUserActive) {
       e.preventDefault();
       toast.warning("Veuillez vérifier votre email pour accéder au panier");
       return false;
@@ -398,13 +324,13 @@ const Header = () => {
                 href="/cart"
                 onClick={handleMobileCartClick}
                 className={`px-3 py-2 inline-block text-center text-gray-700 bg-white shadow-sm border border-gray-200 rounded-md mr-2 relative ${
-                  isUserVerified
+                  isUserActive
                     ? "hover:bg-blue-50"
                     : "opacity-60 cursor-not-allowed hover:bg-gray-50"
                 }`}
                 aria-label="Panier"
                 title={
-                  isUserVerified
+                  isUserActive
                     ? "Accéder au panier"
                     : "Vérifiez votre email pour accéder au panier"
                 }
@@ -415,7 +341,7 @@ const Header = () => {
                     {cartCount}
                   </span>
                 )}
-                {!isUserVerified && (
+                {!isUserActive && (
                   <AlertCircle className="absolute -top-1 -right-1 w-3 h-3 text-orange-500 bg-white rounded-full" />
                 )}
               </Link>
@@ -442,11 +368,7 @@ const Header = () => {
           {/* User navigation - Desktop */}
           <div className="hidden md:flex items-center space-x-3">
             {user && (
-              <CartButton
-                cartCount={cartCount}
-                isVerified={isUserVerified}
-                userEmail={user?.email}
-              />
+              <CartButton cartCount={cartCount} userEmail={user?.email} />
             )}
 
             {!user ? (
@@ -459,7 +381,7 @@ const Header = () => {
                 <span className="ml-1">Connexion</span>
               </Link>
             ) : (
-              <UserDropdown user={user} isVerified={isUserVerified} />
+              <UserDropdown user={user} />
             )}
           </div>
         </div>
@@ -479,13 +401,13 @@ const Header = () => {
             {user ? (
               <div className="space-y-3">
                 {/* ✅ NOUVEAU: Alerte pour utilisateurs non vérifiés en mobile */}
-                {!isUserVerified && (
+                {!isUserActive && (
                   <div className="bg-orange-50 border border-orange-200 rounded-md p-3 mb-4">
                     <div className="flex items-center space-x-2">
                       <AlertCircle className="w-4 h-4 text-orange-600" />
                       <div>
                         <p className="text-sm font-medium text-orange-800">
-                          Email non vérifié
+                          Utilisateur inactif
                         </p>
                         <p className="text-xs text-orange-700">
                           Accès limité aux fonctionnalités
@@ -496,13 +418,9 @@ const Header = () => {
                 )}
 
                 <Link
-                  href={isUserVerified ? "/me" : "/auth/verify"}
+                  href="/me"
                   onClick={closeMobileMenu}
-                  className={`flex items-center space-x-2 px-2 py-2 rounded-md ${
-                    isUserVerified
-                      ? "hover:bg-blue-50"
-                      : "hover:bg-orange-50 bg-orange-50"
-                  }`}
+                  className="flex items-center space-x-2 px-2 py-2 rounded-md hover:bg-blue-50"
                 >
                   <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-200">
                     <Image
@@ -514,7 +432,7 @@ const Header = () => {
                       sizes="32px"
                       className="object-cover"
                     />
-                    {!isUserVerified && (
+                    {!isUserActive && (
                       <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full"></div>
                     )}
                   </div>
@@ -524,9 +442,9 @@ const Header = () => {
                     </p>
                     <p className="text-xs text-gray-500 truncate max-w-[200px]">
                       {user?.email}
-                      {!isUserVerified && (
+                      {!isUserActive && (
                         <span className="ml-1 text-orange-600">
-                          (Non vérifié)
+                          (Utilisateur inactif)
                         </span>
                       )}
                     </p>
@@ -534,7 +452,7 @@ const Header = () => {
                 </Link>
 
                 {/* ✅ NOUVEAU: Menu conditionnel selon le statut de vérification */}
-                {isUserVerified ? (
+                {isUserActive ? (
                   <>
                     <Link
                       href="/me/orders"

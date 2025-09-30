@@ -98,9 +98,6 @@ export const POST = withAuthRateLimit(
         );
       }
 
-      // Génération token de vérification sécurisé
-      const verificationToken = crypto.randomBytes(32).toString("hex");
-
       // Créer l'utilisateur avec tous les champs appropriés
       const user = await User.create({
         name: validation.data.name,
@@ -109,8 +106,6 @@ export const POST = withAuthRateLimit(
         password: validation.data.password,
         role: "user",
         isActive: true,
-        verified: false,
-        verificationToken,
         avatar: {
           public_id: null,
           url: null,
@@ -121,7 +116,6 @@ export const POST = withAuthRateLimit(
         id: user._id,
         email: user.email,
         name: user.name,
-        verified: user.verified,
       });
 
       // Réponse enrichie avec informations complètes
@@ -135,7 +129,6 @@ export const POST = withAuthRateLimit(
             email: user.email,
             phone: user.phone,
             role: user.role,
-            verified: user.verified,
             isActive: user.isActive,
             createdAt: user.createdAt,
             avatar: user.avatar,

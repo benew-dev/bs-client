@@ -117,7 +117,6 @@ const authOptions = {
             phone: user.phone,
             role: user.role || "user",
             avatar: user.avatar,
-            verified: user.verified || false,
             isActive: user.isActive,
             lastLogin: user.lastLogin,
             createdAt: user.createdAt,
@@ -161,7 +160,6 @@ const authOptions = {
           phone: user.phone,
           role: user.role,
           avatar: user.avatar,
-          verified: user.verified,
           isActive: user.isActive,
           lastLogin: user.lastLogin,
           createdAt: user.createdAt,
@@ -203,7 +201,6 @@ const authOptions = {
           ...token.user,
           // Informations supplémentaires pour l'interface
           memberSince: token.user.createdAt,
-          isVerified: token.user.verified,
           accountStatus: token.user.isActive ? "active" : "suspended",
         };
         session.isNewLogin = token.isNewLogin || false;

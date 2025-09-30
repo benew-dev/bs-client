@@ -165,17 +165,6 @@ export const POST = withAuthRateLimit(
       user.loginAttempts = 0; // Réinitialiser les tentatives
       user.lockUntil = undefined; // Déverrouiller le compte si verrouillé
 
-      // Si l'email n'était pas vérifié, on peut le marquer comme vérifié
-      // car l'utilisateur a prouvé qu'il a accès à l'email
-      if (!user.verified) {
-        user.verified = true;
-        user.verificationToken = undefined;
-        console.log("Email verified through password reset:", {
-          userId: user._id,
-          email: user.email?.substring(0, 3) + "***",
-        });
-      }
-
       await user.save();
 
       // ✅ Log de succès
@@ -184,7 +173,6 @@ export const POST = withAuthRateLimit(
         email: user.email?.substring(0, 3) + "***",
         previousChange: oldPasswordChangedAt,
         newChange: user.passwordChangedAt,
-        emailVerified: user.verified,
       });
 
       // ✅ NOUVEAU : Envoyer email de confirmation de changement de mot de passe
@@ -263,7 +251,6 @@ export const POST = withAuthRateLimit(
           code: "PASSWORD_RESET_SUCCESS",
           data: {
             passwordChangedAt: user.passwordChangedAt,
-            emailVerified: user.verified,
             securityTokensCleared: true,
             accountUnlocked: true,
             confirmationEmailSent,
