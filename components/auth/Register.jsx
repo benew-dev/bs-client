@@ -206,20 +206,6 @@ const Register = () => {
         setRegistrationSuccess(true);
         setRegistrationData(data.data);
 
-        // Monitoring succès
-        captureClientError(
-          new Error("Inscription réussie"),
-          "Register",
-          "registrationSuccess",
-          false,
-          {
-            emailSent: data.data?.emailSent,
-            hasNextSteps: !!data.data?.nextSteps,
-            userCreated: !!data.data?.user,
-            action: "success",
-          },
-        );
-
         // Réinitialiser le formulaire
         setFormData({
           name: "",
@@ -236,8 +222,6 @@ const Register = () => {
         if (process.env.NODE_ENV === "development") {
           console.log("Registration successful:", {
             user: data.data?.user?.email,
-            emailSent: data.data?.emailSent,
-            nextSteps: data.data?.nextSteps,
           });
         }
       } else {
@@ -367,47 +351,6 @@ const Register = () => {
           </p>
         </div>
 
-        {/* Status email */}
-        <div
-          className={`rounded-md p-4 mb-6 border ${
-            registrationData.emailSent
-              ? "bg-blue-50 border-blue-200"
-              : "bg-yellow-50 border-yellow-200"
-          }`}
-        >
-          <div className="flex items-center">
-            <Mail
-              className={`w-5 h-5 mr-2 ${
-                registrationData.emailSent ? "text-blue-600" : "text-yellow-600"
-              }`}
-            />
-            <div>
-              <p
-                className={`font-medium text-sm ${
-                  registrationData.emailSent
-                    ? "text-blue-800"
-                    : "text-yellow-800"
-                }`}
-              >
-                {registrationData.emailSent
-                  ? "Email de vérification envoyé !"
-                  : "Email en cours d'envoi..."}
-              </p>
-              <p
-                className={`text-xs mt-1 ${
-                  registrationData.emailSent
-                    ? "text-blue-700"
-                    : "text-yellow-700"
-                }`}
-              >
-                {registrationData.emailSent
-                  ? "Consultez votre boîte email et vos spams."
-                  : "Vous recevrez un email sous peu."}
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Étapes suivantes */}
         {registrationData.nextSteps && (
           <div className="mb-6">
@@ -440,19 +383,6 @@ const Register = () => {
           >
             Créer un autre compte
           </button>
-        </div>
-
-        {/* Aide */}
-        <div className="mt-6 pt-4 border-t border-gray-200 text-center">
-          <p className="text-xs text-gray-500 mb-2">
-            Vous ne recevez pas l&apos;email ?
-          </p>
-          <Link
-            href="/auth/help"
-            className="text-xs text-blue-600 hover:text-blue-800 underline"
-          >
-            Obtenir de l&apos;aide
-          </Link>
         </div>
       </div>
     );

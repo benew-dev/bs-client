@@ -146,11 +146,6 @@ const Header = () => {
   // Flag pour éviter les chargements multiples
   const isCartLoadingRef = useRef(false);
 
-  // ✅ NOUVEAU: Déterminer si l'utilisateur est vérifié
-  const isUserActive = useMemo(() => {
-    return user?.isActive === true;
-  }, [user?.isActive]);
-
   // Cleanup des timeouts au démontage
   useEffect(() => {
     return () => {
@@ -163,9 +158,6 @@ const Header = () => {
 
   // Fonction loadCart optimisée avec debounce
   const loadCart = useCallback(async () => {
-    // ✅ NOUVEAU: Ne charger le panier que pour les utilisateurs vérifiés
-    if (!isUserActive) return;
-
     // Éviter les chargements multiples
     if (isCartLoadingRef.current) return;
 
@@ -188,7 +180,7 @@ const Header = () => {
       setIsLoadingCart(false);
       isCartLoadingRef.current = false;
     }
-  }, [setCartToState, isUserActive]);
+  }, [setCartToState]);
 
   // useEffect optimisé pour la gestion de session
   useEffect(() => {
@@ -203,15 +195,13 @@ const Header = () => {
           clearTimeout(loadCartTimeoutRef.current);
         }
 
-        // ✅ MODIFICATION: Charger le panier seulement si vérifié
-        if (isUserActive) {
-          if (data?.isNewLogin) {
-            loadCartTimeoutRef.current = setTimeout(() => {
-              if (mounted) loadCart();
-            }, CART_LOAD_DELAY);
-          } else {
-            loadCart();
-          }
+        // ✅ MODIFICATION: Charger le panier
+        if (data?.isNewLogin) {
+          loadCartTimeoutRef.current = setTimeout(() => {
+            if (mounted) loadCart();
+          }, CART_LOAD_DELAY);
+        } else {
+          loadCart();
         }
       } catch (error) {
         Sentry.captureException(error, {
@@ -228,7 +218,7 @@ const Header = () => {
     return () => {
       mounted = false;
     };
-  }, [data, setUser, loadCart, isUserActive]);
+  }, [data, setUser, loadCart]);
 
   // Fermer le menu mobile si on clique en dehors
   useEffect(() => {
@@ -290,15 +280,6 @@ const Header = () => {
     setMobileMenuOpen(false);
   };
 
-  // ✅ NOUVEAU: Handler pour les clics sur le panier mobile
-  const handleMobileCartClick = (e) => {
-    if (!isUserActive) {
-      e.preventDefault();
-      toast.warning("Veuillez vérifier votre email pour accéder au panier");
-      return false;
-    }
-  };
-
   return (
     <header className="bg-white py-2 border-b sticky top-0 z-50 shadow-sm">
       <div className="container max-w-[1440px] mx-auto px-4">
@@ -322,27 +303,15 @@ const Header = () => {
             {user && (
               <Link
                 href="/cart"
-                onClick={handleMobileCartClick}
-                className={`px-3 py-2 inline-block text-center text-gray-700 bg-white shadow-sm border border-gray-200 rounded-md mr-2 relative ${
-                  isUserActive
-                    ? "hover:bg-blue-50"
-                    : "opacity-60 cursor-not-allowed hover:bg-gray-50"
-                }`}
+                className="px-3 py-2 inline-block text-center text-gray-700 bg-white shadow-sm border border-gray-200 rounded-md mr-2 relative hover:bg-blue-50"
                 aria-label="Panier"
-                title={
-                  isUserActive
-                    ? "Accéder au panier"
-                    : "Vérifiez votre email pour accéder au panier"
-                }
+                title="Accéder au panier"
               >
                 <ShoppingCart className="text-gray-400 w-5" />
                 {cartCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
                     {cartCount}
                   </span>
-                )}
-                {!isUserActive && (
-                  <AlertCircle className="absolute -top-1 -right-1 w-3 h-3 text-orange-500 bg-white rounded-full" />
                 )}
               </Link>
             )}
@@ -400,23 +369,6 @@ const Header = () => {
             </div>
             {user ? (
               <div className="space-y-3">
-                {/* ✅ NOUVEAU: Alerte pour utilisateurs non vérifiés en mobile */}
-                {!isUserActive && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-md p-3 mb-4">
-                    <div className="flex items-center space-x-2">
-                      <AlertCircle className="w-4 h-4 text-orange-600" />
-                      <div>
-                        <p className="text-sm font-medium text-orange-800">
-                          Utilisateur inactif
-                        </p>
-                        <p className="text-xs text-orange-700">
-                          Accès limité aux fonctionnalités
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 <Link
                   href="/me"
                   onClick={closeMobileMenu}
@@ -432,61 +384,30 @@ const Header = () => {
                       sizes="32px"
                       className="object-cover"
                     />
-                    {!isUserActive && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full"></div>
-                    )}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-700">
                       {user?.name}
                     </p>
-                    <p className="text-xs text-gray-500 truncate max-w-[200px]">
-                      {user?.email}
-                      {!isUserActive && (
-                        <span className="ml-1 text-orange-600">
-                          (Utilisateur inactif)
-                        </span>
-                      )}
-                    </p>
                   </div>
                 </Link>
 
-                {/* ✅ NOUVEAU: Menu conditionnel selon le statut de vérification */}
-                {isUserActive ? (
-                  <>
-                    <Link
-                      href="/me/orders"
-                      onClick={closeMobileMenu}
-                      className="block px-2 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md"
-                    >
-                      Mes commandes
-                    </Link>
-                    <Link
-                      href="/me/contact"
-                      onClick={closeMobileMenu}
-                      className="block px-2 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md"
-                    >
-                      Contactez le vendeur
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      href="/auth/verify"
-                      onClick={closeMobileMenu}
-                      className="block px-2 py-2 text-sm text-orange-600 font-medium bg-orange-50 hover:bg-orange-100 rounded-md"
-                    >
-                      📧 Vérifier mon email
-                    </Link>
-                    <Link
-                      href="/help/verification"
-                      onClick={closeMobileMenu}
-                      className="block px-2 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md"
-                    >
-                      Aide à la vérification
-                    </Link>
-                  </>
-                )}
+                <>
+                  <Link
+                    href="/me/orders"
+                    onClick={closeMobileMenu}
+                    className="block px-2 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md"
+                  >
+                    Mes commandes
+                  </Link>
+                  <Link
+                    href="/me/contact"
+                    onClick={closeMobileMenu}
+                    className="block px-2 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md"
+                  >
+                    Contactez le vendeur
+                  </Link>
+                </>
 
                 <button
                   onClick={async () => {

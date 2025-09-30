@@ -56,7 +56,7 @@ export const POST = withAuthRateLimit(
 
       // Rechercher l'utilisateur
       const user = await User.findOne({ email }).select(
-        "_id name email isActive verified resetPasswordToken resetPasswordExpire updatedAt",
+        "_id name email isActive resetPasswordToken resetPasswordExpire updatedAt",
       );
 
       // ✅ SÉCURITÉ: Toujours retourner le même message (éviter l'énumération)
@@ -96,17 +96,6 @@ export const POST = withAuthRateLimit(
           },
           { status: 200 },
         );
-      }
-
-      // ✅ Vérifier si l'email est vérifié
-      if (!user.verified) {
-        console.log("Password reset attempt on unverified account:", {
-          userId: user._id,
-          email: email.substring(0, 3) + "***",
-        });
-
-        // Envoyer quand même l'email mais informer de vérifier d'abord
-        // On pourrait aussi bloquer, selon la politique de sécurité
       }
 
       // ✅ Rate limiting simple - vérifier le dernier envoi

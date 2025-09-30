@@ -146,7 +146,6 @@ const userSchema = new mongoose.Schema(
         delete ret.lockUntil;
         delete ret.resetPasswordToken;
         delete ret.resetPasswordExpire;
-        delete ret.verificationToken;
         delete ret.__v;
         return ret;
       },
