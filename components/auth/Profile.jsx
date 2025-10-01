@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { memo, useContext, useState, useEffect, useRef } from 'react';
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
-import Image from 'next/image';
-import AuthContext from '@/context/AuthContext';
-import { EllipsisVertical, Lock, Pencil, Plus } from 'lucide-react';
+import { memo, useContext, useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import Image from "next/image";
+import AuthContext from "@/context/AuthContext";
+import { EllipsisVertical, Lock, Pencil, Plus } from "lucide-react";
 
 const AddressesSkeleton = () => (
   <div className="animate-pulse space-y-4">
@@ -18,7 +18,7 @@ const AddressesSkeleton = () => (
 );
 
 // MODIFICATION: Retirer ssr: false si possible
-const UserAddresses = dynamic(() => import('@/components/user/UserAddresses'), {
+const UserAddresses = dynamic(() => import("@/components/user/UserAddresses"), {
   loading: () => <AddressesSkeleton />,
   // MODIFICATION: Essayer sans ssr: false d'abord
   // ssr: false,
@@ -53,25 +53,25 @@ const Profile = ({ addresses = [] }) => {
       if (
         modalRef.current &&
         !modalRef.current.contains(event.target) &&
-        !event.target.closest('.dots-button')
+        !event.target.closest(".dots-button")
       ) {
         setIsModalOpen(false);
       }
     };
 
     const handleEscape = (event) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setIsModalOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
 
     // AJOUT: Stocker la fonction de cleanup
     cleanupRef.current = () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
     };
 
     return cleanupRef.current;
@@ -100,12 +100,12 @@ const Profile = ({ addresses = [] }) => {
   }
 
   const userData = {
-    name: user?.name || 'User',
-    email: user?.email || 'No email provided',
-    phone: user?.phone || 'No phone provided',
+    name: user?.name || "User",
+    email: user?.email || "No email provided",
+    phone: user?.phone || "No phone provided",
     avatarUrl: imageError
-      ? '/images/default.png'
-      : user?.avatar?.url || '/images/default.png',
+      ? "/images/default.png"
+      : user?.avatar?.url || "/images/default.png",
   };
 
   return (
@@ -200,12 +200,14 @@ const Profile = ({ addresses = [] }) => {
         <UserAddresses addresses={addresses} />
       ) : (
         <div className="text-center py-4">
-          <p className="text-gray-600">No saved addresses found</p>
+          <p className="text-gray-600">
+            Vous n&apos;avez pas d&apos;adresse enregistre
+          </p>
           <Link
             href="/address/new"
             className="inline-block mt-2 text-sm text-blue-600 hover:text-blue-800"
           >
-            Add your first address
+            Ajouter votre adresse
           </Link>
         </div>
       )}
