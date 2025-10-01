@@ -538,23 +538,23 @@ const Payment = ({ paymentTypes }) => {
                     )}
                   </button>
                 </div>
-              </div>
 
-              <div className="border-t border-gray-200 pt-4 mt-4">
-                <h3 className="font-medium text-gray-800 mb-3">
-                  Produits ({Array.isArray(cart) ? cartCount : 0})
-                </h3>
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <h3 className="font-medium text-gray-800 mb-3">
+                    Produits ({Array.isArray(cart) ? cartCount : 0})
+                  </h3>
 
-                <div className="space-y-3 max-h-80 overflow-auto pr-2 hide-scrollbar">
-                  {Array.isArray(cart) && cartCount > 0 ? (
-                    cart.map((item) => (
-                      <ItemShipping key={item.id || item._id} item={item} />
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-sm italic py-2">
-                      Aucun produit dans votre panier
-                    </p>
-                  )}
+                  <div className="space-y-3 max-h-80 overflow-auto pr-2 hide-scrollbar">
+                    {Array.isArray(cart) && cartCount > 0 ? (
+                      cart.map((item) => (
+                        <ItemShipping key={item.id || item._id} item={item} />
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-sm italic py-2">
+                        Aucun produit dans votre panier
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             </aside>
