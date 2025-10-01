@@ -1,29 +1,29 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const cartSchema = new mongoose.Schema(
   {
     product: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product',
+      ref: "Product",
       required: true,
       index: true, // Indexer pour des recherches plus rapides
     },
     quantity: {
       type: Number,
       required: true,
-      min: [1, 'La quantité ne peut pas être inférieure à 1'],
+      min: [1, "La quantité ne peut pas être inférieure à 1"],
       default: 1,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
       index: true, // Indexer pour des recherches plus rapides
     },
     price: {
       type: Number,
       required: true, // Stocker le prix au moment de l'ajout au panier
-      min: [0, 'Le prix ne peut pas être négatif'],
+      min: [0, "Le prix ne peut pas être négatif"],
     },
     productName: {
       type: String,
@@ -54,14 +54,14 @@ const cartSchema = new mongoose.Schema(
 cartSchema.index({ user: 1, product: 1 }, { unique: true });
 
 // Méthode virtuelle pour calculer le sous-total
-cartSchema.virtual('subtotal').get(function () {
+cartSchema.virtual("subtotal").get(function () {
   return this.price * this.quantity;
 });
 
 // Méthode d'instance pour mettre à jour la quantité
 cartSchema.methods.updateQuantity = function (newQuantity) {
   if (newQuantity < 1) {
-    throw new Error('La quantité doit être au moins 1');
+    throw new Error("La quantité doit être au moins 1");
   }
   this.quantity = newQuantity;
   this.updatedAt = Date.now();
@@ -71,21 +71,21 @@ cartSchema.methods.updateQuantity = function (newQuantity) {
 // Méthode statique pour trouver tous les articles du panier d'un utilisateur
 cartSchema.statics.findByUser = function (userId) {
   return this.find({ user: userId })
-    .populate('product', 'name price stock images')
+    .populate("product", "name price stock images")
     .sort({ createdAt: -1 });
 };
 
 // Middleware pre-save pour valider la disponibilité du stock
-cartSchema.pre('save', async function (next) {
-  if (this.isNew || this.isModified('quantity')) {
+cartSchema.pre("save", async function (next) {
+  if (this.isNew || this.isModified("quantity")) {
     // Vous pourriez vérifier ici si le stock est suffisant
     // Ce code dépend de votre modèle Product
     try {
-      const Product = mongoose.model('Product');
+      const Product = mongoose.model("Product");
       const product = await Product.findById(this.product);
 
       if (!product) {
-        return next(new Error('Produit non trouvé'));
+        return next(new Error("Produit non trouvé"));
       }
 
       if (product.stock < this.quantity) {
@@ -101,7 +101,7 @@ cartSchema.pre('save', async function (next) {
 });
 
 // Middleware pour mettre à jour le champ updatedAt automatiquement
-cartSchema.pre('save', function (next) {
+cartSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
 });
@@ -112,7 +112,7 @@ cartSchema.statics.removeExpiredItems = function () {
 };
 
 // Configurer le modèle pour qu'il utilise les options de toJSON
-cartSchema.set('toJSON', {
+cartSchema.set("toJSON", {
   virtuals: true,
   transform: function (doc, ret) {
     delete ret.__v; // Supprimer la version interne de mongoose
@@ -121,6 +121,6 @@ cartSchema.set('toJSON', {
 });
 
 // Créer le modèle
-const Cart = mongoose.models.Cart || mongoose.model('Cart', cartSchema);
+const Cart = mongoose.models.Cart || mongoose.model("Cart", cartSchema);
 
 export default Cart;

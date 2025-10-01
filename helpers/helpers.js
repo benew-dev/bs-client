@@ -9,15 +9,15 @@ export const isArrayEmpty = (array) => {
 };
 
 // Formate un prix avec devise
-export const formatPrice = (value, currency = '$', decimals = 2) => {
-  const numValue = typeof value === 'number' ? value : parseFloat(value);
+export const formatPrice = (value, currency = "Fdj", decimals = 2) => {
+  const numValue = typeof value === "number" ? value : parseFloat(value);
   const amount = isNaN(numValue) ? 0 : numValue;
   return `${currency} ${amount.toFixed(decimals)}`;
 };
 
 // Tronque une chaîne
 export const truncateString = (str, length = 50) => {
-  if (!str || typeof str !== 'string') return '';
+  if (!str || typeof str !== "string") return "";
   return str.length > length ? `${str.substring(0, length)}...` : str;
 };
 
@@ -27,17 +27,17 @@ export const generateUniqueId = () => {
 };
 
 // Formate une date
-export const formatDate = (date, options = {}, locale = 'fr-FR') => {
-  if (!date) return '';
+export const formatDate = (date, options = {}, locale = "fr-FR") => {
+  if (!date) return "";
 
   const dateObj = date instanceof Date ? date : new Date(date);
 
-  if (isNaN(dateObj.getTime())) return '';
+  if (isNaN(dateObj.getTime())) return "";
 
   const defaultOptions = {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    year: "numeric",
+    month: "long",
+    day: "numeric",
     ...options,
   };
 
@@ -55,7 +55,7 @@ export const debounce = (func, delay = 300) => {
 
 // Vérifie si un objet est vide
 export const isEmptyObject = (obj) => {
-  if (!obj || typeof obj !== 'object') return true;
+  if (!obj || typeof obj !== "object") return true;
   return Object.keys(obj).length === 0;
 };
 
@@ -63,11 +63,11 @@ export const isEmptyObject = (obj) => {
 export const getNestedValue = (obj, path, defaultValue = null) => {
   if (!obj || !path) return defaultValue;
 
-  const keys = path.split('.');
+  const keys = path.split(".");
   let result = obj;
 
   for (const key of keys) {
-    if (result === null || result === undefined || typeof result !== 'object') {
+    if (result === null || result === undefined || typeof result !== "object") {
       return defaultValue;
     }
     result = result[key];
@@ -78,31 +78,31 @@ export const getNestedValue = (obj, path, defaultValue = null) => {
 
 // Convertit un objet en query string
 export const objectToQueryString = (params) => {
-  if (!params || typeof params !== 'object') return '';
+  if (!params || typeof params !== "object") return "";
 
   return Object.entries(params)
     .filter(
-      ([_, value]) => value !== undefined && value !== null && value !== '',
+      ([_, value]) => value !== undefined && value !== null && value !== "",
     )
     .map(([key, value]) => {
       if (Array.isArray(value)) {
         return value
           .map((v) => `${encodeURIComponent(key)}=${encodeURIComponent(v)}`)
-          .join('&');
+          .join("&");
       }
       return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
     })
-    .join('&');
+    .join("&");
 };
 
 // Met en majuscule la première lettre
 export const capitalizeFirstLetter = (str) => {
-  if (!str || typeof str !== 'string') return '';
+  if (!str || typeof str !== "string") return "";
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
 // Retourne une valeur sécurisée (évite undefined/null)
-export const safeValue = (value, defaultValue = '') => {
+export const safeValue = (value, defaultValue = "") => {
   return value === undefined || value === null ? defaultValue : value;
 };
 
@@ -122,14 +122,14 @@ export const getPriceQueryParams = (queryParams, key, value) => {
 
 // Nom du cookie selon l'environnement
 export const getCookieName = () => {
-  let cookieName = '';
+  let cookieName = "";
 
-  if (process.env.NODE_ENV === 'development') {
-    cookieName = 'next-auth.session-token';
+  if (process.env.NODE_ENV === "development") {
+    cookieName = "next-auth.session-token";
   }
 
-  if (process.env.NODE_ENV === 'production') {
-    cookieName = '__Secure-next-auth.session-token';
+  if (process.env.NODE_ENV === "production") {
+    cookieName = "__Secure-next-auth.session-token";
   }
 
   return cookieName;
@@ -137,6 +137,6 @@ export const getCookieName = () => {
 
 // Parse l'URL de callback
 export const parseCallbackUrl = (url) => {
-  const res = url.replace(/%3A/g, ':').replace(/%2F/g, '/');
+  const res = url.replace(/%3A/g, ":").replace(/%2F/g, "/");
   return res;
 };
