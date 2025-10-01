@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   useState,
@@ -8,23 +8,23 @@ import {
   useMemo,
   useRef,
   memo,
-} from 'react';
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
-import { captureException } from '@/monitoring/sentry';
+} from "react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import { captureException } from "@/monitoring/sentry";
 
 // Imports optimisés
-import CartContext from '@/context/CartContext';
-import OrderContext from '@/context/OrderContext';
-import { isArrayEmpty, formatPrice, safeValue } from '@/helpers/helpers';
-import PaymentPageSkeleton from '../skeletons/PaymentPageSkeleton';
-import { validateDjiboutiPayment } from '@/helpers/validation';
-import { HandCoins, Info, LoaderCircle, ShoppingCart } from 'lucide-react';
+import CartContext from "@/context/CartContext";
+import OrderContext from "@/context/OrderContext";
+import { isArrayEmpty, formatPrice, safeValue } from "@/helpers/helpers";
+import PaymentPageSkeleton from "../skeletons/PaymentPageSkeleton";
+import { validateDjiboutiPayment } from "@/helpers/validation";
+import { HandCoins, Info, LoaderCircle, ShoppingCart } from "lucide-react";
 
 // Chargement dynamique des composants
-const BreadCrumbs = dynamic(() => import('@/components/layouts/BreadCrumbs'), {
+const BreadCrumbs = dynamic(() => import("@/components/layouts/BreadCrumbs"), {
   loading: () => <div className="h-12 animate-pulse bg-gray-200 rounded"></div>,
   ssr: true,
 });
@@ -41,7 +41,7 @@ const CartItemSkeleton = memo(() => (
     </div>
   </div>
 ));
-CartItemSkeleton.displayName = 'CartItemSkeleton';
+CartItemSkeleton.displayName = "CartItemSkeleton";
 
 /**
  * Composant de paiement
@@ -52,8 +52,8 @@ const Payment = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentType, setPaymentType] = useState(null);
-  const [accountName, setAccountName] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
   const [errors, setErrors] = useState({});
   const [dataInitialized, setDataInitialized] = useState(false);
 
@@ -87,18 +87,18 @@ const Payment = () => {
   // Chemins de fil d'Ariane
   const breadCrumbs = useMemo(() => {
     const steps = [
-      { name: 'Accueil', url: '/' },
-      { name: 'Panier', url: '/cart' },
+      { name: "Accueil", url: "/" },
+      { name: "Panier", url: "/cart" },
     ];
 
     // Ajouter l'étape en fonction du statut de livraison
     if (shippingStatus) {
-      steps.push({ name: 'Livraison', url: '/shipping' });
+      steps.push({ name: "Livraison", url: "/shipping" });
     } else {
-      steps.push({ name: 'Mode de livraison', url: '/shipping-choice' });
+      steps.push({ name: "Mode de livraison", url: "/shipping-choice" });
     }
 
-    steps.push({ name: 'Paiement', url: '' });
+    steps.push({ name: "Paiement", url: "" });
 
     return steps;
   }, [shippingStatus]);
@@ -110,15 +110,15 @@ const Payment = () => {
         setIsLoading(true);
 
         // Précharger la page de confirmation
-        router.prefetch('/confirmation');
+        router.prefetch("/confirmation");
 
         // Vérifier que les infos nécessaires sont présentes
         if (!cartTotal || !orderInfo || !orderInfo.orderItems) {
-          toast.error('Informations de commande incomplètes', {
-            position: 'bottom-right',
+          toast.error("Informations de commande incomplètes", {
+            position: "bottom-right",
             autoClose: 5000,
           });
-          return router.push('/cart');
+          return router.push("/cart");
         }
 
         // Mettre à jour les informations de commande avec l'adresse de livraison
@@ -130,7 +130,7 @@ const Payment = () => {
         // Vérifier si des moyens de paiement sont disponibles
         if (isArrayEmpty(paymentTypes)) {
           toast.error("Aucun moyen de paiement n'est disponible actuellement", {
-            position: 'bottom-right',
+            position: "bottom-right",
             autoClose: 5000,
           });
         }
@@ -142,11 +142,11 @@ const Payment = () => {
           error,
         );
         captureException(error, {
-          tags: { component: 'Payment', action: 'initializePaymentPage' },
+          tags: { component: "Payment", action: "initializePaymentPage" },
         });
 
         toast.error(
-          'Une erreur est survenue lors du chargement des options de paiement',
+          "Une erreur est survenue lors du chargement des options de paiement",
         );
       } finally {
         setIsLoading(false);
@@ -177,7 +177,7 @@ const Payment = () => {
 
   const handleAccountNumberChange = useCallback((e) => {
     // Permettre seulement les chiffres et formater pour une meilleure lisibilité
-    const rawValue = e.target.value.replace(/[^\d]/g, '');
+    const rawValue = e.target.value.replace(/[^\d]/g, "");
 
     setAccountNumber(rawValue); // Stocke la valeur sans espaces pour le traitement
   }, []);
@@ -185,7 +185,7 @@ const Payment = () => {
   // 2. Créer une fonction d'adaptation pour mapper tes champs vers le schéma existant
   const mapToPaymentSchema = (paymentType, accountName, accountNumber) => {
     return {
-      paymentPlatform: paymentType?.toLowerCase().replace(/[\s-]/g, '-'), // Adapter le nom
+      paymentPlatform: paymentType?.toLowerCase().replace(/[\s-]/g, "-"), // Adapter le nom
       accountHolderName: accountName,
       phoneNumber: accountNumber, // En assumant que le numéro de compte est un téléphone
     };
@@ -197,7 +197,7 @@ const Payment = () => {
     if (!paymentType || !accountName || !accountNumber) {
       return {
         isValid: false,
-        errors: { general: 'Tous les champs sont requis' },
+        errors: { general: "Tous les champs sont requis" },
       };
     }
 
@@ -206,13 +206,13 @@ const Payment = () => {
     if (nameWords.length < 2 || nameWords.some((w) => w.length < 2)) {
       return {
         isValid: false,
-        errors: { accountName: 'Prénom et nom complets requis' },
+        errors: { accountName: "Prénom et nom complets requis" },
       };
     }
 
     // Validation selon le type de compte
     // Nettoyer le numéro (enlever espaces, tirets, etc.)
-    const cleanNumber = accountNumber.replace(/\D/g, '');
+    const cleanNumber = accountNumber.replace(/\D/g, "");
 
     // Validation selon le type de numéro
     let validationPassed = false;
@@ -230,7 +230,7 @@ const Payment = () => {
       if (!validationResult.isValid) {
         const errorMessages = Object.values(validationResult.errors);
         errorMessages.forEach((msg) => {
-          toast.error(msg, { position: 'bottom-right' });
+          toast.error(msg, { position: "bottom-right" });
         });
         setIsSubmitting(false);
         submitAttempts.current = 0;
@@ -243,9 +243,9 @@ const Payment = () => {
 
       if (cleanNumber.length < 4 || cleanNumber.length > 30) {
         toast.error(
-          'Le numéro de compte doit contenir entre 4 et 30 chiffres',
+          "Le numéro de compte doit contenir entre 4 et 30 chiffres",
           {
-            position: 'bottom-right',
+            position: "bottom-right",
           },
         );
         setIsSubmitting(false);
@@ -255,8 +255,8 @@ const Payment = () => {
 
       // Vérifier que ce n'est pas juste des zéros ou un pattern simple
       if (/^0+$/.test(cleanNumber) || /^(\d)\1+$/.test(cleanNumber)) {
-        toast.error('Numéro de compte invalide', {
-          position: 'bottom-right',
+        toast.error("Numéro de compte invalide", {
+          position: "bottom-right",
         });
         setIsSubmitting(false);
         submitAttempts.current = 0;
@@ -266,8 +266,8 @@ const Payment = () => {
       // Validation du nom (pour tous les types)
       const words = accountName.trim().split(/\s+/);
       if (words.length < 2 || words.some((w) => w.length < 2)) {
-        toast.error('Veuillez saisir votre prénom et nom complets', {
-          position: 'bottom-right',
+        toast.error("Veuillez saisir votre prénom et nom complets", {
+          position: "bottom-right",
         });
         setIsSubmitting(false);
         submitAttempts.current = 0;
@@ -279,7 +279,7 @@ const Payment = () => {
 
     // Si on arrive ici, la validation est passée
     if (!validationPassed) {
-      toast.error('Validation échouée', { position: 'bottom-right' });
+      toast.error("Validation échouée", { position: "bottom-right" });
       setIsSubmitting(false);
       submitAttempts.current = 0;
       return;
@@ -296,8 +296,8 @@ const Payment = () => {
       setTimeout(() => {
         submitAttempts.current = 0;
       }, 5000);
-      return toast.info('Traitement en cours, veuillez patienter...', {
-        position: 'bottom-right',
+      return toast.info("Traitement en cours, veuillez patienter...", {
+        position: "bottom-right",
       });
     }
 
@@ -309,7 +309,7 @@ const Payment = () => {
       if (!validationResult.isValid) {
         const errorMessages = Object.values(validationResult.errors || {});
         errorMessages.forEach((msg) =>
-          toast.error(msg, { position: 'bottom-right' }),
+          toast.error(msg, { position: "bottom-right" }),
         );
         setIsSubmitting(false);
         submitAttempts.current = 0;
@@ -344,14 +344,14 @@ const Payment = () => {
 
       // Réinitialiser l'état du formulaire
       setPaymentType(null);
-      setAccountName('');
-      setAccountNumber('');
+      setAccountName("");
+      setAccountNumber("");
 
       // Le succès est géré par le contexte qui redirige vers la confirmation
     } catch (error) {
-      console.error('Erreur lors du traitement du paiement:', error);
+      console.error("Erreur lors du traitement du paiement:", error);
       captureException(error, {
-        tags: { component: 'Payment', action: 'handlePayment' },
+        tags: { component: "Payment", action: "handlePayment" },
         extra: {
           hasOrderInfo: !!orderInfo,
           hasPaymentType: !!paymentType,
@@ -360,9 +360,9 @@ const Payment = () => {
 
       toast.error(
         error.message ||
-          'Une erreur est survenue lors du traitement du paiement',
+          "Une erreur est survenue lors du traitement du paiement",
         {
-          position: 'bottom-right',
+          position: "bottom-right",
           autoClose: 5000,
         },
       );
@@ -463,14 +463,14 @@ const Payment = () => {
                     <input
                       className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-blue-200 focus:outline-none transition-colors ${
                         errors.accountName
-                          ? 'border-red-300 bg-red-50'
-                          : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+                          ? "border-red-300 bg-red-50"
+                          : "border-gray-300 bg-gray-50 hover:border-gray-400"
                       }`}
                       type="text"
                       placeholder="Nom complet sur le compte"
                       value={accountName}
                       onChange={handleAccountNameChange}
-                      aria-invalid={errors.accountName ? 'true' : 'false'}
+                      aria-invalid={errors.accountName ? "true" : "false"}
                       required
                     />
                     {errors.accountName && (
@@ -487,8 +487,8 @@ const Payment = () => {
                     <input
                       className={`w-full px-3 py-2 border rounded-md focus:ring focus:ring-blue-200 focus:outline-none transition-colors ${
                         errors.accountNumber
-                          ? 'border-red-300 bg-red-50'
-                          : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+                          ? "border-red-300 bg-red-50"
+                          : "border-gray-300 bg-gray-50 hover:border-gray-400"
                       }`}
                       type="text"
                       inputMode="numeric"
@@ -496,7 +496,7 @@ const Payment = () => {
                       placeholder="Numéro de compte (chiffres uniquement)"
                       value={accountNumber}
                       onChange={handleAccountNumberChange}
-                      aria-invalid={errors.accountNumber ? 'true' : 'false'}
+                      aria-invalid={errors.accountNumber ? "true" : "false"}
                       autoComplete="off"
                       maxLength="30"
                       required
@@ -539,7 +539,7 @@ const Payment = () => {
 
                 <div className="flex items-center justify-between space-x-3">
                   <Link
-                    href={shippingStatus ? '/shipping' : '/shipping-choice'}
+                    href={shippingStatus ? "/shipping" : "/shipping-choice"}
                     className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 shadow-sm"
                   >
                     Retour
@@ -551,8 +551,8 @@ const Payment = () => {
                     disabled={isSubmitting}
                     className={`flex-1 px-5 py-2 text-white rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                       isSubmitting
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-green-600 hover:bg-green-700 focus:ring-green-500'
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
                     }`}
                     aria-live="polite"
                   >
@@ -562,7 +562,7 @@ const Payment = () => {
                         Traitement...
                       </span>
                     ) : (
-                      'Payer'
+                      "Payer"
                     )}
                   </button>
                 </div>
@@ -594,15 +594,15 @@ const NoPaymentMethodsFound = memo(() => (
     </Link>
   </div>
 ));
-NoPaymentMethodsFound.displayName = 'NoPaymentMethodsFound';
+NoPaymentMethodsFound.displayName = "NoPaymentMethodsFound";
 
 // Carte de méthode de paiement
 const PaymentMethodCard = memo(({ payment, isSelected, onSelect }) => (
   <label
     className={`flex p-4 border rounded-lg transition-all duration-200 cursor-pointer ${
       isSelected
-        ? 'bg-blue-50 border-blue-400 shadow-sm'
-        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+        ? "bg-blue-50 border-blue-400 shadow-sm"
+        : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
     }`}
   >
     <span className="flex items-center">
@@ -622,6 +622,6 @@ const PaymentMethodCard = memo(({ payment, isSelected, onSelect }) => (
     </span>
   </label>
 ));
-PaymentMethodCard.displayName = 'PaymentMethodCard';
+PaymentMethodCard.displayName = "PaymentMethodCard";
 
 export default Payment;
