@@ -120,11 +120,6 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: [0, "Le montant total ne peut pas être négatif"],
     },
-    taxAmount: {
-      type: Number,
-      default: 0,
-      min: [0, "La taxe ne peut pas être négative"],
-    },
     cancelReason: {
       type: String,
       trim: true,
@@ -232,11 +227,12 @@ orderSchema.pre("save", async function (next) {
 // Vérifier la cohérence des données avant sauvegarde
 orderSchema.pre("save", function (next) {
   // Vérifier que le total correspond à la somme des sous-totaux + frais
-  if (this.isModified("orderItems")) {
-    this.orderItems.reduce(
+  if (this.isModified("orderItems") || this.isNew) {
+    const itemsTotal = this.orderItems.reduce(
       (sum, item) => sum + (item.subtotal || item.price * item.quantity),
       0,
     );
+    this.totalAmount = itemsTotal;
   }
 
   // Mises à jour de dates selon le statut
