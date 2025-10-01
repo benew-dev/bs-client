@@ -1,33 +1,34 @@
-'use client';
+"use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import { isArrayEmpty } from '@/helpers/helpers';
-import { captureException } from '@/monitoring/sentry';
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
+import { isArrayEmpty } from "@/helpers/helpers";
+import { captureException } from "@/monitoring/sentry";
 import {
   FiltersSkeleton,
   ProductItemSkeleton,
-} from '../skeletons/ListProductsSkeleton';
-import { SearchX } from 'lucide-react';
+} from "../skeletons/ListProductsSkeleton";
+import { SearchX } from "lucide-react";
 
 // Import dynamique des composants
 const CustomPagination = dynamic(
-  () => import('@/components/layouts/CustomPagination'),
+  () => import("@/components/layouts/CustomPagination"),
   { ssr: true },
 );
 
-const Filters = dynamic(() => import('../layouts/Filters'), {
+const Filters = dynamic(() => import("../layouts/Filters"), {
   loading: () => <FiltersSkeleton />,
   ssr: true,
 });
 
-const ProductItem = dynamic(() => import('./ProductItem'), {
+const ProductItem = dynamic(() => import("./ProductItem"), {
   loading: () => <ProductItemSkeleton />,
   ssr: true,
 });
 
 const ListProducts = ({ data, categories }) => {
+  console.log("Categories in ListProducts", categories);
   // États locaux
   const [localLoading, setLocalLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -35,11 +36,11 @@ const ListProducts = ({ data, categories }) => {
   const router = useRouter();
 
   // Récupérer les paramètres de recherche pour les afficher
-  const keyword = searchParams?.get('keyword');
-  const category = searchParams?.get('category');
-  const minPrice = searchParams?.get('min');
-  const maxPrice = searchParams?.get('max');
-  const page = searchParams?.get('page');
+  const keyword = searchParams?.get("keyword");
+  const category = searchParams?.get("category");
+  const minPrice = searchParams?.get("min");
+  const maxPrice = searchParams?.get("max");
+  const page = searchParams?.get("page");
 
   // Construire un message récapitulatif des filtres appliqués
   const getFilterSummary = useCallback(() => {
@@ -60,11 +61,11 @@ const ListProducts = ({ data, categories }) => {
 
       if (page) summary.push(`Page: ${page || 1}`);
 
-      return summary.length > 0 ? summary.join(' | ') : null;
+      return summary.length > 0 ? summary.join(" | ") : null;
     } catch (err) {
       // Capture silencieuse d'erreur pour éviter de planter le composant
       captureException(err, {
-        tags: { component: 'ListProducts', function: 'getFilterSummary' },
+        tags: { component: "ListProducts", function: "getFilterSummary" },
       });
       return null;
     }
@@ -74,14 +75,14 @@ const ListProducts = ({ data, categories }) => {
   const filterSummary = useMemo(() => getFilterSummary(), [getFilterSummary]);
 
   // Vérifier la validité des données pour éviter les erreurs
-  const hasValidData = data && typeof data === 'object';
+  const hasValidData = data && typeof data === "object";
   const hasValidCategories = categories && Array.isArray(categories);
 
   // Handler pour réinitialiser les filtres
   const handleResetFilters = useCallback(() => {
     try {
       setLocalLoading(true);
-      router.push('/');
+      router.push("/");
     } catch (err) {
       // Supprimer cette ligne : setError(err);
       // Au lieu de cela, laisser l'erreur se propager vers Error Boundary
@@ -153,8 +154,8 @@ const ListProducts = ({ data, categories }) => {
                 aria-live="polite"
               >
                 {data?.products?.length > 0
-                  ? `${data.products.length} produit${data.products.length > 1 ? 's' : ''} trouvé${data.products.length > 1 ? 's' : ''}`
-                  : 'Produits'}
+                  ? `${data.products.length} produit${data.products.length > 1 ? "s" : ""} trouvé${data.products.length > 1 ? "s" : ""}`
+                  : "Produits"}
               </h1>
             </div>
 
@@ -183,7 +184,7 @@ const ListProducts = ({ data, categories }) => {
                 <p className="text-gray-600 max-w-md">
                   {keyword
                     ? `Aucun résultat pour "${keyword}". Essayez d'autres termes de recherche.`
-                    : 'Aucun produit ne correspond aux filtres sélectionnés. Essayez de modifier vos critères.'}
+                    : "Aucun produit ne correspond aux filtres sélectionnés. Essayez de modifier vos critères."}
                 </p>
                 <button
                   onClick={handleResetFilters}
