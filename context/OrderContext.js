@@ -72,7 +72,7 @@ export const OrderProvider = ({ children }) => {
 
       if (!orderInfo.orderItems || orderInfo.orderItems.length === 0) {
         const validationError = new Error(
-          "Panier vide lors de la création de commande"
+          "Panier vide lors de la création de commande",
         );
         captureClientError(validationError, "OrderContext", "addOrder", false);
         setError("Votre panier est vide");
@@ -83,7 +83,7 @@ export const OrderProvider = ({ children }) => {
       // Validation des montants
       if (!orderInfo.totalAmount || orderInfo.totalAmount <= 0) {
         const validationError = new Error(
-          "Montant total invalide pour la commande"
+          "Montant total invalide pour la commande",
         );
         captureClientError(validationError, "OrderContext", "addOrder", false);
         setError("Montant de commande invalide");
@@ -106,7 +106,7 @@ export const OrderProvider = ({ children }) => {
           body: JSON.stringify(orderInfo),
           signal: controller.signal,
           credentials: "include",
-        }
+        },
       );
 
       clearTimeout(timeoutId);
@@ -164,7 +164,7 @@ export const OrderProvider = ({ children }) => {
       } else {
         // Succès partiel ou réponse malformée - Critique pour l'e-commerce
         const responseError = new Error(
-          "Réponse API malformée lors de la création de commande"
+          "Réponse API malformée lors de la création de commande",
         );
         captureClientError(responseError, "OrderContext", "addOrder", true);
         setError("Erreur lors de la création de la commande");
@@ -203,13 +203,13 @@ export const OrderProvider = ({ children }) => {
     try {
       if (!Array.isArray(types)) {
         const validationError = new Error(
-          "Types de paiement invalides (non-array)"
+          "Types de paiement invalides (non-array)",
         );
         captureClientError(
           validationError,
           "OrderContext",
           "setPaymentTypes",
-          false
+          false,
         );
         setPaymentTypes([]);
         return;
@@ -229,7 +229,7 @@ export const OrderProvider = ({ children }) => {
           validationError,
           "OrderContext",
           "setAddresses",
-          false
+          false,
         );
         setAddresses([]);
         return;
