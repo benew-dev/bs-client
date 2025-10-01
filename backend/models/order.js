@@ -284,11 +284,10 @@ orderSchema.post("save", async function () {
 
 // Méthode pour calculer le total de la commande
 orderSchema.methods.calculateTotal = function () {
-  const itemsTotal = this.orderItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+  return this.orderItems.reduce(
+    (sum, item) => sum + (item.subtotal || item.price * item.quantity),
     0,
   );
-  return itemsTotal;
 };
 
 // Méthode statique pour trouver les commandes d'un utilisateur

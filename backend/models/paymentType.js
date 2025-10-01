@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const paymentTypeSchema = new mongoose.Schema({
   paymentName: {
@@ -12,4 +12,4 @@ const paymentTypeSchema = new mongoose.Schema({
 });
 
 export default mongoose.models.PaymentType ||
-  mongoose.model('PaymentType', paymentTypeSchema);
+  mongoose.model("PaymentType", paymentTypeSchema);
