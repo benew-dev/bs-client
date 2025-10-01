@@ -1,30 +1,30 @@
-import { memo, useCallback, useContext } from 'react';
-import { toast } from 'react-toastify';
-import Link from 'next/link';
-import Image from 'next/image';
+import { memo, useCallback, useContext } from "react";
+import { toast } from "react-toastify";
+import Link from "next/link";
+import Image from "next/image";
 
-import CartContext from '@/context/CartContext';
-import { INCREASE } from '@/helpers/constants';
-import AuthContext from '@/context/AuthContext';
+import CartContext from "@/context/CartContext";
+import { INCREASE } from "@/helpers/constants";
+import AuthContext from "@/context/AuthContext";
 
 const ProductItem = memo(({ product }) => {
   const { addItemToCart, updateCart, cart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
 
   // Vérification de sécurité pour s'assurer que product est un objet valide
-  if (!product || typeof product !== 'object') {
+  if (!product || typeof product !== "object") {
     return null;
   }
 
   const inStock = product.stock > 0;
-  const productId = product._id || '';
-  const productName = product.name || 'Produit sans nom';
-  const productDescription = product.description || '';
+  const productId = product._id || "";
+  const productName = product.name || "Produit sans nom";
+  const productDescription = product.description || "";
   const productPrice = product.price || 0;
-  const productCategory = product.category?.categoryName || 'Non catégorisé';
+  const productCategory = product.category?.categoryName || "Non catégorisé";
 
   // URL de l'image avec fallback
-  const imageUrl = product.images?.[0]?.url || '/images/default_product.png';
+  const imageUrl = product.images?.[0]?.url || "/images/default_product.png";
 
   // Optimisation avec useCallback pour éviter les recréations à chaque rendu
   const addToCartHandler = useCallback(
@@ -34,7 +34,7 @@ const ProductItem = memo(({ product }) => {
       try {
         if (!user) {
           return toast.error(
-            'Connectez-vous pour ajouter des articles à votre panier !',
+            "Connectez-vous pour ajouter des articles à votre panier !",
           );
         }
 
@@ -71,10 +71,10 @@ const ProductItem = memo(({ product }) => {
               width={240}
               height={240}
               onError={(e) => {
-                e.currentTarget.src = '/images/default_product.png';
+                e.currentTarget.src = "/images/default_product.png";
                 e.currentTarget.onerror = null;
               }}
-              style={{ objectFit: 'contain' }}
+              style={{ objectFit: "contain" }}
               priority={false}
               loading="lazy"
               sizes="(max-width: 768px) 80vw, 240px"
@@ -98,8 +98,8 @@ const ProductItem = memo(({ product }) => {
                 <span className="font-semibold mr-3">Description: </span>
                 <span className="line-clamp-2">
                   {productDescription
-                    ? productDescription.substring(0, 45) + '...'
-                    : 'Aucune description disponible'}
+                    ? productDescription.substring(0, 45) + "..."
+                    : "Aucune description disponible"}
                 </span>
               </p>
               <p className="mb-1" title="Stock">
@@ -121,9 +121,9 @@ const ProductItem = memo(({ product }) => {
               className="text-xl font-semibold text-black flex items-center justify-center md:justify-start"
               data-testid="Price"
             >
-              {new Intl.NumberFormat('fr-FR', {
-                style: 'currency',
-                currency: 'EUR',
+              {new Intl.NumberFormat("fr-FR", {
+                style: "currency",
+                currency: "Fdj",
               }).format(productPrice)}
             </span>
 
@@ -137,14 +137,14 @@ const ProductItem = memo(({ product }) => {
               <button
                 disabled={!inStock}
                 className={`px-2 lg:px-4 py-2 inline-block md:text-xs lg:text-sm text-white rounded-md hover:bg-blue-700 transition
-                  ${inStock ? 'bg-blue-600' : 'bg-gray-400 cursor-not-allowed'}`}
+                  ${inStock ? "bg-blue-600" : "bg-gray-400 cursor-not-allowed"}`}
                 onClick={(e) => inStock && addToCartHandler(e)}
                 aria-label={
-                  inStock ? 'Ajouter au panier' : 'Produit indisponible'
+                  inStock ? "Ajouter au panier" : "Produit indisponible"
                 }
                 aria-disabled={!inStock}
               >
-                {inStock ? 'Ajouter au panier' : 'Indisponible'}
+                {inStock ? "Ajouter au panier" : "Indisponible"}
               </button>
             </div>
           </div>
@@ -155,6 +155,6 @@ const ProductItem = memo(({ product }) => {
 });
 
 // Ajouter displayName pour faciliter le débogage
-ProductItem.displayName = 'ProductItem';
+ProductItem.displayName = "ProductItem";
 
 export default ProductItem;

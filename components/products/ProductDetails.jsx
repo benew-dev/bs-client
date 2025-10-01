@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   useContext,
@@ -7,25 +7,25 @@ import {
   useCallback,
   memo,
   useMemo,
-} from 'react';
-import dynamic from 'next/dynamic';
-import { toast } from 'react-toastify';
-import PropTypes from 'prop-types'; // Pour la validation des props
-import Image from 'next/image';
-import Link from 'next/link';
+} from "react";
+import dynamic from "next/dynamic";
+import { toast } from "react-toastify";
+import PropTypes from "prop-types"; // Pour la validation des props
+import Image from "next/image";
+import Link from "next/link";
 
-import AuthContext from '@/context/AuthContext';
-import CartContext from '@/context/CartContext';
-import { isArrayEmpty } from '@/helpers/helpers';
-import { INCREASE } from '@/helpers/constants';
+import AuthContext from "@/context/AuthContext";
+import CartContext from "@/context/CartContext";
+import { isArrayEmpty } from "@/helpers/helpers";
+import { INCREASE } from "@/helpers/constants";
 
 // Pour la sécurité - nécessite d'installer cette dépendance
 // npm install dompurify
-import DOMPurify from 'dompurify';
-import { Share2, ShoppingCart, Star, Truck } from 'lucide-react';
+import DOMPurify from "dompurify";
+import { Share2, ShoppingCart, Star, Truck } from "lucide-react";
 
 // Chargement dynamique des composants
-const BreadCrumbs = dynamic(() => import('@/components/layouts/BreadCrumbs'), {
+const BreadCrumbs = dynamic(() => import("@/components/layouts/BreadCrumbs"), {
   ssr: true, // Enable SSR for SEO
   loading: () => (
     <div className="h-8 bg-gray-100 rounded-lg animate-pulse"></div>
@@ -34,9 +34,9 @@ const BreadCrumbs = dynamic(() => import('@/components/layouts/BreadCrumbs'), {
 
 // Formatter le prix avec séparateur de milliers et devise
 const formatPrice = (price) => {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "Fdj",
   }).format(price || 0);
 };
 
@@ -46,7 +46,7 @@ const ProductImageGallery = memo(function ProductImageGallery({
   onImageSelect,
 }) {
   // Si pas d'images disponibles, utiliser l'image par défaut
-  const defaultImage = '/images/default_product.png';
+  const defaultImage = "/images/default_product.png";
   const productImages =
     product?.images?.length > 0 ? product.images : [{ url: defaultImage }];
 
@@ -55,13 +55,13 @@ const ProductImageGallery = memo(function ProductImageGallery({
       <div
         className="border border-gray-200 shadow-sm p-3 text-center rounded-lg mb-5 bg-white relative h-auto max-h-[500px] flex items-center justify-center overflow-hidden"
         role="img"
-        aria-label={`Main image of ${product?.name || 'product'}`}
+        aria-label={`Main image of ${product?.name || "product"}`}
       >
         <div className="w-full h-full transition-transform duration-300 hover:scale-110">
           <Image
             className="object-contain max-h-[450px] inline-block transition-opacity"
             src={selectedImage || defaultImage}
-            alt={product?.name || 'Product image'}
+            alt={product?.name || "Product image"}
             width={400}
             height={400}
             priority={true} // Load this image early
@@ -107,8 +107,8 @@ const ProductImageGallery = memo(function ProductImageGallery({
             key={img?.url || `img-${index}`}
             className={`inline-block border ${
               selectedImage === img?.url
-                ? 'border-blue-500 ring-2 ring-blue-200'
-                : 'border-gray-200'
+                ? "border-blue-500 ring-2 ring-blue-200"
+                : "border-gray-200"
             } cursor-pointer p-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all`}
             onClick={() => onImageSelect(img?.url)}
             aria-label={`View product image ${index + 1}`}
@@ -117,7 +117,7 @@ const ProductImageGallery = memo(function ProductImageGallery({
             <Image
               className="w-14 h-14 object-contain"
               src={img?.url || defaultImage}
-              alt={`${product?.name || 'Product'} - thumbnail ${index + 1}`}
+              alt={`${product?.name || "Product"} - thumbnail ${index + 1}`}
               width={56}
               height={56}
               onError={(e) => {
@@ -147,7 +147,7 @@ const ProductInfo = memo(function ProductInfo({
   return (
     <main>
       <h1 className="font-semibold text-xl sm:text-2xl mb-4 text-gray-800">
-        {product?.name || 'Product Not Available'}
+        {product?.name || "Product Not Available"}
       </h1>
 
       <div className="flex flex-wrap items-center space-x-2 mb-2">
@@ -206,12 +206,12 @@ const ProductInfo = memo(function ProductInfo({
           className={`w-full sm:w-auto px-6 py-3 inline-block text-white font-medium text-center rounded-lg transition-colors 
             ${
               inStock
-                ? 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-300 focus:outline-none cursor-pointer'
-                : 'bg-gray-400 cursor-not-allowed'
+                ? "bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-300 focus:outline-none cursor-pointer"
+                : "bg-gray-400 cursor-not-allowed"
             }`}
           onClick={onAddToCart}
           disabled={!inStock || isAddingToCart}
-          aria-label={inStock ? 'Ajouter au panier' : 'Produit indisponible'}
+          aria-label={inStock ? "Ajouter au panier" : "Produit indisponible"}
         >
           {isAddingToCart ? (
             <span className="inline-flex items-center">
@@ -240,7 +240,7 @@ const ProductInfo = memo(function ProductInfo({
           ) : (
             <div className="flex flex-row">
               <ShoppingCart />
-              {inStock ? 'Ajouter au panier' : 'Indisponible'}
+              {inStock ? "Ajouter au panier" : "Indisponible"}
             </div>
           )}
         </button>
@@ -297,27 +297,19 @@ const ProductInfo = memo(function ProductInfo({
         </li>
         <li className="mb-2 flex">
           <span className="font-medium w-36 inline-block">Catégorie:</span>
-          <span>{product?.category?.categoryName || 'Non catégorisé'}</span>
+          <span>{product?.category?.categoryName || "Non catégorisé"}</span>
         </li>
         <li className="mb-2 flex">
           <span className="font-medium w-36 inline-block">Référence:</span>
-          <span className="font-mono text-sm">{product?._id || 'N/A'}</span>
+          <span className="font-mono text-sm">{product?._id || "N/A"}</span>
         </li>
       </ul>
-
-      {/* Badge livraison */}
-      {inStock && (
-        <div className="inline-block bg-green-50 border border-green-100 rounded-lg px-3 py-2 text-green-700 text-sm">
-          <i className="fas fa-truck mr-1" aria-hidden="true"></i>
-          Livraison gratuite à partir de 50€
-        </div>
-      )}
 
       {/* Badge de popularité basé sur les ventes */}
       {product?.sold > 10 && (
         <div className="mt-4 flex flex-row bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 text-amber-700 text-sm mr-2">
           <Truck className="mr-1" />
-          {product.sold > 100 ? 'Très populaire' : 'Populaire'}
+          {product.sold > 100 ? "Très populaire" : "Populaire"}
         </div>
       )}
 
@@ -371,8 +363,8 @@ const RelatedProducts = memo(function RelatedProducts({
           >
             <div className="aspect-w-1 aspect-h-1 mb-4 bg-gray-100 rounded-lg overflow-hidden">
               <Image
-                src={product?.images?.[0]?.url || '/images/default_product.png'}
-                alt={product?.name || 'Produit similaire'}
+                src={product?.images?.[0]?.url || "/images/default_product.png"}
+                alt={product?.name || "Produit similaire"}
                 width={200}
                 height={200}
                 className="object-contain w-full h-full group-hover:scale-105 transition-transform duration-300"
@@ -380,13 +372,13 @@ const RelatedProducts = memo(function RelatedProducts({
                 placeholder="blur"
                 blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAEtAJJXIDTiQAAAABJRU5ErkJggg=="
                 onError={(e) => {
-                  e.target.src = '/images/default_product.png';
+                  e.target.src = "/images/default_product.png";
                 }}
               />
             </div>
             <div>
               <h3 className="font-medium text-gray-800 mb-1 group-hover:text-blue-600 transition-colors line-clamp-2">
-                {product?.name || 'Produit sans nom'}
+                {product?.name || "Produit sans nom"}
               </h3>
               <p className="font-bold text-blue-600">
                 {formatPrice(product?.price)}
@@ -416,7 +408,7 @@ function ProductDetails({ product, sameCategoryProducts }) {
     if (product?.images && product.images.length > 0) {
       setSelectedImage(product.images[0]?.url);
     } else {
-      setSelectedImage('/images/default_product.png');
+      setSelectedImage("/images/default_product.png");
     }
   }, [product]);
 
@@ -439,18 +431,18 @@ function ProductDetails({ product, sameCategoryProducts }) {
     if (!product) return null;
 
     return [
-      { name: 'Accueil', url: '/' },
-      { name: 'Produits', url: '/products' },
+      { name: "Accueil", url: "/" },
+      { name: "Produits", url: "/products" },
       {
-        name: product.category?.categoryName || 'Catégorie',
-        url: `/category/${product.category?._id || 'all'}`,
+        name: product.category?.categoryName || "Catégorie",
+        url: `/category/${product.category?._id || "all"}`,
       },
       {
         name: product.name
           ? product.name.length > 40
             ? `${product.name.substring(0, 40)}...`
             : product.name
-          : 'Produit',
+          : "Produit",
         url: `/product/${product._id}`,
       },
     ];
@@ -460,19 +452,19 @@ function ProductDetails({ product, sameCategoryProducts }) {
   const handleAddToCart = useCallback(() => {
     // Sécurité et validation
     if (!product || !product._id) {
-      toast.error('Produit invalide');
+      toast.error("Produit invalide");
       return;
     }
 
     if (!user) {
       toast.info(
-        'Veuillez vous connecter pour ajouter des articles à votre panier',
+        "Veuillez vous connecter pour ajouter des articles à votre panier",
       );
       return;
     }
 
     if (!inStock) {
-      toast.warning('Ce produit est en rupture de stock');
+      toast.warning("Ce produit est en rupture de stock");
       return;
     }
 
@@ -485,15 +477,15 @@ function ProductDetails({ product, sameCategoryProducts }) {
 
       if (isProductInCart) {
         updateCart(isProductInCart, INCREASE);
-        toast.success('Quantité mise à jour dans votre panier');
+        toast.success("Quantité mise à jour dans votre panier");
       } else {
         addItemToCart({
           product: product._id,
         });
-        toast.success('Produit ajouté à votre panier');
+        toast.success("Produit ajouté à votre panier");
       }
     } catch (error) {
-      console.error('Error adding item to cart:', error);
+      console.error("Error adding item to cart:", error);
       toast.error("Erreur lors de l'ajout au panier. Veuillez réessayer.");
     } finally {
       // Ajouter un délai minimum pour éviter le flickering de l'UI
@@ -510,29 +502,29 @@ function ProductDetails({ product, sameCategoryProducts }) {
       // Utiliser l'API Web Share (mobile)
       navigator
         .share({
-          title: product?.name || 'Découvrez ce produit',
+          title: product?.name || "Découvrez ce produit",
           text: `Découvrez ${product?.name} sur notre boutique.`,
           url: window.location.href,
         })
-        .then(() => console.log('Produit partagé avec succès'))
-        .catch((error) => console.error('Erreur lors du partage:', error));
+        .then(() => console.log("Produit partagé avec succès"))
+        .catch((error) => console.error("Erreur lors du partage:", error));
     } else {
       // Fallback pour les navigateurs qui ne supportent pas l'API Web Share
       // Copier l'URL dans le presse-papier
       navigator.clipboard
         .writeText(window.location.href)
         .then(() => {
-          toast.success('Lien copié dans le presse-papier !');
+          toast.success("Lien copié dans le presse-papier !");
         })
         .catch(() => {
           // Si clipboard API n'est pas supportée, créer un élément temporaire
-          const tempInput = document.createElement('input');
+          const tempInput = document.createElement("input");
           tempInput.value = window.location.href;
           document.body.appendChild(tempInput);
           tempInput.select();
-          document.execCommand('copy');
+          document.execCommand("copy");
           document.body.removeChild(tempInput);
-          toast.success('Lien copié dans le presse-papier !');
+          toast.success("Lien copié dans le presse-papier !");
         });
     }
   }, [product?.name]);
