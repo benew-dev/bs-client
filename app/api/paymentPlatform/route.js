@@ -5,11 +5,11 @@ import { captureException } from "@/monitoring/sentry";
 import { withApiRateLimit } from "@/utils/rateLimit";
 
 /**
- * GET /api/category
- * Récupère toutes les catégories actives
+ * GET /api/payment-platforms
+ * Récupère toutes les plateformes de paiement disponibles
  * Rate limit: 60 req/min (public) ou 120 req/min (authenticated)
  *
- * Headers de sécurité gérés par next.config.mjs pour /api/category/* :
+ * Headers de sécurité gérés par next.config.mjs pour /api/payment-platforms/* :
  * - Cache-Control: public, max-age=300, stale-while-revalidate=600
  * - CDN-Cache-Control: max-age=600
  * - X-Content-Type-Options: nosniff
@@ -22,7 +22,7 @@ import { withApiRateLimit } from "@/utils/rateLimit";
  * - Permissions-Policy: [configuration restrictive]
  * - Content-Security-Policy: [configuration complète]
  *
- * Note: Les catégories sont des données publiques avec cache long
+ * Note: Les plateformes de paiement sont des données publiques avec cache long
  * car elles changent rarement dans un e-commerce
  */
 export const GET = withApiRateLimit(async function () {
@@ -30,19 +30,19 @@ export const GET = withApiRateLimit(async function () {
     // Connexion DB
     await dbConnect();
 
-    // Récupérer les catégories actives avec plus de détails
+    // Récupérer toutes les plateformes de paiement
     const paymentPlatforms = await PaymentType.find()
       .sort({ paymentName: 1 })
       .lean();
 
-    // Vérifier s'il y a des catégories
+    // Vérifier s'il y a des plateformes
     if (!paymentPlatforms || paymentPlatforms.length === 0) {
       return NextResponse.json(
         {
           success: true,
           message: "No payment platforms available",
           data: {
-            paymentPlatforms: [],
+            platforms: [],
             count: 0,
             meta: {
               timestamp: new Date().toISOString(),
@@ -57,13 +57,11 @@ export const GET = withApiRateLimit(async function () {
       );
     }
 
-    // Formater les catégories pour optimiser la réponse
+    // Formater les plateformes pour optimiser la réponse
     const formattedPaymentPlatforms = paymentPlatforms.map((payment) => ({
       _id: payment._id,
       name: payment.paymentName,
       number: payment.paymentNumber,
-      // Retirer les dates pour réduire la taille de la réponse
-      // sauf si nécessaire pour le cache client
     }));
 
     // ============================================
@@ -72,7 +70,7 @@ export const GET = withApiRateLimit(async function () {
     // Les headers sont maintenant gérés de manière centralisée
     // par next.config.mjs pour garantir la cohérence et la sécurité
     //
-    // Pour /api/(products|category)/* sont appliqués automatiquement :
+    // Pour /api/payment-platforms/* sont appliqués automatiquement :
     // - Cache public avec max-age de 5 minutes (données publiques)
     // - Stale-while-revalidate de 10 minutes pour fraîcheur
     // - CDN cache de 10 minutes pour performance
@@ -106,18 +104,18 @@ export const GET = withApiRateLimit(async function () {
         status: 200,
         // Headers de cache gérés automatiquement par next.config.mjs
         // Configuration dans next.config.mjs :
-        // source: '/api/(products|category)/:path*'
+        // source: '/api/payment-platforms/:path*'
         // Cache-Control: public, max-age=300, stale-while-revalidate=600
       },
     );
   } catch (error) {
-    console.error("PaymentPlatforms fetch error:", error.message);
+    console.error("Payment platforms fetch error:", error.message);
 
     // Capturer seulement les vraies erreurs système
     captureException(error, {
       tags: {
         component: "api",
-        route: "paymentPlatforms/GET",
+        route: "payment-platforms/GET",
         error_type: error.name,
       },
       extra: {
@@ -128,7 +126,7 @@ export const GET = withApiRateLimit(async function () {
 
     // Gestion améliorée des erreurs
     let status = 500;
-    let message = "Failed to fetch categories";
+    let message = "Failed to fetch payment platforms";
     let code = "INTERNAL_ERROR";
 
     if (

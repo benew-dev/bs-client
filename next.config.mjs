@@ -71,21 +71,21 @@ const validateEnv = () => {
   if (missingVars.length > 0) {
     const context = IS_CI ? "CI Build" : NODE_ENV;
     console.warn(
-      `⚠️ [${context}] Missing environment variables: ${missingVars.join(", ")}`
+      `⚠️ [${context}] Missing environment variables: ${missingVars.join(", ")}`,
     );
 
     // 🛡️ ÉCHEC STRICT EN PRODUCTION RUNTIME SEULEMENT
     if (NODE_ENV === "production" && !IS_CI) {
       throw new Error(
         `❌ Production runtime failed: Missing critical environment variables: ${missingVars.join(
-          ", "
-        )}`
+          ", ",
+        )}`,
       );
     }
   } else {
     const context = IS_CI ? "CI Build" : NODE_ENV;
     console.log(
-      `✅ [${context}] All required environment variables are present`
+      `✅ [${context}] All required environment variables are present`,
     );
   }
 };
@@ -217,7 +217,7 @@ const nextConfig = {
       // Appelées par Server Components (S2S)
       // ============================================
       {
-        source: "/api/(products|category)/:path*",
+        source: "/api/(products|category|paymentPlatform)/:path*",
         headers: [
           {
             key: "Cache-Control",
@@ -544,5 +544,5 @@ const sentryWebpackPluginOptions = {
 // Export avec Sentry et Bundle Analyzer
 export default withSentryConfig(
   bundleAnalyzer(nextConfig),
-  sentryWebpackPluginOptions
+  sentryWebpackPluginOptions,
 );
