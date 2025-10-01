@@ -28,7 +28,6 @@ const ProductItem = dynamic(() => import("./ProductItem"), {
 });
 
 const ListProducts = ({ data, categories }) => {
-  console.log("Categories in ListProducts", categories);
   // États locaux
   const [localLoading, setLocalLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -49,9 +48,7 @@ const ListProducts = ({ data, categories }) => {
 
       if (keyword) summary.push(`Recherche: "${keyword}"`);
       if (category) {
-        const categoryName = categories?.find(
-          (c) => c._id === category,
-        )?.categoryName;
+        const categoryName = categories?.find((c) => c._id === category)?.name;
         if (categoryName) summary.push(`Catégorie: ${categoryName}`);
       }
       if (minPrice && maxPrice)

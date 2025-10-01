@@ -1,52 +1,52 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { toast } from 'react-toastify';
-import { getPriceQueryParams, isArrayEmpty } from '@/helpers/helpers';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "react-toastify";
+import { getPriceQueryParams, isArrayEmpty } from "@/helpers/helpers";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 const Filters = ({ categories, setLocalLoading }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   // État local synchronisé avec les paramètres d'URL
-  const [min, setMin] = useState(() => searchParams?.get('min') || '');
-  const [max, setMax] = useState(() => searchParams?.get('max') || '');
+  const [min, setMin] = useState(() => searchParams?.get("min") || "");
+  const [max, setMax] = useState(() => searchParams?.get("max") || "");
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Mémoiser la valeur de catégorie actuelle
   const currentCategory = useMemo(
-    () => searchParams?.get('category') || '',
+    () => searchParams?.get("category") || "",
     [searchParams],
   );
 
   // Synchroniser les états avec les paramètres d'URL
   useEffect(() => {
-    setMin(searchParams?.get('min') || '');
-    setMax(searchParams?.get('max') || '');
+    setMin(searchParams?.get("min") || "");
+    setMax(searchParams?.get("max") || "");
   }, [searchParams]);
 
   // Validation des prix mémorisée
   const validatePrices = useCallback(async () => {
-    if (min === '' && max === '') {
+    if (min === "" && max === "") {
       throw new Error(
-        'Veuillez renseigner au moins un des deux champs de prix',
+        "Veuillez renseigner au moins un des deux champs de prix",
       );
     }
 
-    if (min !== '' && max !== '') {
+    if (min !== "" && max !== "") {
       // Conversion sécurisée en nombres
       const minNum = Number(min);
       const maxNum = Number(max);
 
       if (isNaN(minNum) || isNaN(maxNum)) {
-        throw new Error('Les valeurs de prix doivent être des nombres valides');
+        throw new Error("Les valeurs de prix doivent être des nombres valides");
       }
 
       if (minNum > maxNum) {
-        throw new Error('Le prix minimum doit être inférieur au prix maximum');
+        throw new Error("Le prix minimum doit être inférieur au prix maximum");
       }
     }
   }, [min, max]);
@@ -60,13 +60,13 @@ const Filters = ({ categories, setLocalLoading }) => {
 
       try {
         // Création d'une nouvelle instance de URLSearchParams
-        const params = new URLSearchParams(searchParams?.toString() || '');
+        const params = new URLSearchParams(searchParams?.toString() || "");
 
         // Logique de basculement: si la catégorie est déjà sélectionnée, la désélectionner
-        if (params.get('category') === categoryId) {
-          params.delete('category');
+        if (params.get("category") === categoryId) {
+          params.delete("category");
         } else {
-          params.set('category', categoryId);
+          params.set("category", categoryId);
         }
 
         // Navigation vers la nouvelle URL
@@ -76,8 +76,8 @@ const Filters = ({ categories, setLocalLoading }) => {
         setLocalLoading(false);
         router.push(path);
       } catch (error) {
-        console.error('Erreur lors de la sélection de catégorie:', error);
-        toast.error('Une erreur est survenue lors du filtrage par catégorie');
+        console.error("Erreur lors de la sélection de catégorie:", error);
+        toast.error("Une erreur est survenue lors du filtrage par catégorie");
         setLocalLoading(false);
         setIsSubmitting(false);
       }
@@ -96,11 +96,11 @@ const Filters = ({ categories, setLocalLoading }) => {
       await validatePrices();
 
       // Création des paramètres d'URL
-      let params = new URLSearchParams(searchParams?.toString() || '');
+      let params = new URLSearchParams(searchParams?.toString() || "");
 
       // Par celles-ci:
-      params = getPriceQueryParams(params, 'min', min);
-      params = getPriceQueryParams(params, 'max', max);
+      params = getPriceQueryParams(params, "min", min);
+      params = getPriceQueryParams(params, "max", max);
 
       // Navigation
       const path = `/?${params.toString()}`;
@@ -110,7 +110,7 @@ const Filters = ({ categories, setLocalLoading }) => {
       router.push(path);
     } catch (error) {
       toast.error(
-        error.message || 'Une erreur est survenue avec les filtres de prix',
+        error.message || "Une erreur est survenue avec les filtres de prix",
       );
       setLocalLoading(false);
       setIsSubmitting(false);
@@ -121,9 +121,9 @@ const Filters = ({ categories, setLocalLoading }) => {
   const resetFilters = useCallback(() => {
     setIsSubmitting(true);
     setLocalLoading(true);
-    setMin('');
-    setMax('');
-    router.push('/');
+    setMin("");
+    setMax("");
+    router.push("/");
     setOpen(false);
   }, []);
 
@@ -167,7 +167,7 @@ const Filters = ({ categories, setLocalLoading }) => {
 
         <div
           id="filter-panel"
-          className={`${open ? 'block' : 'hidden'} md:block space-y-4`}
+          className={`${open ? "block" : "hidden"} md:block space-y-4`}
         >
           {/* Prix */}
           <div className="p-4 border border-gray-200 bg-white rounded-lg shadow-sm">
@@ -219,8 +219,8 @@ const Filters = ({ categories, setLocalLoading }) => {
             <button
               className={`w-full py-2 px-4 ${
                 isSubmitting
-                  ? 'bg-blue-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
+                  ? "bg-blue-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
               } text-white cursor-pointer rounded-md transition-colors`}
               onClick={handlePriceFilter}
               aria-label="Appliquer les filtres de prix"
@@ -245,14 +245,14 @@ const Filters = ({ categories, setLocalLoading }) => {
                     key={category?._id}
                     className={`flex items-center w-full p-2 rounded-md transition-colors cursor-pointer ${
                       currentCategory === category?._id
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'hover:bg-gray-100 text-gray-700'
+                        ? "bg-blue-100 text-blue-700"
+                        : "hover:bg-gray-100 text-gray-700"
                     }`}
                     onClick={() => handleCategoryClick(category?._id)}
                     aria-pressed={currentCategory === category?._id}
                     disabled={isSubmitting}
                   >
-                    <span className="ml-2">{category?.categoryName}</span>
+                    <span className="ml-2">{category?.name}</span>
                   </button>
                 ))}
               </div>
