@@ -55,12 +55,6 @@ const orderItemSchema = new mongoose.Schema({
  * Schéma de paiement avec validation stricte
  */
 const paymentInfoSchema = new mongoose.Schema({
-  // amountPaid: {
-  //   type: Number,
-  //   required: [true, "Montant payé obligatoire"],
-  //   min: [0, "Le montant ne peut pas être négatif"],
-  //   set: (val) => Math.round(val * 100) / 100, // Arrondir à 2 décimales
-  // },
   typePayment: {
     type: String,
     required: [true, "Type de paiement obligatoire"],
@@ -104,11 +98,6 @@ const orderSchema = new mongoose.Schema(
       index: true,
       // Généré automatiquement à la création
     },
-    // shippingInfo: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "Address",
-    //   index: true,
-    // },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       required: [true, "Utilisateur obligatoire"],
@@ -126,15 +115,6 @@ const orderSchema = new mongoose.Schema(
       default: "unpaid",
       index: true,
     },
-    // orderStatus: {
-    //   type: String,
-    //   enum: {
-    //     values: ["Processing", "Shipped", "Delivered", "Cancelled"],
-    //     message: "Statut de commande non valide: {VALUE}",
-    //   },
-    //   default: "Processing",
-    //   index: true,
-    // },
     totalAmount: {
       type: Number,
       required: true,
@@ -145,11 +125,6 @@ const orderSchema = new mongoose.Schema(
       default: 0,
       min: [0, "La taxe ne peut pas être négative"],
     },
-    // shippingAmount: {
-    //   type: Number,
-    //   default: 0,
-    //   min: [0, "Les frais de port ne peuvent pas être négatifs"],
-    // },
     cancelReason: {
       type: String,
       trim: true,
@@ -168,9 +143,6 @@ const orderSchema = new mongoose.Schema(
     paidAt: {
       type: Date,
     },
-    // deliveredAt: {
-    //   type: Date,
-    // },
     cancelledAt: {
       type: Date,
     },
@@ -201,7 +173,7 @@ const orderSchema = new mongoose.Schema(
 
 // Indexer pour les requêtes fréquentes
 orderSchema.index({ user: 1, createdAt: -1 });
-orderSchema.index({ orderStatus: 1, paymentStatus: 1 });
+orderSchema.index({ paymentStatus: 1, createdAt: -1 });
 orderSchema.index({ createdAt: -1 });
 
 // Créer un identifiant unique au format ORD-YYYYMMDD-XXXXX
@@ -260,22 +232,11 @@ orderSchema.pre("save", async function (next) {
 // Vérifier la cohérence des données avant sauvegarde
 orderSchema.pre("save", function (next) {
   // Vérifier que le total correspond à la somme des sous-totaux + frais
-  if (
-    this.isModified("orderItems") /*||
-    this.isModified("shippingAmount") ||
-    this.isModified("taxAmount")*/
-  ) {
-    const itemsTotal = this.orderItems.reduce(
+  if (this.isModified("orderItems")) {
+    this.orderItems.reduce(
       (sum, item) => sum + (item.subtotal || item.price * item.quantity),
       0,
     );
-    // const calculatedTotal =
-    //   itemsTotal + (this.shippingAmount || 0) + (this.taxAmount || 0);
-
-    // // Permettre une petite différence due aux arrondis (0.01)
-    // if (Math.abs(calculatedTotal - this.totalAmount) > 0.01) {
-    //   this.totalAmount = Number(calculatedTotal.toFixed(2));
-    // }
   }
 
   // Mises à jour de dates selon le statut
@@ -286,14 +247,6 @@ orderSchema.pre("save", function (next) {
   ) {
     this.paidAt = Date.now();
   }
-
-  // if (this.isModified("orderStatus")) {
-  //   if (this.orderStatus === "Delivered" && !this.deliveredAt) {
-  //     this.deliveredAt = Date.now();
-  //   } else if (this.orderStatus === "Cancelled" && !this.cancelledAt) {
-  //     this.cancelledAt = Date.now();
-  //   }
-  // }
 
   next();
 });
@@ -339,7 +292,7 @@ orderSchema.methods.calculateTotal = function () {
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
-  return itemsTotal /*+ (this.shippingAmount || 0) + (this.taxAmount || 0)*/;
+  return itemsTotal;
 };
 
 // Méthode statique pour trouver les commandes d'un utilisateur
@@ -368,7 +321,6 @@ orderSchema.statics.getStats = async function () {
     const stats = await this.aggregate([
       {
         $facet: {
-          status: [{ $group: { _id: "$orderStatus", count: { $sum: 1 } } }],
           payment: [{ $group: { _id: "$paymentStatus", count: { $sum: 1 } } }],
           revenue: [
             { $match: { paymentStatus: "paid" } },
