@@ -92,6 +92,41 @@ const userSchema = new mongoose.Schema(
         },
       },
     },
+    address: {
+      street: {
+        type: String,
+        trim: true,
+        maxLength: [100, "L'adresse ne peut pas dépasser 100 caractères"],
+        validate: {
+          validator: function (v) {
+            // Validation basique pour éviter les caractères dangereux
+            return /^[a-zA-Z0-9\s,.'°-]+$/.test(v);
+          },
+          message: (props) =>
+            `${props.value} contient des caractères non autorisés`,
+        },
+      },
+      city: {
+        type: String,
+        trim: true,
+        maxLength: [
+          50,
+          "Le nom de la ville ne peut pas dépasser 50 caractères",
+        ],
+        validate: {
+          validator: function (v) {
+            return /^[a-zA-Z\s'-]+$/.test(v);
+          },
+          message: (props) => `${props.value} n'est pas un nom de ville valide`,
+        },
+      },
+      country: {
+        type: String,
+        trim: true,
+        maxLength: [50, "Le nom du pays ne peut pas dépasser 50 caractères"],
+        index: true, // Indexation pour faciliter les recherches par pays
+      },
+    },
     role: {
       type: String,
       enum: {
