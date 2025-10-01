@@ -143,8 +143,6 @@ const PaymentPage = async () => {
       console.warn("Failed to fetch payment platforms:", platformsData.message);
     }
 
-    console.log("Platforms Payment Data", platformsData);
-
     return (
       <div
         className="payment-page"
@@ -153,7 +151,7 @@ const PaymentPage = async () => {
       >
         <meta itemProp="name" content="Paiement" />
         <Suspense fallback={<PaymentPageSkeleton />}>
-          <Payment platforms={platformsData.platforms} />
+          <Payment paymentTypes={platformsData.platforms} />
         </Suspense>
       </div>
     );

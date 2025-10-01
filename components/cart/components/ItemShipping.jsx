@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { memo, useMemo, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { formatPrice } from '@/helpers/helpers';
+import { memo, useMemo, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { formatPrice } from "@/helpers/helpers";
 
 /**
  * Composant d'affichage d'un article dans le résumé de livraison
@@ -16,22 +16,22 @@ const ItemShipping = memo(({ item }) => {
 
   // Gestion des valeurs manquantes avec fallbacks
   const quantity = item?.quantity || 1;
-  const productId = item?.productId || 'unknown';
-  const productName = item?.productName || 'Produit sans nom';
+  const productId = item?.productId || "unknown";
+  const productName = item?.productName || "Produit sans nom";
 
   // Calcul du total avec gestion des types et valeurs manquantes
   const total = useMemo(() => {
-    if (typeof item?.subtotal === 'number') {
+    if (typeof item?.subtotal === "number") {
       return item.subtotal;
     }
-    const price = typeof item?.price === 'number' ? item.price : 0;
+    const price = typeof item?.price === "number" ? item.price : 0;
     return quantity * price;
   }, [item?.subtotal, item?.price, quantity]);
 
   // Source de l'image avec gestion des erreurs
   const imageSrc =
     imageError || !item?.imageUrl
-      ? '/images/default_product.png'
+      ? "/images/default_product.png"
       : item.imageUrl;
 
   return (
@@ -85,6 +85,6 @@ const ItemShipping = memo(({ item }) => {
 });
 
 // Définir un displayName pour faciliter le débogage
-ItemShipping.displayName = 'ItemShipping';
+ItemShipping.displayName = "ItemShipping";
 
 export default ItemShipping;

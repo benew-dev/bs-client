@@ -47,7 +47,7 @@ CartItemSkeleton.displayName = "CartItemSkeleton";
  * Composant de paiement
  * Permet à l'utilisateur de sélectionner un moyen de paiement local et finaliser sa commande
  */
-const Payment = () => {
+const Payment = ({ paymentTypes }) => {
   // États locaux
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,26 +63,15 @@ const Payment = () => {
   // Contextes
   const { cart, cartTotal, cartCount } = useContext(CartContext);
 
-  const {
-    orderInfo,
-    setOrderInfo,
-    addOrder,
-    paymentTypes,
-    shippingInfo,
-    deliveryPrice,
-    shippingStatus,
-    error,
-    clearErrors,
-  } = useContext(OrderContext);
+  const { orderInfo, setOrderInfo, addOrder, error, clearErrors } =
+    useContext(OrderContext);
 
   const router = useRouter();
 
   // Calcul du montant total
   const totalAmount = useMemo(() => {
-    const baseAmount = Number(safeValue(cartTotal?.toFixed(2), 0));
-    const shipping = shippingStatus ? Number(safeValue(deliveryPrice, 0)) : 0;
-    return (baseAmount + shipping).toFixed(2);
-  }, [deliveryPrice, shippingStatus]);
+    return Number(safeValue(cartTotal?.toFixed(2), 0));
+  }, []);
 
   // Chemins de fil d'Ariane
   const breadCrumbs = useMemo(() => {
@@ -91,17 +80,10 @@ const Payment = () => {
       { name: "Panier", url: "/cart" },
     ];
 
-    // Ajouter l'étape en fonction du statut de livraison
-    if (shippingStatus) {
-      steps.push({ name: "Livraison", url: "/shipping" });
-    } else {
-      steps.push({ name: "Mode de livraison", url: "/shipping-choice" });
-    }
-
     steps.push({ name: "Paiement", url: "" });
 
     return steps;
-  }, [shippingStatus]);
+  }, []);
 
   // Initialisation des données et validation
   useEffect(() => {
@@ -124,7 +106,6 @@ const Payment = () => {
         // Mettre à jour les informations de commande avec l'adresse de livraison
         setOrderInfo({
           ...orderInfo,
-          shippingInfo,
         });
 
         // Vérifier si des moyens de paiement sont disponibles
@@ -156,7 +137,7 @@ const Payment = () => {
     if (!dataInitialized) {
       initializePaymentPage();
     }
-  }, [shippingInfo, paymentTypes, dataInitialized]);
+  }, [paymentTypes, dataInitialized]);
 
   // Handle auth context updates
   useEffect(() => {
@@ -331,13 +312,7 @@ const Payment = () => {
         paymentInfo,
         taxAmount: 0,
         totalAmount: cartTotal?.toFixed(2) || 0,
-        shippingAmount: shippingStatus ? deliveryPrice : 0,
       };
-
-      // Supprimer les infos de livraison si pas de livraison
-      if (!shippingStatus) {
-        delete finalOrderInfo.shippingInfo;
-      }
 
       // Effectuer la commande
       await addOrder(finalOrderInfo);
@@ -374,10 +349,8 @@ const Payment = () => {
     paymentType,
     accountName,
     accountNumber,
-    shippingStatus,
     totalAmount,
     orderInfo,
-    deliveryPrice,
     addOrder,
   ]);
 
@@ -522,13 +495,6 @@ const Payment = () => {
                     </span>
                   </div>
 
-                  <div className="flex justify-between text-gray-600">
-                    <span>Frais de livraison:</span>
-                    <span>
-                      {shippingStatus ? formatPrice(deliveryPrice || 0) : 0}
-                    </span>
-                  </div>
-
                   <div className="flex justify-between text-lg font-bold border-t pt-3 mt-2">
                     <span>Total a payer:</span>
                     <span className="text-blue-600">
@@ -539,7 +505,7 @@ const Payment = () => {
 
                 <div className="flex items-center justify-between space-x-3">
                   <Link
-                    href={shippingStatus ? "/shipping" : "/shipping-choice"}
+                    href="/cart"
                     className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 shadow-sm"
                   >
                     Retour
