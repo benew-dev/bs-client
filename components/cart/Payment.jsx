@@ -92,22 +92,21 @@ const Payment = ({ paymentTypes }) => {
       try {
         setIsLoading(true);
 
+        // Préparation des éléments de commande
+        const orderItems = prepareOrderItems();
+        setOrderInfo({ orderItems });
+
         // Précharger la page de confirmation
         router.prefetch("/confirmation");
 
         // Vérifier que les infos nécessaires sont présentes
-        // if (!cartTotal || !orderInfo || !orderInfo.orderItems) {
-        //   toast.error("Informations de commande incomplètes", {
-        //     position: "bottom-right",
-        //     autoClose: 5000,
-        //   });
-        //   return router.push("/cart");
-        // }
-
-        // Mettre à jour les informations de commande avec l'adresse de livraison
-        setOrderInfo({
-          ...orderInfo,
-        });
+        if (!cartTotal || cartTotal < 0 || cartCount < 0) {
+          toast.error("Informations de commande incomplètes", {
+            position: "bottom-right",
+            autoClose: 5000,
+          });
+          return router.push("/cart");
+        }
 
         // Vérifier si des moyens de paiement sont disponibles
         if (isArrayEmpty(paymentTypes)) {
@@ -147,6 +146,22 @@ const Payment = ({ paymentTypes }) => {
       clearErrors();
     }
   }, [error, clearErrors]);
+
+  // Fonction pour préparer les éléments de commande
+  const prepareOrderItems = useCallback(() => {
+    if (!Array.isArray(cart)) return [];
+
+    return cart.map((item) => ({
+      cartId: item?.id,
+      product: item?.productId,
+      name: item?.productName || "Produit sans nom",
+      category: "Non catégorisé",
+      quantity: item?.quantity || 1,
+      price: item?.price,
+      image: item?.imageUrl || "/images/default_product.png",
+      subtotal: Number(item?.subtotal),
+    }));
+  }, [cart]);
 
   // Handlers pour les changements de champs
   const handlePaymentTypeChange = useCallback((value) => {
@@ -300,7 +315,6 @@ const Payment = ({ paymentTypes }) => {
 
       // Création des informations de paiement
       const paymentInfo = {
-        amountPaid: parseFloat(totalAmount),
         typePayment: paymentType,
         paymentAccountNumber: accountNumber,
         paymentAccountName: accountName,
@@ -311,8 +325,6 @@ const Payment = ({ paymentTypes }) => {
       const finalOrderInfo = {
         ...orderInfo,
         paymentInfo,
-        taxAmount: 0,
-        totalAmount: cartTotal?.toFixed(2) || 0,
       };
 
       // Effectuer la commande

@@ -14,46 +14,9 @@ export const OrderProvider = ({ children }) => {
 
   // États pour les autres parties de l'app (shipping, etc.)
   const [paymentTypes, setPaymentTypes] = useState([]);
-  const [addresses, setAddresses] = useState([]);
-  const [shippingInfo, setShippingInfo] = useState(null);
-  const [shippingStatus, setShippingStatus] = useState(true);
-  const [deliveryPrice, setDeliveryPrice] = useState(0);
-
-  const [checkoutInfo, setCheckoutInfo] = useState(null);
   const [orderInfo, setOrderInfo] = useState(null);
 
   const router = useRouter();
-
-  // Méthodes simples déjà OK
-  const saveOnCheckout = ({ cart, cartTotal, tax = 0 }) => {
-    try {
-      if (!cart || !Array.isArray(cart) || cart.length === 0) {
-        console.log("Panier vide ou invalide dans saveOnCheckout");
-        return;
-      }
-
-      // Validation basique des montants
-      if (cartTotal < 0 || cartTotal < 0) {
-        console.log("Montants négatifs détectés dans saveOnCheckout");
-        return;
-      }
-
-      const validAmount = parseFloat(cartTotal.toFixed(2)) || 0;
-      const validTotal = validAmount + tax || 0;
-
-      setCheckoutInfo({
-        amount: validAmount,
-        tax,
-        totalAmount: validTotal,
-        items: cart,
-        timestamp: Date.now(),
-      });
-    } catch (error) {
-      // Monitoring pour erreurs inattendues lors de la sauvegarde checkout
-      captureClientError(error, "OrderContext", "saveOnCheckout", true);
-      console.error("Error in saveOnCheckout:", error.message);
-    }
-  };
 
   const addOrder = async (orderInfo) => {
     try {
@@ -76,17 +39,6 @@ export const OrderProvider = ({ children }) => {
         );
         captureClientError(validationError, "OrderContext", "addOrder", false);
         setError("Votre panier est vide");
-        setUpdated(false);
-        return;
-      }
-
-      // Validation des montants
-      if (!orderInfo.totalAmount || orderInfo.totalAmount <= 0) {
-        const validationError = new Error(
-          "Montant total invalide pour la commande",
-        );
-        captureClientError(validationError, "OrderContext", "addOrder", false);
-        setError("Montant de commande invalide");
         setUpdated(false);
         return;
       }
@@ -221,41 +173,6 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-  const safeSetAddresses = (addresses) => {
-    try {
-      if (!Array.isArray(addresses)) {
-        const validationError = new Error("Adresses invalides (non-array)");
-        captureClientError(
-          validationError,
-          "OrderContext",
-          "setAddresses",
-          false,
-        );
-        setAddresses([]);
-        return;
-      }
-      setAddresses(addresses);
-    } catch (error) {
-      captureClientError(error, "OrderContext", "setAddresses", true);
-      setAddresses([]);
-    }
-  };
-
-  const safeSetDeliveryPrice = (price) => {
-    try {
-      const validPrice = parseFloat(price) || 0;
-      if (validPrice < 0) {
-        console.log("Prix de livraison négatif détecté");
-        setDeliveryPrice(0);
-        return;
-      }
-      setDeliveryPrice(validPrice);
-    } catch (error) {
-      captureClientError(error, "OrderContext", "setDeliveryPrice", true);
-      setDeliveryPrice(0);
-    }
-  };
-
   return (
     <OrderContext.Provider
       value={{
@@ -264,19 +181,9 @@ export const OrderProvider = ({ children }) => {
         orderId,
         lowStockProducts,
         paymentTypes,
-        addresses,
-        shippingInfo,
-        shippingStatus,
-        deliveryPrice,
-        checkoutInfo,
         orderInfo,
         setPaymentTypes: safeSetPaymentTypes,
-        setAddresses: safeSetAddresses,
-        setShippingInfo,
-        setShippingStatus,
-        setDeliveryPrice: safeSetDeliveryPrice,
         setOrderInfo,
-        saveOnCheckout,
         addOrder,
         setUpdated,
         clearErrors,
