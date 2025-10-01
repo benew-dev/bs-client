@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
-import cloudinary from 'cloudinary';
-import dbConnect from '@/backend/config/dbConnect';
-import isAuthenticatedUser from '@/backend/middlewares/auth';
-import User from '@/backend/models/user';
-import { captureException, captureMessage } from '@/monitoring/sentry';
-import { withApiRateLimit } from '@/utils/rateLimit';
+import { NextResponse } from "next/server";
+import cloudinary from "cloudinary";
+import dbConnect from "@/backend/config/dbConnect";
+import isAuthenticatedUser from "@/backend/middlewares/auth";
+import User from "@/backend/models/user";
+import { captureException, captureMessage } from "@/monitoring/sentry";
+import { withApiRateLimit } from "@/utils/rateLimit";
 
 // Configuration Cloudinary
 cloudinary.config({
@@ -31,15 +31,15 @@ export const POST = withApiRateLimit(
         !process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY ||
         !process.env.CLOUDINARY_API_SECRET
       ) {
-        captureMessage('Cloudinary configuration missing', {
-          level: 'error',
-          tags: { component: 'api', route: 'sign-cloudinary-params' },
+        captureMessage("Cloudinary configuration missing", {
+          level: "error",
+          tags: { component: "api", route: "sign-cloudinary-params" },
         });
 
         return NextResponse.json(
           {
             success: false,
-            message: 'Server configuration error',
+            message: "Server configuration error",
           },
           { status: 500 },
         );
@@ -54,7 +54,7 @@ export const POST = withApiRateLimit(
         return NextResponse.json(
           {
             success: false,
-            message: 'User not found',
+            message: "User not found",
           },
           { status: 404 },
         );
@@ -64,7 +64,7 @@ export const POST = withApiRateLimit(
         return NextResponse.json(
           {
             success: false,
-            message: 'Account is deactivated',
+            message: "Account is deactivated",
           },
           { status: 403 },
         );
@@ -78,7 +78,7 @@ export const POST = withApiRateLimit(
         return NextResponse.json(
           {
             success: false,
-            message: 'Invalid request body',
+            message: "Invalid request body",
           },
           { status: 400 },
         );
@@ -88,23 +88,23 @@ export const POST = withApiRateLimit(
       if (
         !body ||
         !body.paramsToSign ||
-        typeof body.paramsToSign !== 'object'
+        typeof body.paramsToSign !== "object"
       ) {
         return NextResponse.json(
           {
             success: false,
-            message: 'Missing or invalid paramsToSign',
+            message: "Missing or invalid paramsToSign",
           },
           { status: 400 },
         );
       }
 
-      console.log('Params to sign received:', body.paramsToSign);
+      console.log("Params to sign received:", body.paramsToSign);
 
       const { paramsToSign } = body;
 
       // Configuration du dossier et restrictions
-      paramsToSign.folder = 'buyitnow/avatars';
+      paramsToSign.folder = "buyitnow/avatars";
 
       // 9. Générer la signature
       let signature;
@@ -114,13 +114,13 @@ export const POST = withApiRateLimit(
           process.env.CLOUDINARY_API_SECRET,
         );
       } catch (error) {
-        console.error('Cloudinary signature error:', error);
+        console.error("Cloudinary signature error:", error);
 
         captureException(error, {
           tags: {
-            component: 'api',
-            route: 'sign-cloudinary-params',
-            action: 'signature_generation',
+            component: "api",
+            route: "sign-cloudinary-params",
+            action: "signature_generation",
           },
           extra: {
             userId: user._id,
@@ -130,23 +130,23 @@ export const POST = withApiRateLimit(
         return NextResponse.json(
           {
             success: false,
-            message: 'Failed to generate signature',
+            message: "Failed to generate signature",
           },
           { status: 500 },
         );
       }
 
-      console.log('Signature generated successfully');
+      console.log("Signature generated successfully");
 
       // 10. Logger l'activité (sans données sensibles)
-      if (process.env.NODE_ENV === 'production') {
-        console.info('Cloudinary signature generated', {
-          userId: user._id.toString().substring(0, 8) + '...',
+      if (process.env.NODE_ENV === "production") {
+        console.info("Cloudinary signature generated", {
+          userId: user._id.toString().substring(0, 8) + "...",
           folder: paramsToSign.folder,
           timestamp: new Date().toISOString(),
         });
       } else {
-        console.log('Cloudinary params signed:', {
+        console.log("Cloudinary params signed:", {
           userId: user._id,
           folder: paramsToSign.folder,
           publicId: paramsToSign.public_id,
@@ -157,25 +157,25 @@ export const POST = withApiRateLimit(
       return NextResponse.json(
         {
           success: true,
-          message: 'Signature generated successfully',
+          message: "Signature generated successfully",
           signature,
         },
         {
           status: 200,
           headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate',
-            'Content-Type': 'application/json',
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Content-Type": "application/json",
           },
         },
       );
     } catch (error) {
-      console.error('Sign cloudinary params error:', error);
+      console.error("Sign cloudinary params error:", error);
 
       // Capturer l'erreur dans Sentry
       captureException(error, {
         tags: {
-          component: 'api',
-          route: 'sign-cloudinary-params',
+          component: "api",
+          route: "sign-cloudinary-params",
         },
         extra: {
           userId: req.user?.email,
@@ -185,9 +185,9 @@ export const POST = withApiRateLimit(
 
       // Retourner une erreur générique en production
       const errorMessage =
-        process.env.NODE_ENV === 'production'
-          ? 'Something went wrong'
-          : error.message || 'Internal server error';
+        process.env.NODE_ENV === "production"
+          ? "Something went wrong"
+          : error.message || "Internal server error";
 
       return NextResponse.json(
         {
