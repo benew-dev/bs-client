@@ -10,24 +10,7 @@ import { withApiRateLimit } from "@/utils/rateLimit";
 /**
  * GET /api/orders/me
  * Récupère l'historique des commandes de l'utilisateur connecté
- * Rate limit: 120 req/min (authenticated) - Limite généreuse pour navigation de l'historique
- *
- * Headers de sécurité gérés par next.config.mjs pour /api/orders/* :
- * - Cache-Control: private, no-cache, no-store, must-revalidate
- * - Pragma: no-cache
- * - X-Content-Type-Options: nosniff
- * - X-Robots-Tag: noindex, nofollow
- * - X-Download-Options: noopen
- *
- * Headers globaux de sécurité (toutes routes) :
- * - Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
- * - X-Frame-Options: SAMEORIGIN
- * - Referrer-Policy: strict-origin-when-cross-origin
- * - Permissions-Policy: [configuration restrictive]
- * - Content-Security-Policy: [configuration complète]
- *
- * Note: L'historique des commandes contient des données sensibles
- * (montants, adresses, statuts de paiement) et ne doit jamais être caché publiquement
+ * Rate limit: 120 req/min (authenticated)
  */
 export const GET = withApiRateLimit(async function (req) {
   try {
@@ -98,7 +81,7 @@ export const GET = withApiRateLimit(async function (req) {
       paymentStatus: "unpaid",
     });
 
-    // Total de toutes les commandes d’un utilisateur (tous statuts confondus)
+    // Total de toutes les commandes d'un utilisateur (tous statuts confondus)
     const totalAmountOrders = await Order.getTotalAmountByUser(
       user._id.toString(),
     );
@@ -111,11 +94,13 @@ export const GET = withApiRateLimit(async function (req) {
           message: "No orders found",
           data: {
             orders: [],
-            deliveryPrice: [],
             totalPages: 0,
             currentPage: page,
             count: 0,
             perPage: resPerPage,
+            paidCount: 0,
+            unpaidCount: 0,
+            totalAmountOrders: { totalAmount: 0, orderCount: 0 },
             meta: {
               hasOrders: false,
               timestamp: new Date().toISOString(),
@@ -132,10 +117,10 @@ export const GET = withApiRateLimit(async function (req) {
       searchParams,
     ).pagination(resPerPage);
 
-    // Récupérer les commandes avec pagination
+    // Récupérer les commandes avec pagination - CHAMPS ADAPTÉS AU MODÈLE
     const orders = await apiFilters.query
       .select(
-        "orderNumber orderStatus paymentInfo paymentStatus totalAmount createdAt orderItems",
+        "orderNumber paymentInfo paymentStatus totalAmount createdAt updatedAt paidAt cancelledAt cancelReason orderItems",
       )
       .sort({ createdAt: -1 })
       .lean();
@@ -163,23 +148,6 @@ export const GET = withApiRateLimit(async function (req) {
       ip:
         req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown",
     });
-
-    // ============================================
-    // NOUVELLE IMPLÉMENTATION : Headers de sécurité
-    //
-    // Les headers sont maintenant gérés de manière centralisée
-    // par next.config.mjs pour garantir la cohérence et la sécurité
-    //
-    // Pour /api/orders/* sont appliqués automatiquement :
-    // - Cache privé uniquement (données sensibles de commande)
-    // - Pas de cache navigateur (no-store, no-cache)
-    // - Protection contre l'indexation (X-Robots-Tag)
-    // - Protection téléchargements (X-Download-Options)
-    // - Protection MIME (X-Content-Type-Options)
-    //
-    // Ces headers garantissent que l'historique des commandes
-    // ne sera jamais mis en cache publiquement ou indexé
-    // ============================================
 
     return NextResponse.json(
       {
@@ -210,11 +178,6 @@ export const GET = withApiRateLimit(async function (req) {
         },
         extra: {
           page: req.nextUrl.searchParams.get("page"),
-          filters: {
-            status: req.nextUrl.searchParams.get("status"),
-            startDate: req.nextUrl.searchParams.get("startDate"),
-            endDate: req.nextUrl.searchParams.get("endDate"),
-          },
         },
       });
     }
