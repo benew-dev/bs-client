@@ -285,7 +285,6 @@ const Payment = ({ paymentTypes }) => {
     return { isValid: true, data: { accountName, accountNumber: cleanNumber } };
   };
 
-  // Handler pour la soumission du paiement
   const handlePayment = useCallback(async () => {
     // Empêcher les soumissions multiples rapides
     submitAttempts.current += 1;
@@ -301,7 +300,7 @@ const Payment = ({ paymentTypes }) => {
     try {
       setIsSubmitting(true);
 
-      // Remplacer toute la section de validation par :
+      // Validation des données
       const validationResult = await validatePaymentData();
       if (!validationResult.isValid) {
         const errorMessages = Object.values(validationResult.errors || {});
@@ -321,21 +320,24 @@ const Payment = ({ paymentTypes }) => {
         paymentDate: new Date().toISOString(),
       };
 
-      // Préparation des données de commande
+      // MODIFICATION ICI : Au lieu d'envoyer directement la commande,
+      // on stocke les données dans le contexte et on redirige vers la page de révision
       const finalOrderInfo = {
         ...orderInfo,
         paymentInfo,
+        totalAmount: totalAmount,
       };
 
-      // Effectuer la commande
-      await addOrder(finalOrderInfo);
+      // Stocker les informations complètes de la commande dans le contexte
+      setOrderInfo(finalOrderInfo);
+
+      // Rediriger vers la page de révision au lieu d'envoyer directement
+      router.push("/review-order");
 
       // Réinitialiser l'état du formulaire
       setPaymentType(null);
       setAccountName("");
       setAccountNumber("");
-
-      // Le succès est géré par le contexte qui redirige vers la confirmation
     } catch (error) {
       console.error("Erreur lors du traitement du paiement:", error);
       captureException(error, {
@@ -364,7 +366,8 @@ const Payment = ({ paymentTypes }) => {
     accountNumber,
     totalAmount,
     orderInfo,
-    addOrder,
+    setOrderInfo, // Ajouter setOrderInfo dans les dépendances
+    router,
   ]);
 
   // Rendu conditionnel pour le cas de chargement

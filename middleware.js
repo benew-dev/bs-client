@@ -14,6 +14,7 @@ const PROTECTED_PATHS = [
   "/shipping",
   "/shipping-choice",
   "/payment",
+  "/review-order",
   "/confirmation",
 ];
 const PUBLIC_PATHS = [
@@ -44,7 +45,7 @@ export async function middleware(req) {
 
   // Routes publiques - sortie rapide
   const isPublic = PUBLIC_PATHS.some((publicPath) =>
-    path.startsWith(publicPath)
+    path.startsWith(publicPath),
   );
   if (isPublic) {
     pathCache.set(path, "public");
@@ -53,7 +54,7 @@ export async function middleware(req) {
 
   // Vérifier si c'est une route protégée
   const isProtected = PROTECTED_PATHS.some((protectedPath) =>
-    path.startsWith(protectedPath)
+    path.startsWith(protectedPath),
   );
 
   if (!isProtected) {
