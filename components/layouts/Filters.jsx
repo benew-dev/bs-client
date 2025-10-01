@@ -171,7 +171,7 @@ const Filters = ({ categories, setLocalLoading }) => {
         >
           {/* Prix */}
           <div className="p-4 border border-gray-200 bg-white rounded-lg shadow-sm">
-            <h3 className="font-semibold mb-3 text-gray-700">Prix (€)</h3>
+            <h3 className="font-semibold mb-3 text-gray-700">Prix (Fdj)</h3>
             <div className="grid grid-cols-2 gap-x-2 mb-3">
               <div>
                 <label

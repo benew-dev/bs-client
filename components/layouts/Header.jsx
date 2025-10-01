@@ -16,16 +16,16 @@ import * as Sentry from "@sentry/nextjs";
 import CartContext from "@/context/CartContext";
 import { signOut, useSession } from "next-auth/react";
 import AuthContext from "@/context/AuthContext";
-import { Menu, ShoppingCart, User, X, AlertCircle } from "lucide-react";
-import { toast } from "react-toastify";
+import { Menu, ShoppingCart, User, X } from "lucide-react";
+import dynamic from "next/dynamic";
 
 // Chargement dynamique optimisé du composant Search
-// const Search = dynamic(() => import("./Search"), {
-//   loading: () => (
-//     <div className="h-10 w-full max-w-xl bg-gray-100 animate-pulse rounded-md"></div>
-//   ),
-//   ssr: true,
-// });
+const Search = dynamic(() => import("./Search"), {
+  loading: () => (
+    <div className="h-10 w-full max-w-xl bg-gray-100 animate-pulse rounded-md"></div>
+  ),
+  ssr: true,
+});
 
 // Constantes pour éviter les recréations
 const CART_LOAD_DELAY = 500;
@@ -331,7 +331,7 @@ const Header = () => {
 
           {/* Search - Desktop */}
           <div className="hidden md:block md:flex-1 max-w-xl mx-4">
-            {/* <Search setLoading={setAuthLoading} /> */}
+            <Search setLoading={setAuthLoading} />
           </div>
 
           {/* User navigation - Desktop */}
@@ -365,7 +365,7 @@ const Header = () => {
             aria-label="Menu principal"
           >
             <div className="mb-4">
-              {/* <Search setLoading={setAuthLoading} /> */}
+              <Search setLoading={setAuthLoading} />
             </div>
             {user ? (
               <div className="space-y-3">
