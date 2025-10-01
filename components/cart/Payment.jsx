@@ -404,7 +404,7 @@ const Payment = ({ paymentTypes }) => {
                       <PaymentMethodCard
                         key={payment?._id}
                         payment={payment}
-                        isSelected={paymentType === payment?.paymentName}
+                        isSelected={paymentType === payment?.name}
                         onSelect={handlePaymentTypeChange}
                       />
                     ))}
@@ -488,13 +488,6 @@ const Payment = ({ paymentTypes }) => {
                 </div>
 
                 <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-gray-600">
-                    <span>Total du panier:</span>
-                    <span>
-                      {formatPrice(Number(safeValue(cartTotal?.toFixed(2), 0)))}
-                    </span>
-                  </div>
-
                   <div className="flex justify-between text-lg font-bold border-t pt-3 mt-2">
                     <span>Total a payer:</span>
                     <span className="text-blue-600">
@@ -575,15 +568,13 @@ const PaymentMethodCard = memo(({ payment, isSelected, onSelect }) => (
       <input
         name="payment"
         type="radio"
-        value={payment?.paymentName}
+        value={payment?.name}
         checked={isSelected}
-        onChange={() => onSelect(payment?.paymentName)}
+        onChange={() => onSelect(payment?.name)}
         className="h-4 w-4 text-blue-600 focus:ring-blue-500"
       />
       <div className="ml-3">
-        <span className="font-medium text-gray-800">
-          {payment?.paymentName}
-        </span>
+        <span className="font-medium text-gray-800">{payment?.name}</span>
       </div>
     </span>
   </label>
