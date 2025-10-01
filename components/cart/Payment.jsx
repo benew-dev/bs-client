@@ -113,13 +113,13 @@ const Payment = () => {
         router.prefetch("/confirmation");
 
         // Vérifier que les infos nécessaires sont présentes
-        if (!cartTotal || !orderInfo || !orderInfo.orderItems) {
-          toast.error("Informations de commande incomplètes", {
-            position: "bottom-right",
-            autoClose: 5000,
-          });
-          return router.push("/cart");
-        }
+        // if (!cartTotal || !orderInfo || !orderInfo.orderItems) {
+        //   toast.error("Informations de commande incomplètes", {
+        //     position: "bottom-right",
+        //     autoClose: 5000,
+        //   });
+        //   return router.push("/cart");
+        // }
 
         // Mettre à jour les informations de commande avec l'adresse de livraison
         setOrderInfo({
