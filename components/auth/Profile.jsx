@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import AuthContext from "@/context/AuthContext";
-import { EllipsisVertical, Lock, Pencil, Plus } from "lucide-react";
+import { EllipsisVertical, Lock, Pencil } from "lucide-react";
 
 const AddressesSkeleton = () => (
   <div className="animate-pulse space-y-4">
@@ -159,16 +159,6 @@ const Profile = ({ addresses = [] }) => {
               aria-orientation="vertical"
             >
               <div className="absolute -top-2 right-3 w-4 h-4 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
-
-              <Link
-                href="/address/new"
-                onClick={closeModal}
-                className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-800 transition-colors"
-                role="menuitem"
-              >
-                <Plus className="mr-3 text-green-600" />
-                <span>Add Address</span>
-              </Link>
 
               <Link
                 href="/me/update"
