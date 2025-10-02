@@ -116,6 +116,7 @@ const authOptions = {
             email: user.email,
             phone: user.phone,
             role: user.role || "user",
+            address: user.address,
             avatar: user.avatar,
             isActive: user.isActive,
             lastLogin: user.lastLogin,
