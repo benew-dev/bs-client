@@ -11,7 +11,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  User,
 } from "lucide-react";
 
 const Profile = () => {
@@ -97,6 +96,9 @@ const Profile = () => {
       </div>
     );
   }
+
+  console.log("Avatar Url", user?.avatar?.url);
+  console.log("User Address", user?.address);
 
   const userData = {
     name: user?.name || "User",
@@ -290,46 +292,6 @@ const Profile = () => {
                 <MapPin className="w-4 h-4 mr-2" />
                 Ajouter mon adresse
               </Link>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Card statistiques (optionnel - peut être commenté si non utilisé) */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Informations du compte
-          </h3>
-        </div>
-        <div className="px-6 py-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">
-                {user?.role === "admin" ? "Admin" : "Client"}
-              </p>
-              <p className="text-xs text-gray-600 mt-1">Rôle</p>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">
-                {user?.isActive ? "Actif" : "Inactif"}
-              </p>
-              <p className="text-xs text-gray-600 mt-1">Statut</p>
-            </div>
-          </div>
-
-          {user?.createdAt && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-xs text-gray-500">
-                Membre depuis le{" "}
-                <span className="font-medium text-gray-700">
-                  {new Date(user.createdAt).toLocaleDateString("fr-FR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </span>
-              </p>
             </div>
           )}
         </div>
