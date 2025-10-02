@@ -19,18 +19,18 @@ export const AuthProvider = ({ children }) => {
   const updateSession = session?.update; // Éviter la déstructuration directe
 
   // ✅ NOUVELLE fonction pour synchroniser l'utilisateur avec session complète
+  // 1. METTRE À JOUR syncUserWithSession pour inclure l'adresse :
+
   const syncUserWithSession = async (updatedUserData) => {
-    // Récupérer les données actuelles de l'utilisateur
     const currentUser = user;
 
-    // Créer un utilisateur complet en gardant toutes les propriétés existantes
-    // et en ne mettant à jour que les champs modifiables
+    // Créer un utilisateur complet avec l'adresse
     const syncedUser = {
-      ...currentUser, // Garder toutes les propriétés existantes
+      ...currentUser,
       name: updatedUserData.name || currentUser?.name,
       phone: updatedUserData.phone || currentUser?.phone,
       avatar: updatedUserData.avatar || currentUser?.avatar,
-      // Garder les autres propriétés inchangées
+      address: updatedUserData.address || currentUser?.address, // ✅ AJOUT
     };
 
     console.log("Syncing user with session:", {
@@ -39,10 +39,8 @@ export const AuthProvider = ({ children }) => {
       synced: syncedUser,
     });
 
-    // Mettre à jour l'état local
     setUser(syncedUser);
 
-    // ✅ MODIFICATION: Vérifier que updateSession existe avant de l'utiliser
     if (updateSession && typeof updateSession === "function") {
       try {
         await updateSession({
@@ -51,7 +49,6 @@ export const AuthProvider = ({ children }) => {
         console.log("Session updated successfully");
       } catch (error) {
         console.warn("Failed to update session:", error);
-        // Ne pas bloquer le processus si la mise à jour de session échoue
       }
     } else {
       console.warn("UpdateSession not available, skipping session sync");
@@ -80,7 +77,7 @@ export const AuthProvider = ({ children }) => {
           body: JSON.stringify({ name, phone, email, password }),
           signal: controller.signal,
           credentials: "include",
-        }
+        },
       );
 
       clearTimeout(timeoutId);
@@ -135,7 +132,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const updateProfile = async ({ name, phone, avatar }) => {
+  const updateProfile = async ({ name, phone, avatar, address }) => {
     try {
       setLoading(true);
       setError(null);
@@ -148,9 +145,49 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
+      // Validation de l'adresse si fournie
+      if (address) {
+        if (!address.street || address.street.trim() === "") {
+          console.log("La rue est obligatoire");
+          setError("La rue est obligatoire");
+          setLoading(false);
+          return;
+        }
+
+        if (!address.city || address.city.trim() === "") {
+          console.log("La ville est obligatoire");
+          setError("La ville est obligatoire");
+          setLoading(false);
+          return;
+        }
+
+        if (!address.country || address.country.trim() === "") {
+          console.log("Le pays est obligatoire");
+          setError("Le pays est obligatoire");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Préparer les données à envoyer
+      const payload = {
+        name: name.trim(),
+        phone: phone ? phone.trim() : "",
+        avatar,
+      };
+
+      // Ajouter l'adresse seulement si elle est fournie et complète
+      if (address && address.street && address.city && address.country) {
+        payload.address = {
+          street: address.street.trim(),
+          city: address.city.trim(),
+          country: address.country.trim(),
+        };
+      }
+
       // Simple fetch avec timeout court
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s comme vos APIs
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me/update`,
@@ -160,26 +197,29 @@ export const AuthProvider = ({ children }) => {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: JSON.stringify({
-            name: name.trim(),
-            phone: phone ? phone.trim() : "",
-            avatar,
-          }),
+          body: JSON.stringify(payload),
           signal: controller.signal,
           credentials: "include",
-        }
+        },
       );
 
       clearTimeout(timeoutId);
 
       const data = await res.json();
 
-      // Gestion simple des erreurs (comme registerUser)
+      // Gestion simple des erreurs
       if (!res.ok) {
         let errorMessage = "";
         switch (res.status) {
           case 400:
-            errorMessage = data.message || "Données de profil invalides";
+            // Afficher les erreurs de validation spécifiques si disponibles
+            if (data.errors) {
+              const firstErrorKey = Object.keys(data.errors)[0];
+              errorMessage =
+                data.errors[firstErrorKey] || "Données de profil invalides";
+            } else {
+              errorMessage = data.message || "Données de profil invalides";
+            }
             break;
           case 401:
             errorMessage = "Session expirée. Veuillez vous reconnecter";
@@ -207,14 +247,14 @@ export const AuthProvider = ({ children }) => {
         console.log("User before update:", user);
         console.log("Updated user data:", data.data.updatedUser);
 
-        // ✅ MODIFICATION: Utiliser la nouvelle fonction de synchronisation
+        // Synchroniser avec la session
         const syncedUser = await syncUserWithSession(data.data.updatedUser);
 
         console.log("User after sync:", syncedUser);
 
         toast.success("Profil mis à jour avec succès!");
 
-        // ✅ AJOUT: Attendre un peu que la session soit mise à jour avant de rediriger
+        // Attendre un peu que la session soit mise à jour avant de rediriger
         setTimeout(() => {
           router.push("/me");
         }, 500);
@@ -257,7 +297,7 @@ export const AuthProvider = ({ children }) => {
 
       if (currentPassword === newPassword) {
         const validationError = new Error(
-          "Le nouveau mot de passe doit être différent"
+          "Le nouveau mot de passe doit être différent",
         );
         console.error(validationError, "AuthContext", "updatePassword", false);
         setError("Le nouveau mot de passe doit être différent");
@@ -267,7 +307,7 @@ export const AuthProvider = ({ children }) => {
 
       if (newPassword.length < 8) {
         const validationError = new Error(
-          "Minimum 8 caractères pour le nouveau mot de passe"
+          "Minimum 8 caractères pour le nouveau mot de passe",
         );
         console.error(validationError, "AuthContext", "updatePassword", false);
         setError("Minimum 8 caractères pour le nouveau mot de passe");
@@ -277,11 +317,11 @@ export const AuthProvider = ({ children }) => {
 
       if (newPassword !== confirmPassword) {
         const validationError = new Error(
-          "Le nouveau mot de passe et la confirmation ne correspondent pas"
+          "Le nouveau mot de passe et la confirmation ne correspondent pas",
         );
         console.error(validationError, "AuthContext", "updatePassword", false);
         setError(
-          "Le nouveau mot de passe et la confirmation ne correspondent pas"
+          "Le nouveau mot de passe et la confirmation ne correspondent pas",
         );
         setLoading(false);
         return;
@@ -306,7 +346,7 @@ export const AuthProvider = ({ children }) => {
           }),
           signal: controller.signal,
           credentials: "include",
-        }
+        },
       );
 
       clearTimeout(timeoutId);
@@ -357,276 +397,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const addNewAddress = async (address) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Validation basique
-      if (!address) {
-        const validationError = new Error(
-          "Les données d'adresse sont manquantes"
-        );
-        console.error(validationError, "AuthContext", "addNewAddress", false);
-        setError("Les données d'adresse sont manquantes");
-        setLoading(false);
-        return;
-      }
-
-      // Simple fetch avec timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/address`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify(address),
-          signal: controller.signal,
-          credentials: "include",
-        }
-      );
-
-      clearTimeout(timeoutId);
-      const data = await res.json();
-
-      if (!res.ok) {
-        let errorMessage = "";
-        switch (res.status) {
-          case 400:
-            errorMessage = data.message || "Données d'adresse invalides";
-            break;
-          case 401:
-            errorMessage = "Session expirée. Veuillez vous reconnecter";
-            setTimeout(() => router.push("/login"), 2000);
-            break;
-          case 409:
-            errorMessage = "Cette adresse existe déjà";
-            break;
-          case 429:
-            errorMessage = "Trop de tentatives. Réessayez plus tard.";
-            break;
-          default:
-            errorMessage = data.message || "Erreur lors de l'ajout";
-        }
-
-        // Monitoring pour erreurs HTTP
-        const httpError = new Error(`HTTP ${res.status}: ${errorMessage}`);
-        const isCritical = res.status === 401;
-        console.error(httpError, "AuthContext", "addNewAddress", isCritical);
-
-        setError(errorMessage);
-        setLoading(false);
-        return;
-      }
-
-      if (data.success) {
-        toast.success("Adresse ajoutée avec succès!");
-        router.push("/me");
-      }
-    } catch (error) {
-      if (error.name === "AbortError") {
-        setError("La requête a pris trop de temps");
-        console.error(error, "AuthContext", "addNewAddress", false);
-      } else {
-        setError("Problème de connexion. Vérifiez votre connexion.");
-        console.error(error, "AuthContext", "addNewAddress", true);
-      }
-      console.error("Address creation error:", error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateAddress = async (id, address) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Validation basique
-      if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
-        const validationError = new Error("Identifiant d'adresse invalide");
-        console.error(validationError, "AuthContext", "updateAddress", false);
-        setError("Identifiant d'adresse invalide");
-        setLoading(false);
-        return;
-      }
-
-      if (!address || Object.keys(address).length === 0) {
-        const validationError = new Error("Données d'adresse invalides");
-        console.error(validationError, "AuthContext", "updateAddress", false);
-        setError("Données d'adresse invalides");
-        setLoading(false);
-        return;
-      }
-
-      // Simple fetch avec timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/address/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify(address),
-          signal: controller.signal,
-          credentials: "include",
-        }
-      );
-
-      clearTimeout(timeoutId);
-      const data = await res.json();
-
-      if (!res.ok) {
-        let errorMessage = "";
-        switch (res.status) {
-          case 400:
-            errorMessage = data.message || "Données d'adresse invalides";
-            break;
-          case 401:
-            errorMessage = "Session expirée. Veuillez vous reconnecter";
-            setTimeout(() => router.push("/login"), 2000);
-            break;
-          case 403:
-            errorMessage = "Vous n'avez pas l'autorisation";
-            break;
-          case 404:
-            errorMessage = "Adresse non trouvée";
-            setTimeout(() => router.push("/me"), 2000);
-            break;
-          case 409:
-            errorMessage = "Cette adresse existe déjà";
-            break;
-          case 429:
-            errorMessage = "Trop de tentatives. Réessayez plus tard.";
-            break;
-          default:
-            errorMessage = data.message || "Erreur lors de la modification";
-        }
-
-        // Monitoring pour erreurs HTTP - Critique pour 401/403/404
-        const httpError = new Error(`HTTP ${res.status}: ${errorMessage}`);
-        const isCritical = [401, 403, 404].includes(res.status);
-        console.error(httpError, "AuthContext", "updateAddress", isCritical);
-
-        setError(errorMessage);
-        setLoading(false);
-        return;
-      }
-
-      if (data.success) {
-        setUpdated(true);
-        toast.success("Adresse modifiée avec succès!");
-        router.replace(`/address/${id}`);
-      }
-    } catch (error) {
-      if (error.name === "AbortError") {
-        setError("La requête a pris trop de temps");
-        console.error(error, "AuthContext", "updateAddress", false);
-      } else {
-        setError("Problème de connexion. Vérifiez votre connexion.");
-        console.error(error, "AuthContext", "updateAddress", true);
-      }
-      console.error("Address update error:", error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteAddress = async (id) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Validation basique
-      if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
-        const validationError = new Error("Identifiant d'adresse invalide");
-        console.error(validationError, "AuthContext", "deleteAddress", false);
-        setError("Identifiant d'adresse invalide");
-        setLoading(false);
-        return;
-      }
-
-      // Simple fetch avec timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/address/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          signal: controller.signal,
-          credentials: "include",
-        }
-      );
-
-      clearTimeout(timeoutId);
-      const data = await res.json();
-
-      if (!res.ok) {
-        let errorMessage = "";
-        switch (res.status) {
-          case 400:
-            errorMessage = data.message || "Identifiant invalide";
-            break;
-          case 401:
-            errorMessage = "Session expirée. Veuillez vous reconnecter";
-            setTimeout(() => router.push("/login"), 2000);
-            break;
-          case 403:
-            errorMessage = "Vous n'avez pas l'autorisation";
-            break;
-          case 404:
-            errorMessage = "Adresse non trouvée";
-            setTimeout(() => router.push("/me"), 2000);
-            break;
-          case 429:
-            errorMessage = "Trop de tentatives. Réessayez plus tard.";
-            break;
-          default:
-            errorMessage = data.message || "Erreur lors de la suppression";
-        }
-
-        // Monitoring pour erreurs HTTP - Critique pour 401/403/404
-        const httpError = new Error(`HTTP ${res.status}: ${errorMessage}`);
-        const isCritical = [401, 403, 404].includes(res.status);
-        console.error(httpError, "AuthContext", "deleteAddress", isCritical);
-
-        setError(errorMessage);
-        setLoading(false);
-        return;
-      }
-
-      if (data.success) {
-        toast.success("Adresse supprimée avec succès!");
-        router.push("/me");
-      }
-    } catch (error) {
-      if (error.name === "AbortError") {
-        setError("La requête a pris trop de temps");
-        console.error(error, "AuthContext", "deleteAddress", false);
-      } else {
-        setError("Problème de connexion. Vérifiez votre connexion.");
-        console.error(error, "AuthContext", "deleteAddress", true);
-      }
-      console.error("Address deletion error:", error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const sendEmail = async ({ subject, message }) => {
     try {
       setLoading(true);
@@ -651,7 +421,7 @@ export const AuthProvider = ({ children }) => {
 
       if (subject.length > 200) {
         const validationError = new Error(
-          "Le sujet est trop long (max 200 caractères)"
+          "Le sujet est trop long (max 200 caractères)",
         );
         console.error(validationError, "AuthContext", "sendEmail", false);
         setError("Le sujet est trop long (max 200 caractères)");
@@ -661,7 +431,7 @@ export const AuthProvider = ({ children }) => {
 
       if (message.length > 5000) {
         const validationError = new Error(
-          "Le message est trop long (max 5000 caractères)"
+          "Le message est trop long (max 5000 caractères)",
         );
         console.error(validationError, "AuthContext", "sendEmail", false);
         setError("Le message est trop long (max 5000 caractères)");
@@ -762,9 +532,6 @@ export const AuthProvider = ({ children }) => {
         registerUser,
         updateProfile,
         updatePassword,
-        addNewAddress,
-        updateAddress,
-        deleteAddress,
         sendEmail,
         clearUser,
         clearErrors,

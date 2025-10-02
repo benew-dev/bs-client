@@ -8,19 +8,14 @@ import { withApiRateLimit } from "@/utils/rateLimit";
 
 /**
  * PUT /api/auth/me/update
- * Met à jour le profil utilisateur
- * Rate limit: 20 modifications par 5 minutes (protection contre les modifications abusives de profil)
+ * Met à jour le profil utilisateur AVEC adresse
  */
 export const PUT = withApiRateLimit(
   async function (req) {
     try {
-      // Vérifier l'authentification
       await isAuthenticatedUser(req, NextResponse);
-
-      // Connexion DB
       await dbConnect();
 
-      // Récupérer l'utilisateur
       const user = await User.findOne({ email: req.user.email });
       if (!user) {
         return NextResponse.json(
@@ -29,7 +24,6 @@ export const PUT = withApiRateLimit(
         );
       }
 
-      // Parser les données
       let profileData;
       try {
         profileData = await req.json();
@@ -40,7 +34,7 @@ export const PUT = withApiRateLimit(
         );
       }
 
-      // Valider avec Yup
+      // Validation avec Yup (inclut maintenant l'adresse)
       const validation = await validateProfile(profileData);
       if (!validation.isValid) {
         return NextResponse.json(
@@ -53,8 +47,8 @@ export const PUT = withApiRateLimit(
         );
       }
 
-      // Extraire seulement les champs autorisés
-      const allowedFields = ["name", "phone", "avatar"];
+      // MODIFIÉ: Champs autorisés incluent maintenant l'adresse
+      const allowedFields = ["name", "phone", "avatar", "address"];
       const updateData = {};
 
       allowedFields.forEach((field) => {
@@ -63,7 +57,6 @@ export const PUT = withApiRateLimit(
         }
       });
 
-      // Vérifier qu'il y a des champs à mettre à jour
       if (Object.keys(updateData).length === 0) {
         return NextResponse.json(
           { success: false, message: "No fields to update" },
@@ -71,7 +64,6 @@ export const PUT = withApiRateLimit(
         );
       }
 
-      // Mettre à jour l'utilisateur
       const updatedUser = await User.findOneAndUpdate(
         { email: req.user.email },
         updateData,
@@ -89,6 +81,7 @@ export const PUT = withApiRateLimit(
         );
       }
 
+      // MODIFIÉ: Réponse inclut maintenant l'adresse
       return NextResponse.json(
         {
           success: true,
@@ -100,6 +93,7 @@ export const PUT = withApiRateLimit(
               email: updatedUser.email,
               phone: updatedUser.phone,
               avatar: updatedUser.avatar,
+              address: updatedUser.address, // NOUVEAU
               role: updatedUser.role,
               isActive: updatedUser.isActive || false,
             },
@@ -110,7 +104,6 @@ export const PUT = withApiRateLimit(
     } catch (error) {
       console.error("Profile update error:", error.message);
 
-      // Capturer seulement les vraies erreurs système
       if (error.name !== "ValidationError") {
         captureException(error, {
           tags: { component: "api", route: "auth/me/update" },
@@ -131,9 +124,9 @@ export const PUT = withApiRateLimit(
   },
   {
     customLimit: {
-      points: 20, // 20 modifications maximum
-      duration: 300000, // par période de 5 minutes
-      blockDuration: 600000, // blocage de 10 minutes en cas de dépassement
+      points: 20,
+      duration: 300000,
+      blockDuration: 600000,
     },
   },
 );
