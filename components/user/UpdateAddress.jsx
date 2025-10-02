@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useContext, useEffect, useCallback, useRef } from 'react';
-import { countries } from 'countries-list';
-import { toast } from 'react-toastify';
-import DOMPurify from 'dompurify';
-import { useRouter } from 'next/navigation';
+import { useState, useContext, useEffect, useCallback, useRef } from "react";
+import { countries } from "countries-list";
+import { toast } from "react-toastify";
+import DOMPurify from "dompurify";
+import { useRouter } from "next/navigation";
 
-import AuthContext from '@/context/AuthContext';
-import { ArrowLeft, LoaderCircle } from 'lucide-react';
-import captureClientError from '@/monitoring/sentry';
+import AuthContext from "@/context/AuthContext";
+import { ArrowLeft, LoaderCircle } from "lucide-react";
+import captureClientError from "@/monitoring/sentry";
 
 /**
  * UpdateAddress component for managing address modification and deletion
@@ -46,12 +46,12 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
 
   // Form state with sanitized initial values
   const [formState, setFormState] = useState({
-    street: address?.street || '',
-    city: address?.city || '',
-    state: address?.state || '',
-    zipCode: address?.zipCode || '',
-    additionalInfo: address?.additionalInfo || '',
-    country: address?.country || '',
+    street: address?.street || "",
+    city: address?.city || "",
+    state: address?.state || "",
+    zipCode: address?.zipCode || "",
+    additionalInfo: address?.additionalInfo || "",
+    country: address?.country || "",
     isDefault: address?.isDefault || false,
   });
 
@@ -67,7 +67,7 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
     // Validate that we have a valid address
     if (!address || !id) {
       toast.error("Données d'adresse invalides");
-      router.push('/me');
+      router.push("/me");
       return;
     }
 
@@ -93,7 +93,7 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
 
   // Sanitize input to prevent XSS attacks
   const sanitizeInput = useCallback((value) => {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       // Sanitize the input, but don't trim to allow spaces
       return DOMPurify.sanitize(value);
     }
@@ -103,7 +103,7 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
   // Handle input change with sanitization
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
-    const inputValue = type === 'checkbox' ? checked : sanitizeInput(value);
+    const inputValue = type === "checkbox" ? checked : sanitizeInput(value);
 
     setFormState((prevState) => ({
       ...prevState,
@@ -138,9 +138,9 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
       if (formState.zipCode && !/^\d{2,5}$/.test(formState.zipCode)) {
         setValidationErrors((prev) => ({
           ...prev,
-          zipCode: 'Le code postal doit contenir entre 2 et 5 chiffres',
+          zipCode: "Le code postal doit contenir entre 2 et 5 chiffres",
         }));
-        toast.error('Format de code postal invalide');
+        toast.error("Format de code postal invalide");
         setIsSubmitting(false);
         return;
       }
@@ -151,22 +151,22 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
       // Success handling via effect to avoid race conditions
 
       // Log success anonymously (for monitoring)
-      if (process.env.NODE_ENV === 'production') {
-        console.info('Address updated', {
+      if (process.env.NODE_ENV === "production") {
+        console.info("Address updated", {
           userId: userId
             ? `${userId.substring(0, 2)}...${userId.slice(-2)}`
-            : 'unknown',
-          addressId: id ? `${id.substring(0, 4)}...` : 'unknown',
-          referer: referer ? `${referer.substring(0, 10)}...` : 'direct',
+            : "unknown",
+          addressId: id ? `${id.substring(0, 4)}...` : "unknown",
+          referer: referer ? `${referer.substring(0, 10)}...` : "direct",
         });
       }
     } catch (error) {
-      console.error('Address update error', error);
-      captureClientError(error, 'UpdateAddress', 'updateError', true, {
+      console.error("Address update error", error);
+      captureClientError(error, "UpdateAddress", "updateError", true, {
         addressId: id ? `${id.substring(0, 4)}...` : null,
       });
       toast.error(
-        error.message || 'Une erreur est survenue lors de la mise à jour',
+        error.message || "Une erreur est survenue lors de la mise à jour",
       );
     } finally {
       setIsSubmitting(false);
@@ -194,25 +194,25 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
 
       // Redirect after successful deletion
       setTimeout(() => {
-        router.push('/me');
+        router.push("/me");
       }, 1500);
 
       // Log deletion anonymously (for monitoring)
-      if (process.env.NODE_ENV === 'production') {
-        console.info('Address deleted', {
+      if (process.env.NODE_ENV === "production") {
+        console.info("Address deleted", {
           userId: userId
             ? `${userId.substring(0, 2)}...${userId.slice(-2)}`
-            : 'unknown',
-          addressId: id ? `${id.substring(0, 4)}...` : 'unknown',
+            : "unknown",
+          addressId: id ? `${id.substring(0, 4)}...` : "unknown",
         });
       }
     } catch (error) {
-      console.error('Address deletion error', error);
-      captureClientError(error, 'UpdateAddress', 'deleteError', true, {
+      console.error("Address deletion error", error);
+      captureClientError(error, "UpdateAddress", "deleteError", true, {
         addressId: id ? `${id.substring(0, 4)}...` : null,
       });
       toast.error(
-        error.message || 'Une erreur est survenue lors de la suppression',
+        error.message || "Une erreur est survenue lors de la suppression",
       );
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -227,7 +227,7 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
   // Get error class based on validation state
   const getInputClassName = (fieldName) => {
     const baseClass =
-      'appearance-none border rounded-md py-2 px-3 w-full transition-colors duration-200';
+      "appearance-none border rounded-md py-2 px-3 w-full transition-colors duration-200";
 
     if (validationErrors[fieldName]) {
       return `${baseClass} border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-500`;
@@ -274,14 +274,14 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
                     name="street"
                     ref={streetInputRef}
                     required
-                    className={getInputClassName('street')}
+                    className={getInputClassName("street")}
                     type="text"
                     placeholder="Saisissez votre adresse"
                     value={formState.street}
                     onChange={handleInputChange}
                     aria-invalid={!!validationErrors.street}
                     aria-describedby={
-                      validationErrors.street ? 'street-error' : undefined
+                      validationErrors.street ? "street-error" : undefined
                     }
                     maxLength={100}
                   />
@@ -302,7 +302,7 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
                   <input
                     id="additionalInfo"
                     name="additionalInfo"
-                    className={getInputClassName('additionalInfo')}
+                    className={getInputClassName("additionalInfo")}
                     type="text"
                     placeholder="Appartement, bâtiment, étage, etc."
                     value={formState.additionalInfo}
@@ -310,7 +310,7 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
                     aria-invalid={!!validationErrors.additionalInfo}
                     aria-describedby={
                       validationErrors.additionalInfo
-                        ? 'additionalInfo-error'
+                        ? "additionalInfo-error"
                         : undefined
                     }
                     maxLength={100}
@@ -334,14 +334,14 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
                       id="city"
                       name="city"
                       required
-                      className={getInputClassName('city')}
+                      className={getInputClassName("city")}
                       type="text"
                       placeholder="Saisissez votre ville"
                       value={formState.city}
                       onChange={handleInputChange}
                       aria-invalid={!!validationErrors.city}
                       aria-describedby={
-                        validationErrors.city ? 'city-error' : undefined
+                        validationErrors.city ? "city-error" : undefined
                       }
                       maxLength={50}
                     />
@@ -354,21 +354,21 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
 
                   <div className="mb-4">
                     <label htmlFor="state" className="block mb-1 font-medium">
-                      Région / Département{' '}
+                      Région / Département{" "}
                       <span className="text-red-500">*</span>
                     </label>
                     <input
                       id="state"
                       name="state"
                       required
-                      className={getInputClassName('state')}
+                      className={getInputClassName("state")}
                       type="text"
                       placeholder="Saisissez votre région"
                       value={formState.state}
                       onChange={handleInputChange}
                       aria-invalid={!!validationErrors.state}
                       aria-describedby={
-                        validationErrors.state ? 'state-error' : undefined
+                        validationErrors.state ? "state-error" : undefined
                       }
                       maxLength={50}
                     />
@@ -388,7 +388,7 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
                     <input
                       id="zipCode"
                       name="zipCode"
-                      className={getInputClassName('zipCode')}
+                      className={getInputClassName("zipCode")}
                       type="text"
                       inputMode="numeric"
                       pattern="\d{2,5}"
@@ -397,7 +397,7 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
                       onChange={handleInputChange}
                       aria-invalid={!!validationErrors.zipCode}
                       aria-describedby={
-                        validationErrors.zipCode ? 'zipCode-error' : undefined
+                        validationErrors.zipCode ? "zipCode-error" : undefined
                       }
                       maxLength={5}
                     />
@@ -446,12 +446,12 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
                     id="country"
                     name="country"
                     required
-                    className={getInputClassName('country')}
+                    className={getInputClassName("country")}
                     value={formState.country}
                     onChange={handleInputChange}
                     aria-invalid={!!validationErrors.country}
                     aria-describedby={
-                      validationErrors.country ? 'country-error' : undefined
+                      validationErrors.country ? "country-error" : undefined
                     }
                   >
                     <option value="">Sélectionnez un pays</option>
@@ -492,7 +492,7 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
                             Suppression...
                           </span>
                         ) : (
-                          'Confirmer la suppression'
+                          "Confirmer la suppression"
                         )}
                       </button>
                       <button
@@ -518,8 +518,8 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
                         isSubmitting ||
                         (formTouched &&
                           Object.keys(validationErrors).length > 0)
-                          ? 'bg-blue-400 cursor-not-allowed'
-                          : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                          ? "bg-blue-400 cursor-not-allowed"
+                          : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
                       }`}
                     >
                       {isSubmitting ? (
@@ -528,7 +528,7 @@ const UpdateAddress = ({ id, address, userId, referer }) => {
                           Mise à jour...
                         </span>
                       ) : (
-                        'Mettre à jour'
+                        "Mettre à jour"
                       )}
                     </button>
 
