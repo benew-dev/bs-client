@@ -97,9 +97,6 @@ const Profile = () => {
     );
   }
 
-  console.log("Avatar Url", user?.avatar?.url);
-  console.log("User Address", user?.address);
-
   const userData = {
     name: user?.name || "User",
     email: user?.email || "Aucun email",
