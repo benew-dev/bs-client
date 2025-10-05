@@ -6,7 +6,6 @@ import {
   useState,
   useCallback,
   memo,
-  useMemo,
   useRef,
 } from "react";
 import Link from "next/link";
@@ -136,6 +135,8 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoadingCart, setIsLoadingCart] = useState(false);
   const { data } = useSession();
+
+  console.log(user);
 
   // Refs pour gérer les timeouts
   const loadCartTimeoutRef = useRef(null);
