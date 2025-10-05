@@ -1,8 +1,10 @@
-import { Suspense } from "react";
-import dynamic from "next/dynamic";
+import { lazy, Suspense } from "react";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { getCookieName } from "@/helpers/helpers";
+
+// Ajoutez après les imports
+export const dynamic = "force-dynamic";
 
 const ProfileSkeleton = () => (
   <div className="animate-pulse space-y-4" aria-busy="true" aria-live="polite">
@@ -17,7 +19,7 @@ const ProfileSkeleton = () => (
   </div>
 );
 
-const Profile = dynamic(
+const Profile = lazy(
   () => import("@/components/auth/Profile").then((mod) => mod.default),
   {
     loading: () => <ProfileSkeleton />,

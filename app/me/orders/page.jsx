@@ -1,5 +1,4 @@
-import dynamic from "next/dynamic";
-import { Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { captureException } from "@/monitoring/sentry";
@@ -8,8 +7,11 @@ import logger from "@/utils/logger";
 import { getCookieName } from "@/helpers/helpers";
 import { getAuthenticatedUser } from "@/lib/auth";
 
+// Ajoutez après les imports
+export const dynamic = "force-dynamic";
+
 // Chargement dynamique avec fallback
-const ListOrders = dynamic(() => import("@/components/orders/ListOrders"), {
+const ListOrders = lazy(() => import("@/components/orders/ListOrders"), {
   loading: () => <OrdersPageSkeleton />,
   ssr: true,
 });

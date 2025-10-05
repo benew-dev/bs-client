@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { headers } from "next/headers";
 
+// Ajoutez après les imports
+export const dynamic = "force-dynamic";
+
 export default async function UserLayout({ children }) {
   // MODIFICATION: Utiliser une fonction DAL pour l'authentification
   let user;

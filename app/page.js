@@ -5,6 +5,9 @@ import { parseProductSearchParams } from "@/utils/inputSanitizer";
 // Utilisation de lazy au lieu de dynamic pour éviter le conflit de nom
 const ListProducts = lazy(() => import("@/components/products/ListProducts"));
 
+// Ajoutez en haut du fichier
+export const dynamic = "force-dynamic";
+
 // STRATÉGIE DE RENDU : ISR (Incremental Static Regeneration)
 // Parfait pour un e-commerce avec ~500 visiteurs/jour
 export const revalidate = 3600; // Revalidation toutes les heures (3600 secondes)

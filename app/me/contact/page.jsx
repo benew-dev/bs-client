@@ -1,8 +1,10 @@
-import { Suspense } from 'react';
-import dynamic from 'next/dynamic';
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { getAuthenticatedUser } from '@/lib/auth';
+import { lazy, Suspense } from "react";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { getAuthenticatedUser } from "@/lib/auth";
+
+// Vous avez déjà cette ligne, gardez-la !
+export const dynamic = "force-dynamic";
 
 // Custom components
 const ContactSkeleton = () => (
@@ -20,8 +22,8 @@ const ContactSkeleton = () => (
 );
 
 // Dynamic import with enhanced loading state and error handling
-const Contact = dynamic(
-  () => import('@/components/user/Contact').then((mod) => mod.default),
+const Contact = lazy(
+  () => import("@/components/user/Contact").then((mod) => mod.default),
   {
     loading: () => <ContactSkeleton />,
     ssr: true,
@@ -34,15 +36,15 @@ const Contact = dynamic(
 export async function generateMetadata() {
   // Get referrer from request headers for security validation
   const headersList = await headers();
-  const referrer = headersList.get('referer') || '';
+  const referrer = headersList.get("referer") || "";
   const isInternalReferrer = referrer.includes(
     process.env.NEXT_PUBLIC_SITE_URL ||
-      'https://buyitnow-next15-client-bs.vercel.app',
+      "https://buyitnow-next15-client-bs.vercel.app",
   );
 
   // Security check: If external referrer trying to access authenticated page,
   // log the attempt for security monitoring
-  if (!isInternalReferrer && process.env.NODE_ENV === 'production') {
+  if (!isInternalReferrer && process.env.NODE_ENV === "production") {
     console.warn(
       `Security: External referrer attempt to access contact page: ${referrer}`,
     );
@@ -50,24 +52,24 @@ export async function generateMetadata() {
   }
 
   return {
-    title: 'Buy It Now - Contact the owner',
-    description: 'Get in touch with our team for support or inquiries',
+    title: "Buy It Now - Contact the owner",
+    description: "Get in touch with our team for support or inquiries",
     robots: {
       index: false, // Prevent indexing of authenticated pages
       follow: false,
     },
     // Additional runtime metadata based on request context
     alternates: {
-      canonical: '/me/contact',
+      canonical: "/me/contact",
     },
     openGraph: {
-      title: 'Contact Us - Buy It Now',
-      type: 'website',
+      title: "Contact Us - Buy It Now",
+      type: "website",
     },
     // Enhance security with CSP headers specifically for contact form
     other: {
-      'Content-Security-Policy': "frame-ancestors 'self'; form-action 'self';",
-      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      "Content-Security-Policy": "frame-ancestors 'self'; form-action 'self';",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
     },
   };
 }
@@ -85,40 +87,40 @@ export default async function ContactPage() {
   // AJOUTER : Vérification d'authentification
   const user = await getAuthenticatedUser(headersList);
   if (!user) {
-    console.log('User not authenticated, redirecting to login');
-    return redirect('/login?callbackUrl=/me/contact');
+    console.log("User not authenticated, redirecting to login");
+    return redirect("/login?callbackUrl=/me/contact");
   }
 
   // AJOUTER après la vérification d'authentification :
   // Journal d'accès anonymisé pour la sécurité
-  const clientIp = (headersList.get('x-forwarded-for') || '')
-    .split(',')
+  const clientIp = (headersList.get("x-forwarded-for") || "")
+    .split(",")
     .shift()
     .trim();
-  const anonymizedIp = clientIp ? clientIp.replace(/\d+$/, 'xxx') : 'unknown';
-  const userAgent = headersList.get('user-agent') || 'unknown';
+  const anonymizedIp = clientIp ? clientIp.replace(/\d+$/, "xxx") : "unknown";
+  const userAgent = headersList.get("user-agent") || "unknown";
 
-  console.info('Contact page accessed', {
+  console.info("Contact page accessed", {
     userAgent: userAgent?.substring(0, 100),
     referer: referrer?.substring(0, 200),
     ip: anonymizedIp,
     userId: user._id
       ? `${user._id.substring(0, 2)}...${user._id.slice(-2)}`
-      : 'unknown',
+      : "unknown",
   });
 
-  const referrer = headersList.get('referer') || '';
+  const referrer = headersList.get("referer") || "";
   const isInternalReferrer = referrer.includes(
     process.env.NEXT_PUBLIC_SITE_URL ||
-      'https://buyitnow-next15-client-bs.vercel.app',
+      "https://buyitnow-next15-client-bs.vercel.app",
   );
 
   // For high-security pages, you might want to enforce internal referrers
   // Uncomment the following to implement this security measure
-  if (!isInternalReferrer && process.env.NODE_ENV === 'production') {
+  if (!isInternalReferrer && process.env.NODE_ENV === "production") {
     // Redirect to home page if accessed directly from external site
     // This helps prevent CSRF attacks
-    redirect('/');
+    redirect("/");
   }
 
   try {
@@ -136,7 +138,7 @@ export default async function ContactPage() {
   } catch (error) {
     // Let error propagate to error.jsx
     throw new Error(
-      'Failed to load contact form: ' + (error.message || 'Unknown error'),
+      "Failed to load contact form: " + (error.message || "Unknown error"),
     );
   }
 }
