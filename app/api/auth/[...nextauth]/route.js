@@ -285,9 +285,9 @@ export const GET = withAuthRateLimit(
   {
     // Configuration plus permissive pour les GET (session checks fréquents)
     customLimit: {
-      points: 30, // 30 requêtes
-      duration: 60000, // par minute
-      blockDuration: 60000, // blocage 1 minute si dépassement
+      points: 20, // Au lieu de 5
+      duration: 60000, // 1 minute au lieu de 15
+      blockDuration: 300000, // 5 minutes au lieu de 30
     },
   },
 );
