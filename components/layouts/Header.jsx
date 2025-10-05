@@ -9,7 +9,6 @@ import {
   useMemo,
   useRef,
 } from "react";
-// import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import * as Sentry from "@sentry/nextjs";
@@ -31,7 +30,7 @@ const Search = dynamic(() => import("./Search"), {
 const CART_LOAD_DELAY = 500;
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
-// ✅ NOUVEAU: Bouton panier avec gestion des utilisateurs non vérifiés
+// ✅ Bouton panier
 const CartButton = memo(({ cartCount }) => {
   return (
     <Link
@@ -54,7 +53,7 @@ const CartButton = memo(({ cartCount }) => {
 
 CartButton.displayName = "CartButton";
 
-// ✅ NOUVEAU: Dropdown utilisateur avec gestion vérification
+// ✅ Dropdown utilisateur avec gestion vérification
 const UserDropdown = memo(({ user }) => {
   const menuItems = [
     { href: "/me", label: "Mon profil" },
@@ -158,7 +157,6 @@ const Header = () => {
 
   // Fonction loadCart optimisée avec debounce
   const loadCart = useCallback(async () => {
-    // Éviter les chargements multiples
     if (isCartLoadingRef.current) return;
 
     try {
@@ -174,7 +172,7 @@ const Header = () => {
           component: "Header",
           action: "loadCart",
         },
-        level: "warning", // Pas critique
+        level: "warning",
       });
     } finally {
       setIsLoadingCart(false);
@@ -190,12 +188,10 @@ const Header = () => {
       try {
         setUser(data?.user);
 
-        // Nettoyer l'ancien timeout s'il existe
         if (loadCartTimeoutRef.current) {
           clearTimeout(loadCartTimeoutRef.current);
         }
 
-        // ✅ MODIFICATION: Charger le panier
         if (data?.isNewLogin) {
           loadCartTimeoutRef.current = setTimeout(() => {
             if (mounted) loadCart();
@@ -224,14 +220,12 @@ const Header = () => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       const mobileMenu = document.getElementById("mobile-menu");
-      const menuButton = event.target.closest(
-        'button[aria-controls="mobile-menu"]',
-      );
+      const profileButton = event.target.closest("[data-profile-toggle]");
 
       if (
         mobileMenu &&
         !mobileMenu.contains(event.target) &&
-        !menuButton &&
+        !profileButton &&
         mobileMenuOpen
       ) {
         setMobileMenuOpen(false);
@@ -280,6 +274,12 @@ const Header = () => {
     setMobileMenuOpen(false);
   };
 
+  // Toggle menu mobile
+  const toggleMobileMenu = (e) => {
+    e.stopPropagation();
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
   return (
     <header className="bg-white py-2 border-b sticky top-0 z-50 shadow-sm">
       <div className="container max-w-[1440px] mx-auto px-4">
@@ -298,35 +298,63 @@ const Header = () => {
             </Link>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          {/* Mobile buttons (Panier + Photo profil OU Hamburger) */}
+          <div className="md:hidden flex items-center gap-2">
             {user && (
-              <Link
-                href="/cart"
-                className="px-3 py-2 inline-block text-center text-gray-700 bg-white shadow-sm border border-gray-200 rounded-md mr-2 relative hover:bg-blue-50"
-                aria-label="Panier"
-                title="Accéder au panier"
-              >
-                <ShoppingCart className="text-gray-400 w-5" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
+              <>
+                {/* Bouton Panier Mobile */}
+                <Link
+                  href="/cart"
+                  className="px-3 py-2 inline-block text-center text-gray-700 bg-white shadow-sm border border-gray-200 rounded-md relative hover:bg-blue-50"
+                  aria-label="Panier"
+                  title="Accéder au panier"
+                >
+                  <ShoppingCart className="text-gray-400 w-5" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+
+                {/* Photo de profil Mobile (remplace hamburger) */}
+                <button
+                  onClick={toggleMobileMenu}
+                  data-profile-toggle
+                  className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-colors"
+                  aria-label={
+                    mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"
+                  }
+                  aria-expanded={mobileMenuOpen}
+                  aria-controls="mobile-menu"
+                >
+                  <Image
+                    alt={`Photo de profil de ${user?.name || "utilisateur"}`}
+                    src={
+                      user?.avatar ? user?.avatar?.url : "/images/default.png"
+                    }
+                    fill
+                    sizes="40px"
+                    className="object-cover"
+                  />
+                </button>
+              </>
             )}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setMobileMenuOpen(!mobileMenuOpen);
-              }}
-              className="px-3 py-2 border border-gray-200 rounded-md text-gray-700"
-              aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
-              aria-expanded={mobileMenuOpen}
-              aria-controls="mobile-menu"
-            >
-              {mobileMenuOpen ? <X /> : <Menu />}
-            </button>
+
+            {/* Menu Hamburger pour utilisateurs non connectés */}
+            {!user && (
+              <button
+                onClick={toggleMobileMenu}
+                className="px-3 py-2 border border-gray-200 rounded-md text-gray-700"
+                aria-label={
+                  mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"
+                }
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
+              >
+                {mobileMenuOpen ? <X /> : <Menu />}
+              </button>
+            )}
           </div>
 
           {/* Search - Desktop */}
@@ -336,9 +364,7 @@ const Header = () => {
 
           {/* User navigation - Desktop */}
           <div className="hidden md:flex items-center space-x-3">
-            {user && (
-              <CartButton cartCount={cartCount} userEmail={user?.email} />
-            )}
+            {user && <CartButton cartCount={cartCount} />}
 
             {!user ? (
               <Link
@@ -369,45 +395,30 @@ const Header = () => {
             </div>
             {user ? (
               <div className="space-y-3">
+                {/* Mon profil réapparaît */}
                 <Link
                   href="/me"
                   onClick={closeMobileMenu}
-                  className="flex items-center space-x-2 px-2 py-2 rounded-md hover:bg-blue-50"
+                  className="block px-2 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md"
                 >
-                  <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-                    <Image
-                      alt={`Photo de profil de ${user?.name || "utilisateur"}`}
-                      src={
-                        user?.avatar ? user?.avatar?.url : "/images/default.png"
-                      }
-                      fill
-                      sizes="32px"
-                      className="object-cover"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">
-                      {user?.name}
-                    </p>
-                  </div>
+                  Mon profil
                 </Link>
 
-                <>
-                  <Link
-                    href="/me/orders"
-                    onClick={closeMobileMenu}
-                    className="block px-2 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md"
-                  >
-                    Mes commandes
-                  </Link>
-                  <Link
-                    href="/me/contact"
-                    onClick={closeMobileMenu}
-                    className="block px-2 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md"
-                  >
-                    Contactez le vendeur
-                  </Link>
-                </>
+                <Link
+                  href="/me/orders"
+                  onClick={closeMobileMenu}
+                  className="block px-2 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md"
+                >
+                  Mes commandes
+                </Link>
+
+                <Link
+                  href="/me/contact"
+                  onClick={closeMobileMenu}
+                  className="block px-2 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md"
+                >
+                  Contactez le vendeur
+                </Link>
 
                 <button
                   onClick={async () => {
