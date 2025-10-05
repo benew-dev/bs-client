@@ -74,7 +74,11 @@ const UserDropdown = memo(({ user }) => {
           <Image
             data-testid="profile image"
             alt={`Photo de profil de ${user?.name || "utilisateur"}`}
-            src={user?.avatar ? user?.avatar?.url : "/images/default.png"}
+            src={
+              user?.avatar?.url !== null
+                ? user?.avatar?.url
+                : "/images/default.png"
+            }
             fill
             sizes="32px"
             className="object-cover"
@@ -135,8 +139,6 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoadingCart, setIsLoadingCart] = useState(false);
   const { data } = useSession();
-
-  console.log(user);
 
   // Refs pour gérer les timeouts
   const loadCartTimeoutRef = useRef(null);
@@ -332,7 +334,9 @@ const Header = () => {
                   <Image
                     alt={`Photo de profil de ${user?.name || "utilisateur"}`}
                     src={
-                      user?.avatar ? user?.avatar?.url : "/images/default.png"
+                      user?.avatar?.url !== null
+                        ? user?.avatar?.url
+                        : "/images/default.png"
                     }
                     fill
                     sizes="40px"
