@@ -23,6 +23,7 @@ import { INCREASE } from "@/helpers/constants";
 // npm install dompurify
 import DOMPurify from "dompurify";
 import { Share2, ShoppingCart, Star, Truck } from "lucide-react";
+import { useSwipeable } from "react-swipeable";
 
 // Chargement dynamique des composants
 const BreadCrumbs = dynamic(() => import("@/components/layouts/BreadCrumbs"), {
@@ -326,67 +327,262 @@ const ProductInfo = memo(function ProductInfo({
   );
 });
 
-const RelatedProducts = memo(function RelatedProducts({
+const RelatedProductsCarousel = memo(function RelatedProductsCarousel({
   products,
   currentProductId,
 }) {
-  // Filtrer les produits pour exclure le produit actuel et limiter à 4 max
+  // États pour la gestion du carrousel
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+  const [slidesPerView, setSlidesPerView] = useState(4);
+
+  // Filtrer les produits pour exclure le produit actuel
   const filteredProducts = useMemo(
     () =>
-      products
-        ?.filter((product) => product?._id !== currentProductId)
-        .slice(0, 4),
+      products?.filter((product) => product?._id !== currentProductId) || [],
     [products, currentProductId],
   );
 
-  // Si isArrayEmpty retourne true, cela signifie que le tableau est vide ou invalide
-  // Donc nous voulons vérifier SI isArrayEmpty est true, ALORS return null
+  // Si aucun produit similaire, ne pas afficher la section
   if (isArrayEmpty(filteredProducts)) {
     return null;
   }
 
+  // Gestion responsive du nombre de slides visibles par vue
+  useEffect(() => {
+    const updateSlidesPerView = () => {
+      const width = window.innerWidth;
+      if (width < 640) {
+        setSlidesPerView(1); // Mobile: 1 slide visible
+      } else if (width < 768) {
+        setSlidesPerView(2); // Small tablet: 2 slides visibles
+      } else if (width < 1024) {
+        setSlidesPerView(3); // Tablet: 3 slides visibles
+      } else {
+        setSlidesPerView(4); // Desktop: 4 slides visibles
+      }
+    };
+
+    updateSlidesPerView();
+    window.addEventListener("resize", updateSlidesPerView);
+    return () => window.removeEventListener("resize", updateSlidesPerView);
+  }, []);
+
+  // Calculer l'index maximum pour la navigation
+  const maxSlideIndex = useMemo(() => {
+    return Math.max(0, filteredProducts.length - slidesPerView);
+  }, [filteredProducts.length, slidesPerView]);
+
+  // Auto-scroll (optionnel - activé par défaut)
+  useEffect(() => {
+    if (!isAutoScrolling || filteredProducts.length <= slidesPerView) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCurrentSlide((prevSlide) => {
+        // Retour au début après le dernier slide
+        if (prevSlide >= maxSlideIndex) {
+          return 0;
+        }
+        return prevSlide + 1;
+      });
+    }, 4000); // 4 secondes entre chaque défilement
+
+    return () => clearInterval(interval);
+  }, [isAutoScrolling, maxSlideIndex, filteredProducts.length, slidesPerView]);
+
+  // Calculer le décalage pour l'animation
+  const translateX = useMemo(() => {
+    // Chaque produit occupe (100 / slidesPerView)% de la largeur visible
+    // On déplace d'un produit à la fois
+    const slideWidth = 100 / slidesPerView;
+    return -(currentSlide * slideWidth);
+  }, [currentSlide, slidesPerView]);
+
+  // Reprendre l'auto-scroll après 10 secondes d'inactivité
+  useEffect(() => {
+    if (!isAutoScrolling) {
+      const timeout = setTimeout(() => {
+        setIsAutoScrolling(true);
+      }, 10000);
+      return () => clearTimeout(timeout);
+    }
+  }, [isAutoScrolling]);
+
+  // Calculer le nombre de "pages" pour les indicateurs (dots)
+  const totalDots = useMemo(() => {
+    // Si on a moins de produits que de slides visibles, pas besoin de pagination
+    if (filteredProducts.length <= slidesPerView) return 0;
+    // Sinon, on a autant de dots que de positions possibles
+    return maxSlideIndex + 1;
+  }, [filteredProducts.length, slidesPerView, maxSlideIndex]);
+
+  // Configuration du swipe avec react-swipeable
+  const handlers = useSwipeable({
+    onSwipedLeft: () => {
+      // Aller au slide suivant
+      if (currentSlide < maxSlideIndex) {
+        setCurrentSlide((prev) => prev + 1);
+        setIsAutoScrolling(false);
+      }
+    },
+    onSwipedRight: () => {
+      // Aller au slide précédent
+      if (currentSlide > 0) {
+        setCurrentSlide((prev) => prev - 1);
+        setIsAutoScrolling(false);
+      }
+    },
+    onSwiping: (eventData) => {
+      // Optionnel : retour visuel pendant le swipe
+      // Vous pouvez utiliser eventData.deltaX pour animer le carousel pendant le swipe
+      setIsAutoScrolling(false);
+    },
+    preventScrollOnSwipe: true, // Empêcher le scroll vertical pendant le swipe horizontal
+    trackMouse: true, // Permettre le swipe avec la souris (utile pour tester)
+    trackTouch: true, // Activer le swipe tactile
+    delta: 50, // Distance minimum pour déclencher un swipe (en pixels)
+    swipeDuration: 500, // Durée maximum du swipe (en ms)
+    rotationAngle: 15, // Angle de tolérance pour détecter un swipe horizontal
+  });
+
   return (
     <section aria-labelledby="related-heading" className="mt-12">
-      <h2
-        id="related-heading"
-        className="font-bold text-xl sm:text-2xl mb-5 text-gray-800"
-      >
-        Produits similaires
-      </h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2
+          id="related-heading"
+          className="font-bold text-xl sm:text-2xl text-gray-800"
+        >
+          Produits similaires
+        </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
-          <Link
-            key={product?._id}
-            href={`/product/${product?._id}`}
-            className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 hover:border-blue-100 transform hover:-translate-y-1"
-          >
-            <div className="aspect-w-1 aspect-h-1 mb-4 bg-gray-100 rounded-lg overflow-hidden">
-              <Image
-                src={product?.images?.[0]?.url || "/images/default_product.png"}
-                alt={product?.name || "Produit similaire"}
-                width={200}
-                height={200}
-                className="object-contain w-full h-full group-hover:scale-105 transition-transform duration-300"
-                loading="lazy" // Chargement différé
-                placeholder="blur"
-                blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAEtAJJXIDTiQAAAABJRU5ErkJggg=="
-                onError={(e) => {
-                  e.target.src = "/images/default_product.png";
-                }}
-              />
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-800 mb-1 group-hover:text-blue-600 transition-colors line-clamp-2">
-                {product?.name || "Produit sans nom"}
-              </h3>
-              <p className="font-bold text-blue-600">
-                {formatPrice(product?.price)}
-              </p>
-            </div>
-          </Link>
-        ))}
+        {/* Indicateur du nombre de produits */}
+        <span className="text-sm text-gray-500">
+          {filteredProducts.length} produit
+          {filteredProducts.length > 1 ? "s" : ""}
+        </span>
       </div>
+
+      {/* Container du carrousel */}
+      <div className="relative group">
+        {/* Container avec overflow hidden */}
+        <div {...handlers} className="overflow-hidden rounded-lg">
+          <div
+            className="flex transition-transform duration-500 ease-in-out"
+            style={{
+              transform: `translateX(${translateX}%)`,
+            }}
+          >
+            {/* CHAQUE PRODUIT = UN SLIDE INDIVIDUEL */}
+            {filteredProducts.map((product) => (
+              <div
+                key={product?._id}
+                className="flex-shrink-0 px-2"
+                style={{
+                  // Chaque slide occupe exactement la largeur nécessaire selon slidesPerView
+                  width: `${100 / slidesPerView}%`,
+                }}
+              >
+                <Link
+                  href={`/product/${product?._id}`}
+                  className="group/card block bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 hover:border-blue-100 transform hover:-translate-y-1 h-full"
+                >
+                  {/* Image du produit */}
+                  <div className="aspect-square mb-4 bg-gray-100 rounded-lg overflow-hidden relative">
+                    <Image
+                      src={
+                        product?.images?.[0]?.url ||
+                        "/images/default_product.png"
+                      }
+                      alt={product?.name || "Produit similaire"}
+                      fill
+                      className="object-contain group-hover/card:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      onError={(e) => {
+                        e.target.src = "/images/default_product.png";
+                      }}
+                    />
+
+                    {/* Badge si le produit est nouveau */}
+                    {product?.createdAt &&
+                      new Date(product.createdAt) >
+                        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) && (
+                        <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-medium">
+                          Nouveau
+                        </div>
+                      )}
+
+                    {/* Badge si rupture de stock */}
+                    {product?.stock === 0 && (
+                      <div className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full font-medium">
+                        Épuisé
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Informations du produit */}
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-gray-800 group-hover/card:text-blue-600 transition-colors line-clamp-2 text-sm leading-tight min-h-[2.5rem]">
+                      {product?.name || "Produit sans nom"}
+                    </h3>
+
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-blue-600 text-lg">
+                        {formatPrice(product?.price)}
+                      </p>
+
+                      {/* Indicateur de stock */}
+                      {product?.stock > 0 && (
+                        <span className="text-xs text-green-600 font-medium">
+                          En stock
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Catégorie */}
+                    {product?.category?.categoryName && (
+                      <p className="text-xs text-gray-500">
+                        {product.category.categoryName}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Indicateurs de pagination (dots) - Seulement si navigation nécessaire */}
+        {totalDots > 1 && (
+          <div className="flex justify-center mt-4 space-x-2">
+            {Array.from({ length: totalDots }).map((_, dotIndex) => (
+              <button
+                key={dotIndex}
+                onClick={() => {
+                  setCurrentSlide(dotIndex);
+                  setIsAutoScrolling(false);
+                }}
+                className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                  dotIndex === currentSlide
+                    ? "bg-blue-600 w-6"
+                    : "bg-gray-300 hover:bg-gray-400"
+                }`}
+                aria-label={`Aller à la position ${dotIndex + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Message si tous les produits sont visibles */}
+      {filteredProducts.length <= slidesPerView &&
+        filteredProducts.length > 0 && (
+          <p className="text-center text-sm text-gray-500 mt-4">
+            Tous les produits similaires sont affichés
+          </p>
+        )}
     </section>
   );
 });
@@ -612,7 +808,7 @@ function ProductDetails({ product, sameCategoryProducts }) {
         </div>
 
         {/* Produits connexes */}
-        <RelatedProducts
+        <RelatedProductsCarousel
           products={sameCategoryProducts}
           currentProductId={product._id}
         />
