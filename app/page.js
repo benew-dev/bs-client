@@ -229,9 +229,10 @@ const getCategories = async () => {
 };
 
 const HomePage = async ({ searchParams }) => {
+  const params = await searchParams;
   // Lance les deux promesses en parallèle
   const [productsData, categoriesData] = await Promise.all([
-    getAllProducts(searchParams),
+    getAllProducts(params),
     getCategories(),
   ]).catch((err) => {
     // Gère une erreur si l'une des promesses échoue

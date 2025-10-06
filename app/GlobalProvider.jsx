@@ -11,15 +11,15 @@ import "react-toastify/dist/ReactToastify.css";
 
 export function GlobalProvider({ children }) {
   return (
-    <>
-      <ToastContainer position="bottom-right" />
+    <SessionProvider>
       <AuthProvider>
         <CartProvider>
           <OrderProvider>
-            <SessionProvider>{children}</SessionProvider>
+            <ToastContainer position="bottom-right" />
+            {children}
           </OrderProvider>
         </CartProvider>
       </AuthProvider>
-    </>
+    </SessionProvider>
   );
 }
