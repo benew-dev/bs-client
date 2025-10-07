@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
+import { useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 // import { searchSchema } from '@/helpers/schemas';
 
 // Fonction de debounce pour limiter les requêtes
@@ -23,7 +23,7 @@ const useDebounce = (fn, delay) => {
 };
 
 const Search = ({ setLoading }) => {
-  const [keyword, setKeyword] = useState('');
+  const [keyword, setKeyword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const inputRef = useRef(null);
@@ -46,8 +46,8 @@ const Search = ({ setLoading }) => {
 
       try {
         // Vérification simple avant validation
-        if (!keyword || keyword.trim() === '') {
-          toast.error('Veuillez entrer un terme de recherche');
+        if (!keyword || keyword.trim() === "") {
+          toast.error("Veuillez entrer un terme de recherche");
           setLoading?.(false);
           setIsSubmitting(false);
           return;
@@ -68,7 +68,7 @@ const Search = ({ setLoading }) => {
         } else {
           // Afficher une erreur générique plus conviviale
           toast.error(
-            error.message || 'Une erreur est survenue lors de la recherche',
+            error.message || "Une erreur est survenue lors de la recherche",
           );
         }
 
@@ -85,7 +85,7 @@ const Search = ({ setLoading }) => {
   // Gérer l'appui sur la touche Entrée
   const handleKeyDown = useCallback(
     (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === "Enter") {
         e.preventDefault();
         debouncedSubmit(e); // Utiliser debouncedSubmit au lieu de submitHandler
       }
@@ -119,14 +119,14 @@ const Search = ({ setLoading }) => {
         type="button"
         className={`px-4 py-2 inline-block border border-transparent ${
           isSubmitting
-            ? 'bg-blue-400 cursor-not-allowed'
-            : 'bg-blue-600 hover:bg-blue-700'
+            ? "bg-blue-400 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700"
         } text-white rounded-md transition-colors`}
         onClick={debouncedSubmit} // Utiliser debouncedSubmit ici
         disabled={isSubmitting}
         aria-label="Lancer la recherche"
       >
-        {isSubmitting ? 'Recherche...' : 'Rechercher'}
+        {isSubmitting ? "Recherche..." : "Rechercher"}
       </button>
     </form>
   );

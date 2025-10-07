@@ -119,8 +119,8 @@ const Filters = ({ categories, setLocalLoading }) => {
 
   // Réinitialiser les filtres
   const resetFilters = useCallback(() => {
-    setIsSubmitting(true);
-    setLocalLoading(true);
+    setIsSubmitting(false);
+    setLocalLoading(false);
     setMin("");
     setMax("");
     router.push("/");
