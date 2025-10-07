@@ -1,38 +1,34 @@
 /**
- * Rate Limiter moderne avec LRU Cache pour Next.js 15
- * Optimisé pour ~500 visiteurs/jour sur VPS Ubuntu avec PM2 (mono-processus)
+ * Rate Limiter Intelligent avec stratégies différenciées
+ * Optimisé pour e-commerce avec ~500 visiteurs/jour
  *
- * Features 2025:
- * - Algorithme Sliding Window Log pour une précision optimale
- * - LRU Cache pour limiter la consommation mémoire
- * - Headers conformes IETF draft-ietf-httpapi-ratelimit-headers-09
- * - Protection DDoS avec détection de patterns d'attaque
- * - Support différencié par rôle utilisateur
- * - Métriques exportables vers Sentry
+ * Features:
+ * - Rate limiting différencié par type d'action (login, logout, payment, etc.)
+ * - Comptage séparé des succès et échecs
+ * - Whitelist automatique après connexion réussie
+ * - Protection DDoS avec détection de patterns
+ * - Support multi-stratégies par endpoint
  *
- * @version 2.1.0
- * @date 2025-09-23
+ * @version 3.0.0
+ * @date 2025-10-06
  */
 
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 /**
- * Classe LRU Cache optimisée pour le rate limiting
- * Limite automatiquement la taille des Maps pour éviter les memory leaks
+ * LRU Cache optimisé avec TTL
  */
 class LRUCache extends Map {
   constructor(maxSize = 1000, ttl = 3600000) {
     super();
     this.maxSize = maxSize;
-    this.ttl = ttl; // Time to live en ms
+    this.ttl = ttl;
     this.timestamps = new Map();
   }
 
   set(key, value) {
-    // Supprimer les entrées expirées
     this.cleanup();
 
-    // Si la taille max est atteinte, supprimer le plus ancien
     if (this.size >= this.maxSize && !this.has(key)) {
       const firstKey = this.keys().next().value;
       this.delete(firstKey);
@@ -74,170 +70,297 @@ class LRUCache extends Map {
 }
 
 /**
- * Configuration des limites par endpoint et par rôle
- * Basé sur les recommandations 2025 pour Next.js
+ * Configuration intelligente par type d'action
+ * Stratégies différenciées pour chaque cas d'usage
  */
-const RATE_LIMITS = {
-  // Endpoints publics
-  public: {
-    api: { points: 60, duration: 60000, blockDuration: 60000 }, // 60 req/min
-    search: { points: 20, duration: 60000, blockDuration: 120000 }, // 20 req/min
+const INTELLIGENT_LIMITS = {
+  // AUTH - Stratégies différenciées
+  auth: {
+    // Login failures - très strict
+    loginFailure: {
+      points: 5, // 5 échecs max
+      duration: 900000, // par 15 minutes
+      blockDuration: 1800000, // blocage 30 min
+      keyStrategy: "ip+email", // Track par IP ET email
+    },
+    // Login success - permissif
+    loginSuccess: {
+      points: 30, // 30 connexions réussies
+      duration: 60000, // par minute
+      blockDuration: 60000, // blocage 1 min seulement
+      keyStrategy: "ip",
+    },
+    // Logout - très permissif (pas de raison de limiter)
+    logout: {
+      points: 100, // 100 déconnexions
+      duration: 60000, // par minute
+      blockDuration: 0, // pas de blocage
+      keyStrategy: "user",
+    },
+    // Session check - ultra permissif (appelé fréquemment)
+    session: {
+      points: 200, // 200 checks
+      duration: 60000, // par minute
+      blockDuration: 0,
+      keyStrategy: "ip",
+    },
+    // Password reset - strict
+    passwordReset: {
+      points: 3, // 3 tentatives
+      duration: 3600000, // par heure
+      blockDuration: 3600000, // blocage 1h
+      keyStrategy: "ip+email",
+    },
   },
-  // Endpoints authentifiés
-  authenticated: {
-    api: { points: 120, duration: 60000, blockDuration: 60000 }, // 120 req/min
-    upload: { points: 10, duration: 300000, blockDuration: 600000 }, // 10/5min
+
+  // PAYMENT - Permissif pour les vrais utilisateurs
+  payment: {
+    // Webhook de paiement - permissif
+    webhook: {
+      points: 10, // 10 webhooks
+      duration: 60000, // par minute
+      blockDuration: 300000, // blocage 5 min
+      keyStrategy: "user",
+      requireAuth: true, // Doit être authentifié
+    },
+    // Création de commande - modéré
+    createOrder: {
+      points: 5, // 5 commandes
+      duration: 300000, // par 5 minutes
+      blockDuration: 600000, // blocage 10 min
+      keyStrategy: "user",
+      requireAuth: true,
+    },
+    // Vérification de paiement - permissif
+    checkStatus: {
+      points: 30, // 30 vérifications
+      duration: 60000, // par minute
+      blockDuration: 60000,
+      keyStrategy: "user",
+    },
   },
-  // Endpoints critiques
-  critical: {
-    auth: { points: 5, duration: 900000, blockDuration: 1800000 }, // 5/15min
-    payment: { points: 3, duration: 300000, blockDuration: 3600000 }, // 3/5min
-    password: { points: 3, duration: 3600000, blockDuration: 3600000 }, // 3/h
+
+  // API - Stratégies par type
+  api: {
+    // Lecture publique - permissif
+    publicRead: {
+      points: 100, // 100 requêtes
+      duration: 60000, // par minute
+      blockDuration: 60000,
+      keyStrategy: "ip",
+    },
+    // Lecture authentifiée - très permissif
+    authenticatedRead: {
+      points: 200, // 200 requêtes
+      duration: 60000, // par minute
+      blockDuration: 30000,
+      keyStrategy: "user",
+    },
+    // Écriture - modéré
+    write: {
+      points: 30, // 30 écritures
+      duration: 60000, // par minute
+      blockDuration: 300000,
+      keyStrategy: "user",
+      requireAuth: true,
+    },
+    // Upload - strict
+    upload: {
+      points: 10, // 10 uploads
+      duration: 300000, // par 5 minutes
+      blockDuration: 600000,
+      keyStrategy: "user",
+      requireAuth: true,
+    },
+    // Recherche - modéré
+    search: {
+      points: 30, // 30 recherches
+      duration: 60000, // par minute
+      blockDuration: 120000,
+      keyStrategy: "ip",
+    },
   },
-  // Utilisateurs premium (si applicable)
-  premium: {
-    api: { points: 500, duration: 60000, blockDuration: 30000 }, // 500 req/min
+
+  // CART - Très permissif (UX critique)
+  cart: {
+    // Ajout au panier - ultra permissif
+    add: {
+      points: 100, // 100 ajouts
+      duration: 60000, // par minute
+      blockDuration: 0, // pas de blocage
+      keyStrategy: "session",
+    },
+    // Mise à jour - permissif
+    update: {
+      points: 100,
+      duration: 60000,
+      blockDuration: 0,
+      keyStrategy: "session",
+    },
+    // Suppression - permissif
+    remove: {
+      points: 50,
+      duration: 60000,
+      blockDuration: 0,
+      keyStrategy: "session",
+    },
   },
 };
 
 /**
- * Sliding Window Log - Algorithme recommandé en 2025
- * Plus précis que Fixed Window, moins complexe que Sliding Window Counter
+ * Gestionnaire de rate limiting intelligent
  */
-class SlidingWindowRateLimiter {
-  constructor(maxRequests = 2000, maxBlocked = 500) {
-    // LRU Caches avec limites de taille
-    this.requests = new LRUCache(maxRequests, 3600000); // TTL 1h
-    this.blocked = new LRUCache(maxBlocked, 1800000); // TTL 30min
-    this.metrics = new LRUCache(100, 300000); // Métriques, TTL 5min
+class IntelligentRateLimiter {
+  constructor() {
+    // Caches séparés par stratégie
+    this.requestLogs = new LRUCache(3000, 3600000); // TTL 1h
+    this.failures = new LRUCache(1000, 1800000); // TTL 30min
+    this.blocked = new LRUCache(500, 1800000); // TTL 30min
+    this.trustedUsers = new LRUCache(500, 86400000); // TTL 24h
+    this.suspiciousActivity = new Map();
 
-    // Whitelist et configuration
+    // Whitelist permanente
     this.whitelist = new Set([
-      '127.0.0.1',
-      '::1',
-      // Ajouter IPs de monitoring, CDN, etc.
+      "127.0.0.1",
+      "::1",
+      // Ajouter IPs de confiance
     ]);
 
-    // Pattern detection pour anti-DDoS
-    this.suspiciousPatterns = new Map();
+    // Statistiques
+    this.stats = {
+      totalRequests: 0,
+      blockedRequests: 0,
+      failedLogins: 0,
+      successfulLogins: 0,
+    };
 
-    // Cleanup automatique
     this.startCleanupInterval();
   }
 
   /**
-   * Extraction d'IP robuste avec support IPv6
+   * Extraction d'IP robuste
    */
   extractIP(req) {
-    // Headers dans l'ordre de priorité
     const headers = [
-      'cf-connecting-ip', // Cloudflare
-      'x-real-ip', // Nginx proxy
-      'x-forwarded-for', // Standard proxy
-      'x-client-ip', // Autres proxies
+      "cf-connecting-ip",
+      "x-real-ip",
+      "x-forwarded-for",
+      "x-client-ip",
     ];
 
     for (const header of headers) {
       const value = req.headers.get(header);
       if (value) {
-        // Prendre la première IP valide (IPv4 ou IPv6)
-        const ips = value.split(',').map((ip) => ip.trim());
+        const ips = value.split(",").map((ip) => ip.trim());
         const validIP = ips.find((ip) => this.isValidIP(ip));
         if (validIP) return validIP;
       }
     }
 
-    // Fallback
-    return req.ip || '0.0.0.0';
+    return req.ip || "0.0.0.0";
   }
 
-  /**
-   * Validation d'IP (IPv4 et IPv6)
-   */
   isValidIP(ip) {
-    // IPv4
     const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-    // IPv6 simplifié
     const ipv6Regex = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/;
-
     return ipv4Regex.test(ip) || ipv6Regex.test(ip);
   }
 
   /**
-   * Génération d'un identifiant unique pour le rate limiting
+   * Génération de clé intelligente selon la stratégie
    */
-  generateKey(ip, userId = null, endpoint = 'api') {
-    if (userId) {
-      // Pour les utilisateurs authentifiés, combiner IP + userId
-      return `${endpoint}:user:${userId}:${ip}`;
+  generateKey(strategy, { ip, userId, email, sessionId, action }) {
+    const parts = [`rl:${action}`];
+
+    switch (strategy.keyStrategy) {
+      case "ip":
+        parts.push(`ip:${ip}`);
+        break;
+      case "user":
+        parts.push(`user:${userId || "anonymous"}`);
+        break;
+      case "ip+email":
+        parts.push(`ip:${ip}`, `email:${email || "unknown"}`);
+        break;
+      case "ip+user":
+        parts.push(`ip:${ip}`, `user:${userId || "anonymous"}`);
+        break;
+      case "session":
+        parts.push(`session:${sessionId || ip}`);
+        break;
+      default:
+        parts.push(`ip:${ip}`);
     }
-    return `${endpoint}:ip:${ip}`;
+
+    return parts.join(":");
   }
 
   /**
-   * Algorithme Sliding Window Log
+   * Vérification intelligente du rate limit
    */
-  isRateLimited(key, limit) {
+  checkRateLimit(key, strategy) {
     const now = Date.now();
-    const windowStart = now - limit.duration;
+    const windowStart = now - strategy.duration;
 
-    // Récupérer ou initialiser le log des requêtes
-    let requestLog = this.requests.get(key) || [];
+    // Récupérer le log des requêtes
+    let requestLog = this.requestLogs.get(key) || [];
 
-    // Filtrer les requêtes dans la fenêtre courante
+    // Filtrer les requêtes dans la fenêtre
     requestLog = requestLog.filter((timestamp) => timestamp > windowStart);
 
     // Vérifier la limite
-    if (requestLog.length >= limit.points) {
-      return {
-        limited: true,
-        remaining: 0,
-        resetAt: Math.min(...requestLog) + limit.duration,
-        retryAfter: Math.ceil(
-          (Math.min(...requestLog) + limit.duration - now) / 1000,
-        ),
-      };
-    }
+    const isLimited = requestLog.length >= strategy.points;
 
-    // Ajouter la requête actuelle
-    requestLog.push(now);
-    this.requests.set(key, requestLog);
+    if (!isLimited) {
+      // Ajouter la requête actuelle
+      requestLog.push(now);
+      this.requestLogs.set(key, requestLog);
+    }
 
     return {
-      limited: false,
-      remaining: limit.points - requestLog.length,
-      resetAt: windowStart + limit.duration,
-      retryAfter: 0,
+      limited: isLimited,
+      remaining: Math.max(0, strategy.points - requestLog.length),
+      resetAt: windowStart + strategy.duration,
+      retryAfter: isLimited
+        ? Math.ceil((windowStart + strategy.duration - now) / 1000)
+        : 0,
     };
   }
 
   /**
-   * Détection de patterns d'attaque
+   * Gestion intelligente des échecs de connexion
    */
-  detectSuspiciousActivity(ip) {
-    const pattern = this.suspiciousPatterns.get(ip) || {
-      count: 0,
-      firstSeen: Date.now(),
-    };
-    pattern.count++;
+  handleLoginAttempt(ip, email, success) {
+    const failureKey = `failures:${ip}:${email}`;
 
-    // Reset après 1 minute
-    if (Date.now() - pattern.firstSeen > 60000) {
-      pattern.count = 1;
-      pattern.firstSeen = Date.now();
+    if (success) {
+      // Reset les compteurs d'échec en cas de succès
+      this.failures.delete(failureKey);
+      this.stats.successfulLogins++;
+
+      // Ajouter à la liste de confiance temporaire
+      this.trustedUsers.set(`trusted:${ip}`, {
+        email,
+        loginTime: Date.now(),
+      });
+    } else {
+      // Incrémenter les échecs
+      const failures = (this.failures.get(failureKey) || 0) + 1;
+      this.failures.set(failureKey, failures);
+      this.stats.failedLogins++;
+
+      // Bloquer après trop d'échecs
+      if (failures >= 5) {
+        this.blockIP(ip, 1800000, "too_many_login_failures");
+      }
     }
-
-    this.suspiciousPatterns.set(ip, pattern);
-
-    // Seuil d'activité suspecte : plus de 200 requêtes/minute
-    return pattern.count > 200;
   }
 
   /**
-   * Vérification du blocage
+   * Vérification si IP/User est bloqué
    */
-  isBlocked(ip) {
-    const blockInfo = this.blocked.get(ip);
+  isBlocked(key) {
+    const blockInfo = this.blocked.get(key);
     if (!blockInfo) return null;
 
     const now = Date.now();
@@ -250,211 +373,241 @@ class SlidingWindowRateLimiter {
       };
     }
 
-    this.blocked.delete(ip);
+    this.blocked.delete(key);
     return null;
   }
 
   /**
-   * Bloquer une IP
+   * Bloquer une IP/User
    */
-  blockIP(ip, duration, reason = 'rate_limit_exceeded') {
+  blockIP(ip, duration, reason) {
+    if (duration === 0) return; // Pas de blocage si duration = 0
+
     const until = Date.now() + duration;
-    this.blocked.set(ip, {
+    this.blocked.set(`blocked:${ip}`, {
       until,
       reason,
-      count: (this.blocked.get(ip)?.count || 0) + 1,
+      count: (this.blocked.get(`blocked:${ip}`)?.count || 0) + 1,
     });
 
-    // Log pour Sentry
-    this.logMetric('ip_blocked', { ip, reason, duration });
+    this.stats.blockedRequests++;
+    console.warn(`[RATE_LIMIT] IP blocked: ${ip}, reason: ${reason}`);
   }
 
   /**
-   * Enregistrement des métriques
+   * Détection d'activité suspecte
    */
-  logMetric(event, data) {
-    const minute = Math.floor(Date.now() / 60000);
-    const key = `metrics:${minute}`;
-    const metrics = this.metrics.get(key) || {
-      events: [],
-      timestamp: Date.now(),
+  detectSuspiciousActivity(ip, action) {
+    const key = `suspicious:${ip}`;
+    const activity = this.suspiciousActivity.get(key) || {
+      actions: [],
+      firstSeen: Date.now(),
     };
 
-    metrics.events.push({
-      event,
-      data,
-      timestamp: Date.now(),
-    });
+    activity.actions.push({ action, timestamp: Date.now() });
 
-    this.metrics.set(key, metrics);
-
-    // Hook pour Sentry (à implémenter selon votre config)
-    if (event === 'ip_blocked' || event === 'ddos_detected') {
-      console.warn(`[RATE_LIMIT] ${event}:`, data);
-      // TODO: Sentry.captureMessage(`Rate limit: ${event}`, 'warning', { extra: data });
+    // Garder seulement les 100 dernières actions
+    if (activity.actions.length > 100) {
+      activity.actions = activity.actions.slice(-100);
     }
+
+    this.suspiciousActivity.set(key, activity);
+
+    // Analyser les patterns
+    const recentActions = activity.actions.filter(
+      (a) => Date.now() - a.timestamp < 60000, // Dernière minute
+    );
+
+    // Patterns suspects
+    if (recentActions.length > 100) {
+      // Plus de 100 actions/minute
+      return "excessive_requests";
+    }
+
+    const failedLogins = recentActions.filter(
+      (a) => a.action === "login_failure",
+    ).length;
+    if (failedLogins > 10) {
+      // Plus de 10 échecs de connexion/minute
+      return "brute_force_attempt";
+    }
+
+    return null;
   }
 
   /**
-   * Export des métriques pour monitoring
+   * Vérifier si l'utilisateur est de confiance
    */
-  getMetrics() {
-    const metrics = {
-      requests_cache_size: this.requests.size,
-      blocked_ips_count: this.blocked.size,
-      suspicious_ips_count: this.suspiciousPatterns.size,
-      events: [],
-    };
-
-    for (const [_, data] of this.metrics.entries()) {
-      metrics.events.push(...data.events);
-    }
-
-    return metrics;
+  isTrusted(ip, userId) {
+    return (
+      this.whitelist.has(ip) ||
+      this.trustedUsers.has(`trusted:${ip}`) ||
+      (userId && this.trustedUsers.has(`trusted:user:${userId}`))
+    );
   }
 
   /**
-   * Nettoyage automatique périodique
+   * Nettoyage périodique
    */
   startCleanupInterval() {
-    if (typeof setInterval === 'undefined') return;
+    if (typeof setInterval === "undefined") return;
 
-    // Nettoyage toutes les 2 minutes
     setInterval(() => {
-      // Cleanup des LRU caches
-      this.requests.cleanup();
+      // Cleanup des caches
+      this.requestLogs.cleanup();
+      this.failures.cleanup();
       this.blocked.cleanup();
-      this.metrics.cleanup();
+      this.trustedUsers.cleanup();
 
-      // Cleanup des patterns suspects anciens
+      // Cleanup des activités suspectes anciennes
       const now = Date.now();
-      for (const [ip, pattern] of this.suspiciousPatterns.entries()) {
-        if (now - pattern.firstSeen > 300000) {
-          // 5 minutes
-          this.suspiciousPatterns.delete(ip);
+      for (const [key, activity] of this.suspiciousActivity.entries()) {
+        if (now - activity.firstSeen > 3600000) {
+          // 1 heure
+          this.suspiciousActivity.delete(key);
         }
       }
 
-      // Log de santé
-      if (this.requests.size > this.requests.maxSize * 0.8) {
-        console.warn('[RATE_LIMIT] Cache requests proche de la limite:', {
-          current: this.requests.size,
-          max: this.requests.maxSize,
-        });
+      // Log des stats
+      if (process.env.NODE_ENV === "development") {
+        console.log("[RATE_LIMIT] Stats:", this.stats);
       }
     }, 120000); // 2 minutes
+  }
+
+  /**
+   * Récupérer les statistiques
+   */
+  getStats() {
+    return {
+      ...this.stats,
+      cacheSize: {
+        requests: this.requestLogs.size,
+        failures: this.failures.size,
+        blocked: this.blocked.size,
+        trusted: this.trustedUsers.size,
+      },
+    };
   }
 }
 
 // Instance singleton
-const rateLimiter = new SlidingWindowRateLimiter();
+const intelligentLimiter = new IntelligentRateLimiter();
 
 /**
- * Middleware principal de rate limiting
+ * Middleware principal avec stratégies intelligentes
  */
-export function withRateLimit(handler, options = {}) {
+export function withIntelligentRateLimit(handler, options = {}) {
   const {
-    type = 'public',
-    endpoint = 'api',
-    customLimit = null,
-    getUserRole = null,
-    skipWhitelist = false,
+    category = "api",
+    action = "publicRead",
+    extractUserInfo = null,
+    onSuccess = null,
+    onFailure = null,
+    customStrategy = null,
   } = options;
 
   return async function rateLimitedHandler(req, ...args) {
     try {
-      const ip = rateLimiter.extractIP(req);
+      const ip = intelligentLimiter.extractIP(req);
 
-      // Skip pour whitelist (sauf si explicitement désactivé)
-      if (!skipWhitelist && rateLimiter.whitelist.has(ip)) {
-        return handler(req, ...args);
+      // Récupérer les infos utilisateur si disponibles
+      let userInfo = { ip };
+      if (extractUserInfo && typeof extractUserInfo === "function") {
+        const extracted = await extractUserInfo(req);
+        userInfo = { ...userInfo, ...extracted };
       }
 
-      // Vérifier si IP bloquée
-      const blockInfo = rateLimiter.isBlocked(ip);
+      // Sélectionner la stratégie
+      const strategy =
+        customStrategy ||
+        INTELLIGENT_LIMITS[category]?.[action] ||
+        INTELLIGENT_LIMITS.api.publicRead;
+
+      // Vérifier si l'utilisateur est de confiance (bypass partiel)
+      const isTrusted = intelligentLimiter.isTrusted(ip, userInfo.userId);
+
+      // Si trusted, doubler les limites
+      const effectiveStrategy = isTrusted
+        ? {
+            ...strategy,
+            points: strategy.points * 2,
+            blockDuration: strategy.blockDuration / 2,
+          }
+        : strategy;
+
+      // Vérifier si authentification requise
+      if (strategy.requireAuth && !userInfo.userId) {
+        return NextResponse.json(
+          { error: "Authentication required" },
+          { status: 401 },
+        );
+      }
+
+      // Générer la clé de rate limiting
+      const key = intelligentLimiter.generateKey(effectiveStrategy, {
+        ...userInfo,
+        action: `${category}:${action}`,
+      });
+
+      // Vérifier si bloqué
+      const blockInfo = intelligentLimiter.isBlocked(`blocked:${ip}`);
       if (blockInfo) {
         return NextResponse.json(
           {
-            error: 'Access temporarily blocked',
+            error: "Access temporarily blocked",
             reason: blockInfo.reason,
             retryAfter: blockInfo.retryAfter,
           },
           {
             status: 429,
             headers: {
-              'Retry-After': blockInfo.retryAfter.toString(),
-              'X-RateLimit-Policy': '429-blocked',
+              "Retry-After": blockInfo.retryAfter.toString(),
+              "X-RateLimit-Policy": "429-blocked",
             },
           },
         );
       }
 
       // Détection d'activité suspecte
-      if (rateLimiter.detectSuspiciousActivity(ip)) {
-        rateLimiter.blockIP(ip, 1800000, 'suspicious_activity'); // 30min
-        rateLimiter.logMetric('ddos_detected', { ip });
-
+      const suspiciousType = intelligentLimiter.detectSuspiciousActivity(
+        ip,
+        `${category}:${action}`,
+      );
+      if (suspiciousType) {
+        intelligentLimiter.blockIP(ip, 1800000, suspiciousType);
         return NextResponse.json(
-          { error: 'Suspicious activity detected' },
+          { error: "Suspicious activity detected" },
           { status: 429 },
         );
       }
 
-      // Déterminer le rôle et les limites
-      let userRole = type;
-      let userId = null;
-
-      if (getUserRole && typeof getUserRole === 'function') {
-        const roleInfo = await getUserRole(req);
-        if (roleInfo) {
-          userRole = roleInfo.role || type;
-          userId = roleInfo.userId;
-        }
-      }
-
-      // Sélectionner la limite appropriée
-      const limit =
-        customLimit ||
-        RATE_LIMITS[userRole]?.[endpoint] ||
-        RATE_LIMITS.public.api;
-
-      // Générer la clé unique
-      const key = rateLimiter.generateKey(ip, userId, endpoint);
-
       // Vérifier le rate limit
-      const result = rateLimiter.isRateLimited(key, limit);
+      const result = intelligentLimiter.checkRateLimit(key, effectiveStrategy);
 
       if (result.limited) {
-        // Incrémenter le compteur de violations
-        const violations =
-          (rateLimiter.requests.get(`violations:${ip}`) || 0) + 1;
-        rateLimiter.requests.set(`violations:${ip}`, violations);
-
-        // Bloquer si trop de violations
-        if (violations > 10) {
-          rateLimiter.blockIP(ip, limit.blockDuration, 'repeated_violations');
+        // Appeler le callback d'échec si fourni
+        if (onFailure) {
+          await onFailure(userInfo);
         }
 
         return NextResponse.json(
           {
-            error: 'Rate limit exceeded',
-            limit: limit.points,
-            window: `${limit.duration / 1000}s`,
+            error: "Rate limit exceeded",
+            limit: effectiveStrategy.points,
+            window: `${effectiveStrategy.duration / 1000}s`,
             retryAfter: result.retryAfter,
           },
           {
             status: 429,
             headers: {
-              // Headers legacy pour rétrocompatibilité
-              'X-RateLimit-Limit': limit.points.toString(),
-              'X-RateLimit-Remaining': '0',
-              'X-RateLimit-Reset': new Date(result.resetAt).toISOString(),
-              'Retry-After': result.retryAfter.toString(),
-              // Headers IETF draft-ietf-httpapi-ratelimit-headers-09 (2025 standard)
-              'RateLimit-Limit': limit.points.toString(),
-              'RateLimit-Remaining': '0',
-              'RateLimit-Reset': result.retryAfter.toString(),
-              'RateLimit-Policy': `"default";q=${limit.points};w=${limit.duration / 1000}`,
+              "X-RateLimit-Limit": effectiveStrategy.points.toString(),
+              "X-RateLimit-Remaining": "0",
+              "X-RateLimit-Reset": new Date(result.resetAt).toISOString(),
+              "Retry-After": result.retryAfter.toString(),
+              "RateLimit-Limit": effectiveStrategy.points.toString(),
+              "RateLimit-Remaining": "0",
+              "RateLimit-Reset": result.retryAfter.toString(),
             },
           },
         );
@@ -463,161 +616,150 @@ export function withRateLimit(handler, options = {}) {
       // Exécuter le handler
       const response = await handler(req, ...args);
 
-      // Ajouter les headers de rate limit à la réponse
+      // Appeler le callback de succès si fourni
+      if (onSuccess) {
+        await onSuccess(userInfo, response);
+      }
+
+      // Ajouter les headers de rate limit
       if (response instanceof NextResponse) {
-        // Headers legacy pour rétrocompatibilité
-        response.headers.set('X-RateLimit-Limit', limit.points.toString());
         response.headers.set(
-          'X-RateLimit-Remaining',
+          "X-RateLimit-Limit",
+          effectiveStrategy.points.toString(),
+        );
+        response.headers.set(
+          "X-RateLimit-Remaining",
           result.remaining.toString(),
         );
         response.headers.set(
-          'X-RateLimit-Reset',
+          "X-RateLimit-Reset",
           new Date(result.resetAt).toISOString(),
-        );
-        // Headers IETF draft-ietf-httpapi-ratelimit-headers-09 (2025)
-        response.headers.set('RateLimit-Limit', limit.points.toString());
-        response.headers.set(
-          'RateLimit-Remaining',
-          result.remaining.toString(),
-        );
-        response.headers.set(
-          'RateLimit-Reset',
-          Math.ceil(result.resetAt / 1000).toString(),
-        );
-        response.headers.set(
-          'RateLimit-Policy',
-          `"default";q=${limit.points};w=${limit.duration / 1000}`,
         );
       }
 
+      // Incrémenter les stats
+      intelligentLimiter.stats.totalRequests++;
+
       return response;
     } catch (error) {
-      console.error('[RATE_LIMIT] Error:', error);
-      rateLimiter.logMetric('error', {
-        message: error.message,
-        stack: error.stack,
-      });
-
-      // En cas d'erreur, laisser passer la requête
+      console.error("[RATE_LIMIT] Error:", error);
+      // En cas d'erreur, laisser passer
       return handler(req, ...args);
     }
   };
 }
 
 /**
- * Helpers pré-configurés pour différents cas d'usage
+ * Helpers spécialisés pour l'authentification
  */
-export const withAuthRateLimit = (handler, options = {}) =>
-  withRateLimit(handler, { ...options, type: 'critical', endpoint: 'auth' });
-
-export const withApiRateLimit = (handler, options = {}) =>
-  withRateLimit(handler, { ...options, type: 'public', endpoint: 'api' });
-
-export const withPaymentRateLimit = (handler, options = {}) =>
-  withRateLimit(handler, { ...options, type: 'critical', endpoint: 'payment' });
-
-export const withUploadRateLimit = (handler, options = {}) =>
-  withRateLimit(handler, {
+export const withAuthRateLimit = (handler, options = {}) => {
+  return withIntelligentRateLimit(handler, {
     ...options,
-    type: 'authenticated',
-    endpoint: 'upload',
+    category: "auth",
+    action: options.action || "loginSuccess",
+    extractUserInfo: async (req) => {
+      // Extraire l'email du body pour les logins
+      try {
+        const body = await req.clone().text();
+        const email = body.match(/email=([^&]*)/)?.[1];
+        return { email: email ? decodeURIComponent(email) : null };
+      } catch {
+        return {};
+      }
+    },
+    onSuccess: async (userInfo) => {
+      // Si c'est un login réussi, marquer comme trusted
+      if (options.action === "loginSuccess" && userInfo.email) {
+        intelligentLimiter.handleLoginAttempt(
+          userInfo.ip,
+          userInfo.email,
+          true,
+        );
+      }
+    },
+    onFailure: async (userInfo) => {
+      // Si c'est un échec de login
+      if (options.action === "loginFailure" && userInfo.email) {
+        intelligentLimiter.handleLoginAttempt(
+          userInfo.ip,
+          userInfo.email,
+          false,
+        );
+      }
+    },
   });
-
-/**
- * Fonction pour récupérer les métriques (utile pour monitoring)
- */
-export function getRateLimitMetrics() {
-  return rateLimiter.getMetrics();
-}
-
-/**
- * Fonction pour débloquer manuellement une IP (admin)
- */
-export function unblockIP(ip) {
-  return rateLimiter.blocked.delete(ip);
-}
-
-/**
- * Configuration pour middleware global Next.js
- */
-export function createRateLimitMiddleware(config = {}) {
-  return async function middleware(req) {
-    const { pathname } = req.nextUrl;
-
-    // Déterminer le type d'endpoint basé sur le path
-    let type = 'public';
-    let endpoint = 'api';
-
-    if (pathname.startsWith('/api/auth')) {
-      type = 'critical';
-      endpoint = 'auth';
-    } else if (pathname.startsWith('/api/payment')) {
-      type = 'critical';
-      endpoint = 'payment';
-    } else if (pathname.startsWith('/api/upload')) {
-      type = 'authenticated';
-      endpoint = 'upload';
-    }
-
-    // Appliquer le rate limiting
-    const mockHandler = async () => NextResponse.next();
-    const limited = await withRateLimit(mockHandler, { type, endpoint })(req);
-
-    return limited;
-  };
-}
-
-/**
- * Export par défaut
- */
-export default {
-  withRateLimit,
-  withAuthRateLimit,
-  withApiRateLimit,
-  withPaymentRateLimit,
-  withUploadRateLimit,
-  getRateLimitMetrics,
-  unblockIP,
-  createRateLimitMiddleware,
 };
 
 /**
- * USAGE EXAMPLES:
- *
- * // app/api/auth/login/route.js (App Router)
- * import { withAuthRateLimit } from '@/utils/rateLimit';
- *
- * export const POST = withAuthRateLimit(async (req) => {
- *   // Logique de login
- *   return NextResponse.json({ success: true });
- * });
- *
- * // app/api/products/route.js
- * import { withApiRateLimit } from '@/utils/rateLimit';
- *
- * export const GET = withApiRateLimit(async (req) => {
- *   // Logique API
- *   return NextResponse.json({ products: [] });
- * });
- *
- * // Avec rôle utilisateur personnalisé
- * export const GET = withRateLimit(handler, {
- *   getUserRole: async (req) => {
- *     const session = await getSession(req);
- *     return {
- *       role: session?.user?.plan || 'public',
- *       userId: session?.user?.id
- *     };
- *   }
- * });
- *
- * // middleware.js (pour protection globale)
- * import { createRateLimitMiddleware } from '@/utils/rateLimit';
- *
- * export const middleware = createRateLimitMiddleware();
- *
- * export const config = {
- *   matcher: '/api/:path*'
- * };
+ * Helper pour les webhooks de paiement - TRÈS PERMISSIF
  */
+export const withPaymentRateLimit = (handler, options = {}) => {
+  return withIntelligentRateLimit(handler, {
+    ...options,
+    category: "payment",
+    action: options.action || "webhook",
+    extractUserInfo: async (req) => {
+      // Extraire l'utilisateur de la session/token
+      const user = req.user || {};
+      return {
+        userId: user._id || user.id,
+        email: user.email,
+      };
+    },
+  });
+};
+
+/**
+ * Helper pour les APIs publiques
+ */
+export const withApiRateLimit = (handler, options = {}) => {
+  return withIntelligentRateLimit(handler, {
+    ...options,
+    category: "api",
+    action: options.action || "publicRead",
+  });
+};
+
+/**
+ * Helper pour le panier - ULTRA PERMISSIF
+ */
+export const withCartRateLimit = (handler, options = {}) => {
+  return withIntelligentRateLimit(handler, {
+    ...options,
+    category: "cart",
+    action: options.action || "update",
+    extractUserInfo: async (req) => {
+      // Utiliser la session ou un ID de session
+      const sessionId =
+        req.headers.get("x-session-id") ||
+        req.cookies?.get("session_id")?.value;
+      return { sessionId };
+    },
+  });
+};
+
+/**
+ * Fonction pour débloquer manuellement une IP
+ */
+export function unblockIP(ip) {
+  return intelligentLimiter.blocked.delete(`blocked:${ip}`);
+}
+
+/**
+ * Fonction pour récupérer les statistiques
+ */
+export function getRateLimitStats() {
+  return intelligentLimiter.getStats();
+}
+
+// Export par défaut
+export default {
+  withIntelligentRateLimit,
+  withAuthRateLimit,
+  withPaymentRateLimit,
+  withApiRateLimit,
+  withCartRateLimit,
+  unblockIP,
+  getRateLimitStats,
+  INTELLIGENT_LIMITS,
+};
