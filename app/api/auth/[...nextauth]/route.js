@@ -5,27 +5,11 @@ import dbConnect from "@/backend/config/dbConnect";
 import User from "@/backend/models/user";
 import { validateLogin } from "@/helpers/validation/schemas/auth";
 import { captureException } from "@/monitoring/sentry";
-import { withAuthRateLimit } from "@/utils/rateLimit";
+import { withIntelligentRateLimit } from "@/utils/rateLimit";
 
 /**
- * Configuration NextAuth améliorée avec sécurité enterprise
- * Authentification par email/mot de passe avec anti-bruteforce
- *
- * Headers de sécurité gérés par next.config.mjs pour /api/auth/* :
- * - Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0
- * - Pragma: no-cache
- * - Expires: 0
- * - Surrogate-Control: no-store
- * - X-Content-Type-Options: nosniff
- * - X-Robots-Tag: noindex, nofollow, noarchive, nosnippet
- * - X-Download-Options: noopen
- *
- * Headers globaux de sécurité appliqués :
- * - Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
- * - X-Frame-Options: SAMEORIGIN
- * - Referrer-Policy: strict-origin-when-cross-origin
- * - Permissions-Policy: [configuration restrictive]
- * - Content-Security-Policy: [configuration complète]
+ * Configuration NextAuth avec rate limiting intelligent
+ * Utilise la nouvelle version du système de rate limiting
  */
 const authOptions = {
   providers: [
@@ -271,53 +255,101 @@ const authOptions = {
 const baseHandler = NextAuth(authOptions);
 
 /**
- * Wrapper avec rate limiting pour les endpoints d'authentification
- *
- * IMPORTANT: Les headers de sécurité sont appliqués automatiquement
- * par next.config.mjs, pas besoin de les ajouter ici
+ * Handler GET - Pour les checks de session, CSRF tokens, etc.
+ * Utilise l'action 'session' qui est très permissive (200 requêtes/minute)
  */
-
-// Handler GET avec rate limiting modéré (pour session, csrf, providers)
-export const GET = withAuthRateLimit(
-  async (...args) => {
-    return baseHandler(...args);
+export const GET = withIntelligentRateLimit(
+  async (req, ...args) => {
+    return baseHandler(req, ...args);
   },
   {
-    // Configuration plus permissive pour les GET (session checks fréquents)
-    customLimit: {
-      points: 20, // Au lieu de 5
-      duration: 60000, // 1 minute au lieu de 15
-      blockDuration: 300000, // 5 minutes au lieu de 30
+    category: "auth",
+    action: "session",
+    extractUserInfo: async (req) => {
+      try {
+        const cookieName =
+          process.env.NODE_ENV === "production"
+            ? "__Secure-next-auth.session-token"
+            : "next-auth.session-token";
+
+        const sessionToken = req.cookies?.get(cookieName)?.value;
+
+        return {
+          sessionId: sessionToken ? sessionToken.substring(0, 8) : null,
+        };
+      } catch {
+        return {};
+      }
     },
   },
 );
 
-// Handler POST avec rate limiting strict (pour signin)
-export const POST = withAuthRateLimit(
-  async (...args) => {
-    // Log pour monitoring des tentatives de connexion
+/**
+ * Handler POST - Pour login/logout avec détection intelligente
+ * Rate limiting adaptatif selon succès/échec
+ */
+export const POST = withIntelligentRateLimit(
+  async (req, ...args) => {
+    const reqClone = req.clone();
+
+    // Exécuter le handler
+    const response = await baseHandler(req, ...args);
+
+    // Détecter si c'est une tentative de login et si elle a réussi
     try {
-      const req = args[0];
-      if (req && req.url && req.url.includes("/signin")) {
-        const body = await req.clone().text();
-        // Extraire l'email sans logger le mot de passe
+      const url = new URL(reqClone.url);
+      const pathname = url.pathname;
+
+      // Si c'est une tentative de login
+      if (
+        pathname.includes("/callback/credentials") ||
+        pathname.includes("/signin")
+      ) {
+        const body = await reqClone.text();
         const email = body.match(/email=([^&]*)/)?.[1];
+
         if (email) {
-          console.log("[AUTH] Login attempt for:", decodeURIComponent(email));
+          const decodedEmail = decodeURIComponent(email);
+
+          // Vérifier le statut de la réponse pour déterminer succès/échec
+          const isSuccess =
+            response.status === 200 ||
+            response.status === 302 ||
+            response.status === 307;
+
+          if (isSuccess) {
+            console.log(`[AUTH] Login successful for: ${decodedEmail}`);
+          } else {
+            console.log(`[AUTH] Login failed for: ${decodedEmail}`);
+          }
         }
       }
-    } catch (err) {
-      // Ignorer les erreurs de logging
+    } catch (error) {
+      // Ignorer les erreurs de détection
+      console.error("[AUTH] Error detecting login result:", error.message);
     }
 
-    return baseHandler(...args);
+    return response;
   },
   {
-    // Configuration très stricte pour les POST (tentatives de connexion)
-    customLimit: {
-      points: 5, // Seulement 5 tentatives
-      duration: 900000, // par 15 minutes
-      blockDuration: 1800000, // blocage 30 minutes si dépassement
+    category: "auth",
+    action: "loginSuccess", // Par défaut, on considère que c'est un succès
+    extractUserInfo: async (req) => {
+      try {
+        const body = await req.clone().text();
+        const email = body.match(/email=([^&]*)/)?.[1];
+
+        return {
+          email: email ? decodeURIComponent(email) : null,
+        };
+      } catch {
+        return {};
+      }
+    },
+    onFailure: async (userInfo) => {
+      if (userInfo.email) {
+        console.warn("[AUTH] Rate limit reached for:", userInfo.email);
+      }
     },
   },
 );
