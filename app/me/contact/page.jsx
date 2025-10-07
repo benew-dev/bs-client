@@ -22,9 +22,7 @@ const ContactSkeleton = () => (
 );
 
 // Dynamic import with enhanced loading state and error handling
-const Contact = lazy(() =>
-  import("@/components/user/Contact").then((mod) => mod.default),
-);
+const Contact = lazy(() => import("@/components/user/Contact"));
 
 /**
  * Security headers for contact page with referrer validation
