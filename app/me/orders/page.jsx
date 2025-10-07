@@ -11,10 +11,7 @@ import { getAuthenticatedUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 // Chargement dynamique avec fallback
-const ListOrders = lazy(() => import("@/components/orders/ListOrders"), {
-  loading: () => <OrdersPageSkeleton />,
-  ssr: true,
-});
+const ListOrders = lazy(() => import("@/components/orders/ListOrders"));
 
 /**
  * Récupère l'historique des commandes de l'utilisateur connecté

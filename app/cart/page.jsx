@@ -1,32 +1,32 @@
-import { Suspense, lazy } from 'react';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { captureException } from '@/monitoring/sentry';
-import CartSkeleton from '@/components/skeletons/CartSkeleton';
+import { Suspense, lazy } from "react";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { captureException } from "@/monitoring/sentry";
+import CartSkeleton from "@/components/skeletons/CartSkeleton";
 
 // Forcer le rendu dynamique pour cette page
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 // Lazy loading du composant Cart
-const Cart = lazy(() => import('@/components/cart/Cart'));
+const Cart = lazy(() => import("@/components/cart/Cart"));
 
 // Métadonnées enrichies pour le panier
 export const metadata = {
-  title: 'Votre Panier | Buy It Now',
+  title: "Votre Panier | Buy It Now",
   description:
-    'Consultez et gérez les articles de votre panier sur Buy It Now.',
+    "Consultez et gérez les articles de votre panier sur Buy It Now.",
   robots: {
     index: false,
     follow: false,
   },
   openGraph: {
-    title: 'Votre Panier | Buy It Now',
+    title: "Votre Panier | Buy It Now",
     description:
-      'Consultez et gérez les articles de votre panier sur Buy It Now.',
-    type: 'website',
+      "Consultez et gérez les articles de votre panier sur Buy It Now.",
+    type: "website",
   },
   alternates: {
-    canonical: '/cart',
+    canonical: "/cart",
   },
 };
 
@@ -35,12 +35,12 @@ const CartPage = async () => {
     const cookie = await cookies();
     // Vérification de l'authentification côté serveur
     const sessionCookie =
-      cookie.get('next-auth.session-token') ||
-      cookie.get('__Secure-next-auth.session-token');
+      cookie.get("next-auth.session-token") ||
+      cookie.get("__Secure-next-auth.session-token");
 
     if (!sessionCookie) {
       // Rediriger vers la page de connexion avec le retour à la page du panier
-      redirect('/login?callbackUrl=/cart');
+      redirect("/login?callbackUrl=/cart");
     }
 
     return (
@@ -52,18 +52,18 @@ const CartPage = async () => {
       </div>
     );
   } catch (error) {
-    console.error('Error accessing cart page:', error);
+    console.error("Error accessing cart page:", error);
 
     // Capturer l'erreur dans Sentry
     captureException(error, {
       tags: {
-        component: 'CartPage',
+        component: "CartPage",
         errorType: error.name,
       },
     });
 
     // Rediriger vers la page d'accueil en cas d'erreur
-    redirect('/');
+    redirect("/");
   }
 };
 

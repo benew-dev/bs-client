@@ -1,21 +1,18 @@
 // app/confirmation/page.jsx
-import { lazy, Suspense } from 'react';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { captureException } from '@/monitoring/sentry';
+import { lazy, Suspense } from "react";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { captureException } from "@/monitoring/sentry";
 
 // Forcer le rendu dynamique
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 // Lazy loading avec skeleton
-const Confirmation = lazy(() => import('@/components/cart/Confirmation'), {
-  loading: () => <ConfirmationSkeleton />,
-  ssr: false, // Client-only pour données sensibles
-});
+const Confirmation = lazy(() => import("@/components/cart/Confirmation"));
 
 export const metadata = {
-  title: 'Confirmation de commande | Buy It Now',
-  description: 'Votre commande a été confirmée avec succès',
+  title: "Confirmation de commande | Buy It Now",
+  description: "Votre commande a été confirmée avec succès",
   robots: {
     index: false,
     follow: false,
@@ -23,9 +20,9 @@ export const metadata = {
     nosnippet: true,
   },
   openGraph: {
-    title: 'Commande confirmée | Buy It Now',
-    description: 'Merci pour votre commande',
-    type: 'website',
+    title: "Commande confirmée | Buy It Now",
+    description: "Merci pour votre commande",
+    type: "website",
   },
 };
 
@@ -34,11 +31,11 @@ const ConfirmationPage = async () => {
     // 1. Vérification d'authentification OBLIGATOIRE
     const cookieStore = await cookies();
     const sessionCookie =
-      cookieStore.get('next-auth.session-token') ||
-      cookieStore.get('__Secure-next-auth.session-token');
+      cookieStore.get("next-auth.session-token") ||
+      cookieStore.get("__Secure-next-auth.session-token");
 
     if (!sessionCookie) {
-      redirect('/login');
+      redirect("/login");
     }
 
     return (
@@ -57,12 +54,12 @@ const ConfirmationPage = async () => {
     );
   } catch (error) {
     captureException(error, {
-      tags: { component: 'ConfirmationPage' },
-      level: 'error',
+      tags: { component: "ConfirmationPage" },
+      level: "error",
     });
 
     // En cas d'erreur, rediriger vers une page d'erreur
-    redirect('/error?type=order-confirmation');
+    redirect("/error?type=order-confirmation");
   }
 };
 

@@ -19,12 +19,8 @@ const ProfileSkeleton = () => (
   </div>
 );
 
-const Profile = lazy(
-  () => import("@/components/auth/Profile").then((mod) => mod.default),
-  {
-    loading: () => <ProfileSkeleton />,
-    ssr: true,
-  },
+const Profile = lazy(() =>
+  import("@/components/auth/Profile").then((mod) => mod.default),
 );
 
 // MODIFICATION: Fonction avec cache et meilleure gestion d'erreurs

@@ -4,9 +4,7 @@ import { lazy } from "react";
 import { getAuthenticatedUser } from "@/lib/auth";
 
 // Chargement dynamique optimisé avec retries
-const Register = lazy(() => import("@/components/auth/Register"), {
-  ssr: true, // Activer le SSR pour améliorer le premier chargement
-});
+const Register = lazy(() => import("@/components/auth/Register"));
 
 export const dynamic = "force-dynamic";
 

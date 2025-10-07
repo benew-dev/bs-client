@@ -1,24 +1,24 @@
-import { Suspense } from 'react';
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { captureException } from '@/monitoring/sentry';
-import UpdateProfile from '@/components/auth/UpdateProfile';
-import { getAuthenticatedUser } from '@/lib/auth';
+import { Suspense } from "react";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { captureException } from "@/monitoring/sentry";
+import UpdateProfile from "@/components/auth/UpdateProfile";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 // Force dynamic rendering pour garantir l'état d'authentification à jour
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 // Métadonnées enrichies pour SEO et sécurité
 export const metadata = {
-  title: 'Modifier votre profil | Buy It Now',
-  description: 'Mettez à jour vos informations personnelles sur Buy It Now',
+  title: "Modifier votre profil | Buy It Now",
+  description: "Mettez à jour vos informations personnelles sur Buy It Now",
   robots: {
     index: false,
     follow: false,
     nocache: true,
   },
   alternates: {
-    canonical: '/me/update',
+    canonical: "/me/update",
   },
 };
 
@@ -32,39 +32,39 @@ async function UpdateProfilePage() {
     const headersList = await headers();
     const user = await getAuthenticatedUser(headersList);
     if (!user) {
-      console.log('User not authenticated, redirecting to login');
-      return redirect('/login?callbackUrl=/me/update');
+      console.log("User not authenticated, redirecting to login");
+      return redirect("/login?callbackUrl=/me/update");
     }
 
     // Récupérer les en-têtes pour le logging et la sécurité
-    const userAgent = headersList.get('user-agent') || 'unknown';
-    const referer = headersList.get('referer') || 'direct';
+    const userAgent = headersList.get("user-agent") || "unknown";
+    const referer = headersList.get("referer") || "direct";
 
     // Journal d'accès anonymisé pour la sécurité
-    const clientIp = (headersList.get('x-forwarded-for') || '')
-      .split(',')
+    const clientIp = (headersList.get("x-forwarded-for") || "")
+      .split(",")
       .shift()
       .trim();
-    const anonymizedIp = clientIp ? clientIp.replace(/\d+$/, 'xxx') : 'unknown';
+    const anonymizedIp = clientIp ? clientIp.replace(/\d+$/, "xxx") : "unknown";
 
-    console.info('Profile update page accessed', {
+    console.info("Profile update page accessed", {
       userAgent: userAgent?.substring(0, 100),
       referer: referer?.substring(0, 200),
       ip: anonymizedIp,
       userId: user._id
         ? `${user._id.substring(0, 2)}...${user._id.slice(-2)}`
-        : 'unknown',
+        : "unknown",
     });
 
     // Détection basique d'activité potentiellement suspecte
     const isLikelyBot =
       !userAgent ||
-      userAgent.toLowerCase().includes('bot') ||
-      userAgent.toLowerCase().includes('crawl') ||
-      userAgent.toLowerCase().includes('spider');
+      userAgent.toLowerCase().includes("bot") ||
+      userAgent.toLowerCase().includes("crawl") ||
+      userAgent.toLowerCase().includes("spider");
 
     if (isLikelyBot) {
-      console.warn('Potential bot detected on profile update page', {
+      console.warn("Potential bot detected on profile update page", {
         userAgent: userAgent?.substring(0, 100),
         ip: anonymizedIp,
       });
@@ -98,15 +98,15 @@ async function UpdateProfilePage() {
     );
   } catch (error) {
     // Journalisation détaillée de l'erreur
-    console.error('Error initializing profile update page', {
+    console.error("Error initializing profile update page", {
       error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
 
     // Capture d'exception pour Sentry avec contexte enrichi
     captureException(error, {
       tags: {
-        component: 'UpdateProfilePage',
+        component: "UpdateProfilePage",
         errorType: error.name,
       },
       extra: {
@@ -115,7 +115,7 @@ async function UpdateProfilePage() {
     });
 
     // Lancer une erreur propre pour le boundary d'erreur
-    throw new Error('Impossible de charger la page de modification du profil', {
+    throw new Error("Impossible de charger la page de modification du profil", {
       cause: error,
     });
   }

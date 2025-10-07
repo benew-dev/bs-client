@@ -1,9 +1,9 @@
-'use client'; // Error boundaries must be Client Components
+"use client"; // Error boundaries must be Client Components
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { captureException } from '@/monitoring/sentry';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { captureException } from "@/monitoring/sentry";
+import { useRouter } from "next/navigation";
 
 export default function Error({ error, reset }) {
   const router = useRouter();
@@ -19,19 +19,19 @@ export default function Error({ error, reset }) {
     const telemetry = collectTelemetry();
 
     // Log de l'erreur en console en développement
-    console.error('Product page error:', error);
+    console.error("Product page error:", error);
 
     // Récupérer l'URL complète et l'ID du produit
     const url = window.location.href;
-    const segments = window.location.pathname.split('/');
+    const segments = window.location.pathname.split("/");
     const productId = segments[segments.length - 1];
 
     // Capture de l'erreur par Sentry avec contexte enrichi
     captureException(error, {
       tags: {
-        component: 'ProductPage',
+        component: "ProductPage",
         errorType: errorType.code,
-        action: 'page_load',
+        action: "page_load",
         errorReference,
         hasRetried,
       },
@@ -42,16 +42,16 @@ export default function Error({ error, reset }) {
         pathname: window.location.pathname,
         userAgent: navigator.userAgent,
         screen: `${window.innerWidth}x${window.innerHeight}`,
-        referrer: document.referrer || 'direct',
+        referrer: document.referrer || "direct",
         ...telemetry,
       },
       level: errorType.severity,
     });
 
     // Analytique côté client (peut être remplacé par votre outil d'analyse)
-    if (typeof window.gtag === 'function') {
-      window.gtag('event', 'error', {
-        event_category: 'product_page',
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "error", {
+        event_category: "product_page",
         event_label: errorType.code,
         value: productId,
       });
@@ -64,14 +64,14 @@ export default function Error({ error, reset }) {
       return {
         connectionType: navigator.connection
           ? navigator.connection.effectiveType
-          : 'unknown',
-        deviceMemory: navigator.deviceMemory || 'unknown',
+          : "unknown",
+        deviceMemory: navigator.deviceMemory || "unknown",
         isOnline: navigator.onLine,
         language: navigator.language,
         timestamp: new Date().toISOString(),
         timeOnPage: document.startTime
           ? Date.now() - document.startTime
-          : 'unknown',
+          : "unknown",
       };
     } catch (e) {
       return { telemetryError: e.message };
@@ -82,41 +82,41 @@ export default function Error({ error, reset }) {
   function determineErrorType(err) {
     // Erreur liée à un produit qui n'existe pas
     if (
-      err.message?.includes('not found') ||
+      err.message?.includes("not found") ||
       err.statusCode === 404 ||
       err.cause?.statusCode === 404
     ) {
       return {
-        code: 'PRODUCT_NOT_FOUND',
+        code: "PRODUCT_NOT_FOUND",
         message:
           "Ce produit n'est pas disponible ou a été retiré de notre catalogue.",
-        severity: 'info',
+        severity: "info",
         recoverable: false,
       };
     }
 
     // Erreur de timeout
-    if (err.message?.includes('timeout') || err.name === 'TimeoutError') {
+    if (err.message?.includes("timeout") || err.name === "TimeoutError") {
       return {
-        code: 'TIMEOUT',
+        code: "TIMEOUT",
         message:
-          'Le chargement du produit a pris trop de temps. Veuillez réessayer.',
-        severity: 'warning',
+          "Le chargement du produit a pris trop de temps. Veuillez réessayer.",
+        severity: "warning",
         recoverable: true,
       };
     }
 
     // Erreur de réseau
     if (
-      err.message?.includes('network') ||
-      err.name === 'NetworkError' ||
-      err.message?.includes('fetch')
+      err.message?.includes("network") ||
+      err.name === "NetworkError" ||
+      err.message?.includes("fetch")
     ) {
       return {
-        code: 'NETWORK',
+        code: "NETWORK",
         message:
-          'Problème de connexion détecté. Vérifiez votre connexion internet et réessayez.',
-        severity: 'warning',
+          "Problème de connexion détecté. Vérifiez votre connexion internet et réessayez.",
+        severity: "warning",
         recoverable: true,
       };
     }
@@ -124,21 +124,21 @@ export default function Error({ error, reset }) {
     // Erreur serveur
     if (err.statusCode >= 500 || err.cause?.statusCode >= 500) {
       return {
-        code: 'SERVER_ERROR',
+        code: "SERVER_ERROR",
         message:
-          'Nos serveurs rencontrent des difficultés. Nous travaillons à résoudre le problème.',
-        severity: 'error',
+          "Nos serveurs rencontrent des difficultés. Nous travaillons à résoudre le problème.",
+        severity: "error",
         recoverable: true,
       };
     }
 
     // Par défaut
     return {
-      code: 'UNKNOWN',
+      code: "UNKNOWN",
       error: err,
       message:
         "Une erreur inattendue s'est produite lors du chargement du produit.",
-      severity: 'error',
+      severity: "error",
       recoverable: true,
     };
   }
@@ -151,14 +151,14 @@ export default function Error({ error, reset }) {
 
   // Fonction pour naviguer vers la page d'accueil
   const goHome = () => {
-    router.push('/');
+    router.push("/");
   };
 
   // Fonction pour suggérer des produits similaires
   const findSimilarProducts = () => {
     // Si nous connaissons la catégorie, nous pourrions rediriger vers cette catégorie
     // Pour l'instant, rediriger vers la page d'accueil
-    router.push('/');
+    router.push("/");
   };
 
   return (
@@ -188,7 +188,7 @@ export default function Error({ error, reset }) {
             Retour à l&apos;accueil
           </Link>
 
-          {errorType.code === 'PRODUCT_NOT_FOUND' && (
+          {errorType.code === "PRODUCT_NOT_FOUND" && (
             <button
               onClick={findSimilarProducts}
               className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
@@ -199,7 +199,7 @@ export default function Error({ error, reset }) {
         </div>
 
         {/* Afficher plus de détails en mode développement */}
-        {process.env.NODE_ENV === 'production' && (
+        {process.env.NODE_ENV === "production" && (
           <div className="mt-8 p-4 bg-gray-100 rounded text-left overflow-auto max-h-60">
             <h3 className="text-lg font-semibold mb-2">
               Détails de l&apos;erreur (visible uniquement en développement):
