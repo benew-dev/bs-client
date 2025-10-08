@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import cloudinary from "cloudinary";
 import dbConnect from "@/backend/config/dbConnect";
 import isAuthenticatedUser from "@/backend/middlewares/auth";
@@ -202,12 +203,31 @@ export const POST = withIntelligentRateLimit(
   },
   {
     category: "api",
-    action: "upload", // 10 req/5min, blocage 10 min
+    action: "upload",
     extractUserInfo: async (req) => {
-      return {
-        userId: req.user?.id || req.user?._id,
-        email: req.user?.email,
-      };
+      try {
+        const cookieName =
+          process.env.NODE_ENV === "production"
+            ? "__Secure-next-auth.session-token"
+            : "next-auth.session-token";
+
+        const token = await getToken({
+          req,
+          secret: process.env.NEXTAUTH_SECRET,
+          cookieName,
+        });
+
+        return {
+          userId: token?.user?._id || token?.user?.id || token?.sub,
+          email: token?.user?.email,
+        };
+      } catch (error) {
+        console.error(
+          "[CLOUDINARY_SIGN] Error extracting user from JWT:",
+          error.message,
+        );
+        return {};
+      }
     },
   },
 );

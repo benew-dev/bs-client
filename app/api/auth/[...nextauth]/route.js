@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { getToken } from "next-auth/jwt";
 import bcryptjs from "bcryptjs";
 import dbConnect from "@/backend/config/dbConnect";
 import User from "@/backend/models/user";
@@ -272,12 +273,19 @@ export const GET = withIntelligentRateLimit(
             ? "__Secure-next-auth.session-token"
             : "next-auth.session-token";
 
-        const sessionToken = req.cookies?.get(cookieName)?.value;
+        const token = await getToken({
+          req,
+          secret: process.env.NEXTAUTH_SECRET,
+          cookieName,
+        });
 
         return {
-          sessionId: sessionToken ? sessionToken.substring(0, 8) : null,
+          userId: token?.user?._id || token?.user?.id || token?.sub,
+          email: token?.user?.email,
+          sessionId: req.cookies?.get(cookieName)?.value?.substring(0, 8),
         };
-      } catch {
+      } catch (error) {
+        console.error("[AUTH] Error extracting session info:", error.message);
         return {};
       }
     },
@@ -291,16 +299,13 @@ export const GET = withIntelligentRateLimit(
 export const POST = withIntelligentRateLimit(
   async (req, ...args) => {
     const reqClone = req.clone();
-
-    // Exécuter le handler
     const response = await baseHandler(req, ...args);
 
-    // Détecter si c'est une tentative de login et si elle a réussi
+    // Détecter si c'est une tentative de login et son résultat
     try {
       const url = new URL(reqClone.url);
       const pathname = url.pathname;
 
-      // Si c'est une tentative de login
       if (
         pathname.includes("/callback/credentials") ||
         pathname.includes("/signin")
@@ -310,13 +315,12 @@ export const POST = withIntelligentRateLimit(
 
         if (email) {
           const decodedEmail = decodeURIComponent(email);
-
-          // Vérifier le statut de la réponse pour déterminer succès/échec
           const isSuccess =
             response.status === 200 ||
             response.status === 302 ||
             response.status === 307;
 
+          // Informer le rate limiter du résultat
           if (isSuccess) {
             console.log(`[AUTH] Login successful for: ${decodedEmail}`);
           } else {
@@ -325,7 +329,6 @@ export const POST = withIntelligentRateLimit(
         }
       }
     } catch (error) {
-      // Ignorer les erreurs de détection
       console.error("[AUTH] Error detecting login result:", error.message);
     }
 
@@ -333,22 +336,36 @@ export const POST = withIntelligentRateLimit(
   },
   {
     category: "auth",
-    action: "loginSuccess", // Par défaut, on considère que c'est un succès
+    action: "loginSuccess", // Action par défaut
     extractUserInfo: async (req) => {
       try {
         const body = await req.clone().text();
         const email = body.match(/email=([^&]*)/)?.[1];
 
+        // Essayer d'extraire le token pour les sessions existantes
+        const cookieName =
+          process.env.NODE_ENV === "production"
+            ? "__Secure-next-auth.session-token"
+            : "next-auth.session-token";
+
+        const token = await getToken({
+          req,
+          secret: process.env.NEXTAUTH_SECRET,
+          cookieName,
+        });
+
         return {
           email: email ? decodeURIComponent(email) : null,
+          userId: token?.user?._id || token?.user?.id || token?.sub,
         };
-      } catch {
+      } catch (error) {
+        console.error("[AUTH] Error extracting login info:", error.message);
         return {};
       }
     },
     onFailure: async (userInfo) => {
       if (userInfo.email) {
-        console.warn("[AUTH] Rate limit reached for:", userInfo.email);
+        console.warn(`[AUTH] Rate limit reached for: ${userInfo.email}`);
       }
     },
   },

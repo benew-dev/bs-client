@@ -6,7 +6,7 @@ import User from "@/backend/models/user";
 import { validateResetPassword } from "@/helpers/validation/schemas/auth";
 import { captureException } from "@/monitoring/sentry";
 import { sendPasswordResetSuccessEmail } from "@/backend/utils/emailService";
-import { withIntelligentRateLimit } from "@/utils/rateLimit";
+import { withAuthRateLimit } from "@/utils/rateLimit";
 
 /**
  * POST /api/auth/reset-password
@@ -15,7 +15,7 @@ import { withIntelligentRateLimit } from "@/utils/rateLimit";
  *
  * Headers de sécurité gérés par next.config.mjs pour /api/auth/*
  */
-export const POST = withIntelligentRateLimit(
+export const POST = withAuthRateLimit(
   async function (request) {
     try {
       // Connexion DB
@@ -323,26 +323,14 @@ export const POST = withIntelligentRateLimit(
     }
   },
   {
-    category: "api",
-    action: "write",
-    // Stratégie personnalisée pour reset-password (protection contre attaques token)
+    action: "passwordReset", // Utilise auth.passwordReset (3/heure, strict)
+    // Optionnel : customStrategy si vous voulez 5 tentatives au lieu de 3
     customStrategy: {
-      points: 5, // 5 tentatives maximum
-      duration: 900000, // par 15 minutes
-      blockDuration: 900000, // blocage de 15 minutes en cas de dépassement
-      keyStrategy: "ip", // Track par IP pour détecter les attaques de force brute sur les tokens
-      requireAuth: false, // Pas d'authentification requise (utilise token)
-    },
-    extractUserInfo: async (req) => {
-      // Extraire le token du body pour le logging
-      try {
-        const body = await req.clone().json();
-        return {
-          token: body.token?.substring(0, 8) + "...", // Seulement les premiers caractères pour la sécurité
-        };
-      } catch {
-        return {};
-      }
+      points: 5, // 5 tentatives au lieu de 3
+      duration: 900000, // 15 minutes
+      blockDuration: 900000, // blocage 15 minutes
+      keyStrategy: "ip+email", // Track IP + email (sera extrait du token)
+      requireAuth: false,
     },
   },
 );

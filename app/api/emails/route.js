@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { Resend } from "resend";
 import dbConnect from "@/backend/config/dbConnect";
 import isAuthenticatedUser from "@/backend/middlewares/auth";
@@ -313,19 +314,37 @@ ID Utilisateur: ${user._id}
   {
     category: "api",
     action: "write",
-    // Stratégie personnalisée pour les emails (plus stricte)
     customStrategy: {
-      points: 3, // 3 emails maximum
-      duration: 900000, // par période de 15 minutes
-      blockDuration: 1800000, // blocage de 30 minutes en cas de dépassement
-      keyStrategy: "user", // Track par utilisateur
-      requireAuth: true, // Authentification obligatoire
+      points: 3,
+      duration: 900000,
+      blockDuration: 1800000,
+      keyStrategy: "user",
+      requireAuth: true,
     },
     extractUserInfo: async (req) => {
-      return {
-        userId: req.user?.id || req.user?._id,
-        email: req.user?.email,
-      };
+      try {
+        const cookieName =
+          process.env.NODE_ENV === "production"
+            ? "__Secure-next-auth.session-token"
+            : "next-auth.session-token";
+
+        const token = await getToken({
+          req,
+          secret: process.env.NEXTAUTH_SECRET,
+          cookieName,
+        });
+
+        return {
+          userId: token?.user?._id || token?.user?.id || token?.sub,
+          email: token?.user?.email,
+        };
+      } catch (error) {
+        console.error(
+          "[EMAILS] Error extracting user from JWT:",
+          error.message,
+        );
+        return {};
+      }
     },
   },
 );

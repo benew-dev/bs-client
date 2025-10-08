@@ -3,7 +3,7 @@ import dbConnect from "@/backend/config/dbConnect";
 import User from "@/backend/models/user";
 import { validateRegister } from "@/helpers/validation/schemas/auth";
 import { captureException } from "@/monitoring/sentry";
-import { withIntelligentRateLimit } from "@/utils/rateLimit";
+import { withAuthRateLimit } from "@/utils/rateLimit";
 
 /**
  * POST /api/auth/register
@@ -26,7 +26,7 @@ import { withIntelligentRateLimit } from "@/utils/rateLimit";
  * - Permissions-Policy: [configuration restrictive]
  * - Content-Security-Policy: [configuration complète avec unsafe-inline pour auth]
  */
-export const POST = withIntelligentRateLimit(
+export const POST = withAuthRateLimit(
   async function (req) {
     try {
       // Connexion DB
@@ -195,26 +195,14 @@ export const POST = withIntelligentRateLimit(
     }
   },
   {
-    category: "api",
-    action: "write",
-    // Stratégie personnalisée pour l'inscription (strict)
+    action: "loginSuccess", // Utiliser loginSuccess car l'inscription donne accès
+    // customStrategy optionnelle si vous voulez garder 5/heure au lieu de 30/minute
     customStrategy: {
       points: 5, // 5 inscriptions maximum
-      duration: 3600000, // par heure (1 heure)
-      blockDuration: 3600000, // blocage d'1 heure en cas de dépassement
-      keyStrategy: "ip", // Track par IP pour éviter les inscriptions massives
-      requireAuth: false, // Pas d'authentification requise pour s'inscrire
-    },
-    extractUserInfo: async (req) => {
-      // Extraire l'email du body pour le tracking
-      try {
-        const body = await req.clone().json();
-        return {
-          email: body.email?.toLowerCase()?.trim(),
-        };
-      } catch {
-        return {};
-      }
+      duration: 3600000, // par heure
+      blockDuration: 3600000, // blocage 1h
+      keyStrategy: "ip+email", // Track IP + email pour éviter abus
+      requireAuth: false,
     },
   },
 );

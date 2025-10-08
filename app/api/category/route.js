@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 import dbConnect from "@/backend/config/dbConnect";
 import Category from "@/backend/models/category";
 import { captureException } from "@/monitoring/sentry";
@@ -132,13 +133,31 @@ export const GET = withIntelligentRateLimit(
   },
   {
     category: "api",
-    action: "publicRead", // 100 req/min pour public, doublé si authentifié
+    action: "publicRead",
     extractUserInfo: async (req) => {
-      // Extraire les infos utilisateur si disponibles (optionnel pour route publique)
-      return {
-        userId: req.user?.id || req.user?._id,
-        email: req.user?.email,
-      };
+      try {
+        const cookieName =
+          process.env.NODE_ENV === "production"
+            ? "__Secure-next-auth.session-token"
+            : "next-auth.session-token";
+
+        const token = await getToken({
+          req,
+          secret: process.env.NEXTAUTH_SECRET,
+          cookieName,
+        });
+
+        return {
+          userId: token?.user?._id || token?.user?.id || token?.sub,
+          email: token?.user?.email,
+        };
+      } catch (error) {
+        console.error(
+          "[CATEGORY] Error extracting user from JWT:",
+          error.message,
+        );
+        return {};
+      }
     },
   },
 );
