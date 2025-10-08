@@ -95,11 +95,13 @@ const userSchema = new mongoose.Schema(
     address: {
       street: {
         type: String,
+        required: false,
+        default: null,
         trim: true,
         maxLength: [100, "L'adresse ne peut pas dépasser 100 caractères"],
         validate: {
           validator: function (v) {
-            // Validation basique pour éviter les caractères dangereux
+            if (!v) return true; // Accepter null/undefined
             return /^[a-zA-Z0-9\s,.'°-]+$/.test(v);
           },
           message: (props) =>
@@ -108,6 +110,8 @@ const userSchema = new mongoose.Schema(
       },
       city: {
         type: String,
+        required: false,
+        default: null,
         trim: true,
         maxLength: [
           50,
@@ -115,6 +119,7 @@ const userSchema = new mongoose.Schema(
         ],
         validate: {
           validator: function (v) {
+            if (!v) return true; // Accepter null/undefined
             return /^[a-zA-Z\s'-]+$/.test(v);
           },
           message: (props) => `${props.value} n'est pas un nom de ville valide`,
@@ -122,9 +127,11 @@ const userSchema = new mongoose.Schema(
       },
       country: {
         type: String,
+        required: false,
+        default: null,
         trim: true,
         maxLength: [50, "Le nom du pays ne peut pas dépasser 50 caractères"],
-        index: true, // Indexation pour faciliter les recherches par pays
+        index: true,
       },
     },
     role: {

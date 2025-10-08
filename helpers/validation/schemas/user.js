@@ -36,10 +36,12 @@ export const profileSchema = yup.object().shape({
   // NOUVEAU: Schéma d'adresse intégré
   address: yup
     .object()
+    .nullable()
     .shape({
       street: yup
         .string()
-        .transform(sanitizeString)
+        .nullable()
+        .transform((value) => (value ? sanitizeString(value) : null))
         .min(3, "Minimum 3 caractères")
         .max(100, "Maximum 100 caractères")
         .matches(/^[a-zA-Z0-9\s,.'°-]+$/, "Caractères non autorisés")
@@ -47,23 +49,21 @@ export const profileSchema = yup.object().shape({
 
       city: yup
         .string()
-        .transform(sanitizeString)
+        .nullable()
+        .transform((value) => (value ? sanitizeString(value) : null))
         .min(2, "Minimum 2 caractères")
         .max(50, "Maximum 50 caractères")
         .matches(/^[a-zA-Z\s'\-\u00C0-\u017F]+$/, "Caractères non autorisés"),
 
       country: yup
         .string()
-        .transform(sanitizeString)
+        .nullable()
+        .transform((value) => (value ? sanitizeString(value) : null))
         .min(2, "Minimum 2 caractères")
         .max(50, "Maximum 50 caractères")
         .matches(/^[a-zA-Z\s'\-\u00C0-\u017F]+$/, "Caractères non autorisés"),
     })
-    .default({
-      street: "",
-      city: "",
-      country: "",
-    }),
+    .default(null),
 });
 
 // Schéma de vérification d'email (inchangé)

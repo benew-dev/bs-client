@@ -145,45 +145,12 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // Validation de l'adresse si fournie
-      if (address) {
-        if (!address.street || address.street.trim() === "") {
-          console.log("La rue est obligatoire");
-          setError("La rue est obligatoire");
-          setLoading(false);
-          return;
-        }
-
-        if (!address.city || address.city.trim() === "") {
-          console.log("La ville est obligatoire");
-          setError("La ville est obligatoire");
-          setLoading(false);
-          return;
-        }
-
-        if (!address.country || address.country.trim() === "") {
-          console.log("Le pays est obligatoire");
-          setError("Le pays est obligatoire");
-          setLoading(false);
-          return;
-        }
-      }
-
       // Préparer les données à envoyer
       const payload = {
         name: name.trim(),
         phone: phone ? phone.trim() : "",
         avatar,
       };
-
-      // Ajouter l'adresse seulement si elle est fournie et complète
-      if (address && address.street && address.city && address.country) {
-        payload.address = {
-          street: address.street.trim(),
-          city: address.city.trim(),
-          country: address.country.trim(),
-        };
-      }
 
       // Simple fetch avec timeout court
       const controller = new AbortController();

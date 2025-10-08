@@ -371,7 +371,7 @@ const UpdateProfile = ({ userId, initialEmail, referer }) => {
               htmlFor="street"
               className="block mb-1 font-medium text-gray-700"
             >
-              Rue / Voie <span className="text-red-500">*</span>
+              Rue / Voie
             </label>
             <input
               id="street"
@@ -400,7 +400,7 @@ const UpdateProfile = ({ userId, initialEmail, referer }) => {
               htmlFor="city"
               className="block mb-1 font-medium text-gray-700"
             >
-              Ville <span className="text-red-500">*</span>
+              Ville
             </label>
             <input
               id="city"
@@ -429,7 +429,7 @@ const UpdateProfile = ({ userId, initialEmail, referer }) => {
               htmlFor="country"
               className="block mb-1 font-medium text-gray-700"
             >
-              Pays <span className="text-red-500">*</span>
+              Pays
             </label>
             <select
               id="country"
