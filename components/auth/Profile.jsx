@@ -230,14 +230,6 @@ const Profile = () => {
               <MapPin className="w-5 h-5 mr-2 text-blue-600" />
               Adresse
             </h3>
-            {hasAddress && (
-              <Link
-                href="/me/update"
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-              >
-                Modifier
-              </Link>
-            )}
           </div>
         </div>
 
