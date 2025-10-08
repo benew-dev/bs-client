@@ -5,14 +5,16 @@ import isAuthenticatedUser from "@/backend/middlewares/auth";
 import User from "@/backend/models/user";
 import { validatePasswordUpdate } from "@/helpers/validation/schemas/auth";
 import { captureException } from "@/monitoring/sentry";
-import { withApiRateLimit } from "@/utils/rateLimit";
+import { withIntelligentRateLimit } from "@/utils/rateLimit";
 
 /**
  * PUT /api/auth/me/update_password
  * Met à jour le mot de passe utilisateur avec sécurité renforcée
- * Rate limit: 3 tentatives par heure (protection contre les attaques par force brute)
+ * Rate limit: Configuration intelligente personnalisée (3 tentatives par heure, strict)
+ *
+ * Headers de sécurité gérés par next.config.mjs pour /api/auth/*
  */
-export const PUT = withApiRateLimit(
+export const PUT = withIntelligentRateLimit(
   async function (req) {
     try {
       // Vérifier l'authentification
@@ -244,10 +246,21 @@ export const PUT = withApiRateLimit(
     }
   },
   {
-    customLimit: {
+    category: "api",
+    action: "write",
+    // Stratégie personnalisée pour le changement de mot de passe (très strict)
+    customStrategy: {
       points: 3, // 3 tentatives maximum
       duration: 3600000, // par période d'1 heure
       blockDuration: 3600000, // blocage d'1 heure en cas de dépassement
+      keyStrategy: "user", // Track par utilisateur
+      requireAuth: true, // Authentification obligatoire
+    },
+    extractUserInfo: async (req) => {
+      return {
+        userId: req.user?.id || req.user?._id,
+        email: req.user?.email,
+      };
     },
   },
 );

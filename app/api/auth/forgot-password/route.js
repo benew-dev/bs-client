@@ -11,8 +11,16 @@ import { withAuthRateLimit } from "@/utils/rateLimit";
 /**
  * POST /api/auth/forgot-password
  * Génère un token de réinitialisation et envoie un email
- * Rate limit: 3 tentatives par heure (protection anti-spam)
- * Rate limit global: 5 tentatives par 15 minutes par IP
+ * Rate limit: Configuration intelligente - auth.passwordReset (3 tentatives par heure, strict)
+ *
+ * Headers de sécurité gérés par next.config.mjs pour /api/auth/* :
+ * - Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0
+ * - Pragma: no-cache
+ * - Expires: 0
+ * - Surrogate-Control: no-store
+ * - X-Content-Type-Options: nosniff
+ * - X-Robots-Tag: noindex, nofollow, noarchive, nosnippet
+ * - X-Download-Options: noopen
  */
 export const POST = withAuthRateLimit(
   async function (request) {
@@ -249,11 +257,6 @@ export const POST = withAuthRateLimit(
     }
   },
   {
-    // Configuration spécifique pour forgot-password
-    customLimit: {
-      points: 3, // 3 tentatives maximum
-      duration: 3600000, // par heure (1 heure)
-      blockDuration: 3600000, // blocage d'1 heure en cas de dépassement
-    },
+    action: "passwordReset", // Utilise auth.passwordReset: 3 tentatives par heure, blocage 1h
   },
 );

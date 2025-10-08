@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
 import dbConnect from "@/backend/config/dbConnect";
 import User from "@/backend/models/user";
 import { validateRegister } from "@/helpers/validation/schemas/auth";
 import { captureException } from "@/monitoring/sentry";
-import { withAuthRateLimit } from "@/utils/rateLimit";
+import { withIntelligentRateLimit } from "@/utils/rateLimit";
 
 /**
  * POST /api/auth/register
  * Inscription d'un nouvel utilisateur avec vérification email et sécurité renforcée
- * Rate limit: 5 inscriptions par heure par IP (protection anti-spam)
+ * Rate limit: Configuration intelligente personnalisée (5 inscriptions par heure, strict)
  *
  * Headers de sécurité gérés par next.config.mjs pour /api/auth/* :
  * - Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0
@@ -27,7 +26,7 @@ import { withAuthRateLimit } from "@/utils/rateLimit";
  * - Permissions-Policy: [configuration restrictive]
  * - Content-Security-Policy: [configuration complète avec unsafe-inline pour auth]
  */
-export const POST = withAuthRateLimit(
+export const POST = withIntelligentRateLimit(
   async function (req) {
     try {
       // Connexion DB
@@ -44,10 +43,7 @@ export const POST = withAuthRateLimit(
             message: "Corps de requête invalide",
             code: "INVALID_REQUEST_BODY",
           },
-          {
-            status: 400,
-            // Headers appliqués automatiquement par next.config.mjs
-          },
+          { status: 400 },
         );
       }
 
@@ -67,10 +63,7 @@ export const POST = withAuthRateLimit(
             errors: validation.errors,
             code: "VALIDATION_FAILED",
           },
-          {
-            status: 400,
-            // Pas de headers manuels - gérés par next.config.mjs
-          },
+          { status: 400 },
         );
       }
 
@@ -91,10 +84,7 @@ export const POST = withAuthRateLimit(
             message: `Ce email est déjà utilisé`,
             code: "DUPLICATE_EMAIL",
           },
-          {
-            status: 400,
-            // Headers de sécurité appliqués automatiquement
-          },
+          { status: 400 },
         );
       }
 
@@ -136,29 +126,7 @@ export const POST = withAuthRateLimit(
         },
       };
 
-      // ============================================
-      // NOUVELLE IMPLÉMENTATION : Headers de sécurité
-      //
-      // Tous les headers de sécurité sont maintenant gérés
-      // de manière centralisée par next.config.mjs
-      //
-      // Pour /api/auth/* sont appliqués automatiquement :
-      // - Pas de cache (no-store, no-cache, must-revalidate)
-      // - Protection maximale (X-Robots-Tag: noindex, nofollow)
-      // - Sécurité downloads (X-Download-Options: noopen)
-      // - Protection MIME (X-Content-Type-Options: nosniff)
-      //
-      // Plus les headers globaux de sécurité :
-      // - HSTS complet avec preload
-      // - CSP avec configuration sécurisée
-      // - Permissions-Policy restrictive
-      // - Protection clickjacking
-      // ============================================
-
-      return NextResponse.json(response, {
-        status: 201,
-        // Pas de headers manuels - tout est géré par next.config.mjs
-      });
+      return NextResponse.json(response, { status: 201 });
     } catch (error) {
       console.error("❌ Registration error:", error.message);
 
@@ -227,11 +195,26 @@ export const POST = withAuthRateLimit(
     }
   },
   {
-    // Configuration spécifique pour register
-    customLimit: {
+    category: "api",
+    action: "write",
+    // Stratégie personnalisée pour l'inscription (strict)
+    customStrategy: {
       points: 5, // 5 inscriptions maximum
       duration: 3600000, // par heure (1 heure)
       blockDuration: 3600000, // blocage d'1 heure en cas de dépassement
+      keyStrategy: "ip", // Track par IP pour éviter les inscriptions massives
+      requireAuth: false, // Pas d'authentification requise pour s'inscrire
+    },
+    extractUserInfo: async (req) => {
+      // Extraire l'email du body pour le tracking
+      try {
+        const body = await req.clone().json();
+        return {
+          email: body.email?.toLowerCase()?.trim(),
+        };
+      } catch {
+        return {};
+      }
     },
   },
 );

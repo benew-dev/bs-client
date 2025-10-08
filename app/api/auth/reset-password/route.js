@@ -6,15 +6,16 @@ import User from "@/backend/models/user";
 import { validateResetPassword } from "@/helpers/validation/schemas/auth";
 import { captureException } from "@/monitoring/sentry";
 import { sendPasswordResetSuccessEmail } from "@/backend/utils/emailService";
-import { withAuthRateLimit } from "@/utils/rateLimit";
+import { withIntelligentRateLimit } from "@/utils/rateLimit";
 
 /**
  * POST /api/auth/reset-password
  * Réinitialise le mot de passe avec un token valide
- * Rate limit: 5 tentatives par 15 minutes par IP (protection contre attaques token)
- * Rate limit global: 10 tentatives par 15 minutes par IP
+ * Rate limit: Configuration intelligente personnalisée (5 tentatives par 15 minutes, protection contre attaques token)
+ *
+ * Headers de sécurité gérés par next.config.mjs pour /api/auth/*
  */
-export const POST = withAuthRateLimit(
+export const POST = withIntelligentRateLimit(
   async function (request) {
     try {
       // Connexion DB
@@ -322,11 +323,26 @@ export const POST = withAuthRateLimit(
     }
   },
   {
-    // Configuration spécifique pour reset-password
-    customLimit: {
+    category: "api",
+    action: "write",
+    // Stratégie personnalisée pour reset-password (protection contre attaques token)
+    customStrategy: {
       points: 5, // 5 tentatives maximum
       duration: 900000, // par 15 minutes
       blockDuration: 900000, // blocage de 15 minutes en cas de dépassement
+      keyStrategy: "ip", // Track par IP pour détecter les attaques de force brute sur les tokens
+      requireAuth: false, // Pas d'authentification requise (utilise token)
+    },
+    extractUserInfo: async (req) => {
+      // Extraire le token du body pour le logging
+      try {
+        const body = await req.clone().json();
+        return {
+          token: body.token?.substring(0, 8) + "...", // Seulement les premiers caractères pour la sécurité
+        };
+      } catch {
+        return {};
+      }
     },
   },
 );

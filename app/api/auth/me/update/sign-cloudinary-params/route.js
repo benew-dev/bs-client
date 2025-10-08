@@ -4,7 +4,7 @@ import dbConnect from "@/backend/config/dbConnect";
 import isAuthenticatedUser from "@/backend/middlewares/auth";
 import User from "@/backend/models/user";
 import { captureException, captureMessage } from "@/monitoring/sentry";
-import { withApiRateLimit } from "@/utils/rateLimit";
+import { withIntelligentRateLimit } from "@/utils/rateLimit";
 
 // Configuration Cloudinary
 cloudinary.config({
@@ -17,9 +17,11 @@ cloudinary.config({
 /**
  * POST /api/auth/me/update/sign-cloudinary-params
  * Signe les paramètres pour l'upload Cloudinary sécurisé
- * Rate limit: 10 signatures par 5 minutes (protection contre les abus d'upload)
+ * Rate limit: Configuration intelligente - api.upload (10 req/5min, strict)
+ *
+ * Headers de sécurité gérés par next.config.mjs pour /api/auth/*
  */
-export const POST = withApiRateLimit(
+export const POST = withIntelligentRateLimit(
   async function (req) {
     try {
       // 1. Vérifier l'authentification
@@ -199,11 +201,13 @@ export const POST = withApiRateLimit(
     }
   },
   {
-    // Configuration du rate limit personnalisé
-    customLimit: {
-      points: 10, // 10 signatures maximum
-      duration: 300000, // par période de 5 minutes
-      blockDuration: 600000, // blocage de 10 minutes en cas de dépassement
+    category: "api",
+    action: "upload", // 10 req/5min, blocage 10 min
+    extractUserInfo: async (req) => {
+      return {
+        userId: req.user?.id || req.user?._id,
+        email: req.user?.email,
+      };
     },
   },
 );

@@ -4,13 +4,16 @@ import isAuthenticatedUser from "@/backend/middlewares/auth";
 import User from "@/backend/models/user";
 import { validateProfile } from "@/helpers/validation/schemas/user";
 import { captureException } from "@/monitoring/sentry";
-import { withApiRateLimit } from "@/utils/rateLimit";
+import { withIntelligentRateLimit } from "@/utils/rateLimit";
 
 /**
  * PUT /api/auth/me/update
  * Met à jour le profil utilisateur AVEC adresse
+ * Rate limit: Configuration intelligente - api.write (30 req/min pour utilisateurs authentifiés)
+ *
+ * Headers de sécurité gérés par next.config.mjs pour /api/auth/*
  */
-export const PUT = withApiRateLimit(
+export const PUT = withIntelligentRateLimit(
   async function (req) {
     try {
       await isAuthenticatedUser(req, NextResponse);
@@ -123,10 +126,13 @@ export const PUT = withApiRateLimit(
     }
   },
   {
-    customLimit: {
-      points: 20,
-      duration: 300000,
-      blockDuration: 600000,
+    category: "api",
+    action: "write", // 30 req/min pour utilisateurs authentifiés, blocage 5 min
+    extractUserInfo: async (req) => {
+      return {
+        userId: req.user?.id || req.user?._id,
+        email: req.user?.email,
+      };
     },
   },
 );
