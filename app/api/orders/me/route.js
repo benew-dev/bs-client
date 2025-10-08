@@ -5,212 +5,233 @@ import Order from "@/backend/models/order";
 import User from "@/backend/models/user";
 import APIFilters from "@/backend/utils/APIFilters";
 import { captureException } from "@/monitoring/sentry";
-import { withApiRateLimit } from "@/utils/rateLimit";
+import { withIntelligentRateLimit } from "@/utils/rateLimit";
 
 /**
  * GET /api/orders/me
  * Récupère l'historique des commandes de l'utilisateur connecté
- * Rate limit: 120 req/min (authenticated)
+ * Rate limit: Configuration intelligente - authenticatedRead (200 req/min)
+ *
+ * Headers de sécurité gérés par next.config.mjs pour /api/orders/* :
+ * - Cache-Control: private, no-cache, no-store, must-revalidate
+ * - Pragma: no-cache
+ * - X-Content-Type-Options: nosniff
+ * - X-Robots-Tag: noindex, nofollow
+ *
+ * Note: Les commandes sont des données sensibles privées
  */
-export const GET = withApiRateLimit(async function (req) {
-  try {
-    // Vérifier l'authentification
-    await isAuthenticatedUser(req, NextResponse);
+export const GET = withIntelligentRateLimit(
+  async function (req) {
+    try {
+      // Vérifier l'authentification
+      await isAuthenticatedUser(req, NextResponse);
 
-    // Connexion DB
-    await dbConnect();
+      // Connexion DB
+      await dbConnect();
 
-    // Récupérer l'utilisateur avec validation améliorée
-    const user = await User.findOne({ email: req.user.email })
-      .select("_id name email phone isActive")
-      .lean();
+      // Récupérer l'utilisateur avec validation améliorée
+      const user = await User.findOne({ email: req.user.email })
+        .select("_id name email phone isActive")
+        .lean();
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "User not found",
-          code: "USER_NOT_FOUND",
+      if (!user) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "User not found",
+            code: "USER_NOT_FOUND",
+          },
+          { status: 404 },
+        );
+      }
+
+      // Vérifier si le compte est actif
+      if (!user.isActive) {
+        console.warn(
+          "Inactive user attempting to access order history:",
+          user.email,
+        );
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Account suspended. Cannot access order history",
+            code: "ACCOUNT_SUSPENDED",
+          },
+          { status: 403 },
+        );
+      }
+
+      // Récupérer et valider les paramètres de pagination
+      const searchParams = req.nextUrl.searchParams;
+      const page = parseInt(searchParams.get("page") || "1", 10);
+      const resPerPage = 2; // 2 commandes par page
+
+      // Validation des paramètres de pagination
+      if (page < 1 || page > 1000) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Invalid page number. Must be between 1 and 1000",
+            code: "INVALID_PAGINATION",
+            data: { page },
+          },
+          { status: 400 },
+        );
+      }
+
+      // Compter le total de commandes avec les filtres
+      const ordersCount = await Order.countDocuments({ user: user._id });
+      const ordersPaidCount = await Order.countDocuments({
+        user: user._id,
+        paymentStatus: "paid",
+      });
+      const ordersUnpaidCount = await Order.countDocuments({
+        user: user._id,
+        paymentStatus: "unpaid",
+      });
+
+      // Total de toutes les commandes d'un utilisateur (tous statuts confondus)
+      const totalAmountOrders = await Order.getTotalAmountByUser(
+        user._id.toString(),
+      );
+
+      // Si aucune commande trouvée
+      if (ordersCount === 0) {
+        return NextResponse.json(
+          {
+            success: true,
+            message: "No orders found",
+            data: {
+              orders: [],
+              totalPages: 0,
+              currentPage: page,
+              count: 0,
+              perPage: resPerPage,
+              paidCount: 0,
+              unpaidCount: 0,
+              totalAmountOrders: { totalAmount: 0, orderCount: 0 },
+              meta: {
+                hasOrders: false,
+                timestamp: new Date().toISOString(),
+              },
+            },
+          },
+          { status: 200 },
+        );
+      }
+
+      // Utiliser APIFilters pour la pagination
+      const apiFilters = new APIFilters(
+        Order.find({ user: user._id }),
+        searchParams,
+      ).pagination(resPerPage);
+
+      // Récupérer les commandes avec pagination - CHAMPS ADAPTÉS AU MODÈLE
+      const orders = await apiFilters.query
+        .select(
+          "orderNumber paymentInfo paymentStatus totalAmount createdAt updatedAt paidAt cancelledAt cancelReason orderItems",
+        )
+        .sort({ createdAt: -1 })
+        .lean();
+
+      // Calculer le nombre de pages
+      const totalPages = Math.ceil(ordersCount / resPerPage);
+
+      // Formater la réponse
+      const formattedOrders = orders.map((order) => ({
+        ...order,
+        user: {
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
         },
-        { status: 404 },
-      );
-    }
+      }));
 
-    // Vérifier si le compte est actif
-    if (!user.isActive) {
-      console.warn(
-        "Inactive user attempting to access order history:",
-        user.email,
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Account suspended. Cannot access order history",
-          code: "ACCOUNT_SUSPENDED",
-        },
-        { status: 403 },
-      );
-    }
+      // Log pour audit (sans données sensibles)
+      console.log("Order history accessed:", {
+        userId: user._id,
+        userEmail: user.email,
+        ordersRetrieved: orders.length,
+        page,
+        timestamp: new Date().toISOString(),
+        ip:
+          req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+          "unknown",
+      });
 
-    // Récupérer et valider les paramètres de pagination
-    const searchParams = req.nextUrl.searchParams;
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const resPerPage = 2; // 2 commandes par page
-
-    // Validation des paramètres de pagination
-    if (page < 1 || page > 1000) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid page number. Must be between 1 and 1000",
-          code: "INVALID_PAGINATION",
-          data: { page },
-        },
-        { status: 400 },
-      );
-    }
-
-    // Compter le total de commandes avec les filtres
-    const ordersCount = await Order.countDocuments({ user: user._id });
-    const ordersPaidCount = await Order.countDocuments({
-      user: user._id,
-      paymentStatus: "paid",
-    });
-    const ordersUnpaidCount = await Order.countDocuments({
-      user: user._id,
-      paymentStatus: "unpaid",
-    });
-
-    // Total de toutes les commandes d'un utilisateur (tous statuts confondus)
-    const totalAmountOrders = await Order.getTotalAmountByUser(
-      user._id.toString(),
-    );
-
-    // Si aucune commande trouvée
-    if (ordersCount === 0) {
       return NextResponse.json(
         {
           success: true,
-          message: "No orders found",
           data: {
-            orders: [],
-            totalPages: 0,
+            orders: formattedOrders,
+            totalPages,
             currentPage: page,
-            count: 0,
+            count: ordersCount,
+            paidCount: ordersPaidCount,
+            unpaidCount: ordersUnpaidCount,
+            totalAmountOrders,
             perPage: resPerPage,
-            paidCount: 0,
-            unpaidCount: 0,
-            totalAmountOrders: { totalAmount: 0, orderCount: 0 },
-            meta: {
-              hasOrders: false,
-              timestamp: new Date().toISOString(),
-            },
           },
         },
         { status: 200 },
       );
-    }
+    } catch (error) {
+      console.error("Orders fetch error:", error.message);
 
-    // Utiliser APIFilters pour la pagination
-    const apiFilters = new APIFilters(
-      Order.find({ user: user._id }),
-      searchParams,
-    ).pagination(resPerPage);
+      // Capturer seulement les vraies erreurs système
+      if (!error.message?.includes("authentication")) {
+        captureException(error, {
+          tags: {
+            component: "api",
+            route: "orders/me/GET",
+            user: req.user?.email,
+          },
+          extra: {
+            page: req.nextUrl.searchParams.get("page"),
+          },
+        });
+      }
 
-    // Récupérer les commandes avec pagination - CHAMPS ADAPTÉS AU MODÈLE
-    const orders = await apiFilters.query
-      .select(
-        "orderNumber paymentInfo paymentStatus totalAmount createdAt updatedAt paidAt cancelledAt cancelReason orderItems",
-      )
-      .sort({ createdAt: -1 })
-      .lean();
+      // Gestion détaillée des erreurs
+      let status = 500;
+      let message = "Failed to fetch orders history";
+      let code = "INTERNAL_ERROR";
 
-    // Calculer le nombre de pages
-    const totalPages = Math.ceil(ordersCount / resPerPage);
+      if (error.message?.includes("authentication")) {
+        status = 401;
+        message = "Authentication failed";
+        code = "AUTH_FAILED";
+      } else if (error.name === "CastError") {
+        status = 400;
+        message = "Invalid request parameters";
+        code = "INVALID_PARAMS";
+      } else if (error.message?.includes("connection")) {
+        status = 503;
+        message = "Database connection error";
+        code = "DB_CONNECTION_ERROR";
+      }
 
-    // Formater la réponse
-    const formattedOrders = orders.map((order) => ({
-      ...order,
-      user: {
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-      },
-    }));
-
-    // Log pour audit (sans données sensibles)
-    console.log("Order history accessed:", {
-      userId: user._id,
-      userEmail: user.email,
-      ordersRetrieved: orders.length,
-      page,
-      timestamp: new Date().toISOString(),
-      ip:
-        req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown",
-    });
-
-    return NextResponse.json(
-      {
-        success: true,
-        data: {
-          orders: formattedOrders,
-          totalPages,
-          currentPage: page,
-          count: ordersCount,
-          paidCount: ordersPaidCount,
-          unpaidCount: ordersUnpaidCount,
-          totalAmountOrders,
-          perPage: resPerPage,
+      return NextResponse.json(
+        {
+          success: false,
+          message,
+          code,
+          ...(process.env.NODE_ENV === "development" && {
+            error: error.message,
+          }),
         },
-      },
-      { status: 200 },
-    );
-  } catch (error) {
-    console.error("Orders fetch error:", error.message);
-
-    // Capturer seulement les vraies erreurs système
-    if (!error.message?.includes("authentication")) {
-      captureException(error, {
-        tags: {
-          component: "api",
-          route: "orders/me/GET",
-          user: req.user?.email,
-        },
-        extra: {
-          page: req.nextUrl.searchParams.get("page"),
-        },
-      });
+        { status },
+      );
     }
-
-    // Gestion détaillée des erreurs
-    let status = 500;
-    let message = "Failed to fetch orders history";
-    let code = "INTERNAL_ERROR";
-
-    if (error.message?.includes("authentication")) {
-      status = 401;
-      message = "Authentication failed";
-      code = "AUTH_FAILED";
-    } else if (error.name === "CastError") {
-      status = 400;
-      message = "Invalid request parameters";
-      code = "INVALID_PARAMS";
-    } else if (error.message?.includes("connection")) {
-      status = 503;
-      message = "Database connection error";
-      code = "DB_CONNECTION_ERROR";
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message,
-        code,
-        ...(process.env.NODE_ENV === "development" && {
-          error: error.message,
-        }),
-      },
-      { status },
-    );
-  }
-});
+  },
+  {
+    category: "api",
+    action: "authenticatedRead", // 200 req/min pour utilisateurs authentifiés
+    extractUserInfo: async (req) => {
+      return {
+        userId: req.user?.id || req.user?._id,
+        email: req.user?.email,
+      };
+    },
+  },
+);
