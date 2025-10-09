@@ -7,7 +7,8 @@ import Product from "@/backend/models/product";
 import Category from "@/backend/models/category";
 import Cart from "@/backend/models/cart";
 import { captureException } from "@/monitoring/sentry";
-import { withApiRateLimit } from "@/utils/rateLimit";
+import { withIntelligentRateLimit } from "@/utils/rateLimit";
+import { getToken } from "next-auth/jwt";
 
 /**
  * POST /api/orders/webhook
@@ -32,7 +33,7 @@ import { withApiRateLimit } from "@/utils/rateLimit";
  * Note: Cette route est critique pour le business et utilise des transactions
  * MongoDB pour garantir la cohérence des données (stock, panier, commande)
  */
-export const POST = withApiRateLimit(
+export const POST = withIntelligentRateLimit(
   async function (req) {
     try {
       // 1. Authentification
@@ -404,10 +405,32 @@ export const POST = withApiRateLimit(
     }
   },
   {
-    customLimit: {
-      points: 5, // 5 commandes maximum
-      duration: 600000, // par période de 10 minutes
-      blockDuration: 1800000, // blocage de 30 minutes en cas de dépassement
+    category: "payment",
+    action: "createOrder", // 5 commandes par 5 minutes
+    extractUserInfo: async (req) => {
+      try {
+        const cookieName =
+          process.env.NODE_ENV === "production"
+            ? "__Secure-next-auth.session-token"
+            : "next-auth.session-token";
+
+        const token = await getToken({
+          req,
+          secret: process.env.NEXTAUTH_SECRET,
+          cookieName,
+        });
+
+        return {
+          userId: token?.user?._id || token?.user?.id || token?.sub,
+          email: token?.user?.email,
+        };
+      } catch (error) {
+        console.error(
+          "[ORDER_WEBHOOK] Error extracting user from JWT:",
+          error.message,
+        );
+        return {};
+      }
     },
   },
 );
