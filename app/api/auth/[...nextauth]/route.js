@@ -196,10 +196,18 @@ const authOptions = {
               "-password",
             );
             if (freshUser) {
-              token.user.name = freshUser.name;
-              token.user.phone = freshUser.phone;
-              token.user.avatar = freshUser.avatar;
-              token.user.address = freshUser.address;
+              token.user = {
+                _id: freshUser._id,
+                name: freshUser.name,
+                email: freshUser.email,
+                phone: freshUser.phone,
+                address: freshUser.address,
+                role: freshUser.role,
+                avatar: freshUser.avatar,
+                isActive: freshUser.isActive,
+                lastLogin: freshUser.lastLogin,
+                createdAt: freshUser.createdAt,
+              };
             }
           } catch (error) {
             console.error("Error fetching fresh user data:", error);
