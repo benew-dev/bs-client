@@ -11,7 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export function GlobalProvider({ children }) {
   return (
-    <SessionProvider>
+    <SessionProvider refetchInterval={0} refetchOnWindowFocus={true}>
       <AuthProvider>
         <CartProvider>
           <OrderProvider>

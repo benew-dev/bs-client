@@ -186,12 +186,7 @@ const authOptions = {
           phone: session.phone || token.user.phone,
           avatar: session.avatar || token.user.avatar,
           address: session.address || token.user.address,
-          _id: token.user._id,
-          email: token.user.email,
-          role: token.user.role,
-          isActive: token.user.isActive,
-          lastLogin: token.user.lastLogin,
-          createdAt: token.user.createdAt,
+          ...token.user,
         };
 
         // Optionnel: Récupérer les données fraîches de la DB
