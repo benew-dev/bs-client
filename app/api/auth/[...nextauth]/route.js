@@ -190,30 +190,28 @@ const authOptions = {
         };
 
         // Optionnel: Récupérer les données fraîches de la DB
-        // if (token.user._id) {
-        //   try {
-        //     await dbConnect();
-        //     const freshUser = await User.findById(token.user._id).select(
-        //       "-password",
-        //     );
-        //     if (freshUser) {
-        //       token.user = {
-        //         _id: freshUser._id,
-        //         name: freshUser.name,
-        //         email: freshUser.email,
-        //         phone: freshUser.phone,
-        //         address: freshUser.address,
-        //         role: freshUser.role,
-        //         avatar: freshUser.avatar,
-        //         isActive: freshUser.isActive,
-        //         lastLogin: freshUser.lastLogin,
-        //         createdAt: freshUser.createdAt,
-        //       };
-        //     }
-        //   } catch (error) {
-        //     console.error("Error fetching fresh user data:", error);
-        //   }
-        // }
+        if (token.user._id) {
+          try {
+            await dbConnect();
+            const freshUser = await User.findById(token.user._id).select(
+              "-password",
+            );
+            if (freshUser) {
+              token.user = {
+                _id: freshUser._id,
+                name: freshUser.name,
+                email: freshUser.email,
+                phone: freshUser.phone,
+                address: freshUser.address,
+                role: freshUser.role,
+                avatar: freshUser.avatar,
+                ...token.user,
+              };
+            }
+          } catch (error) {
+            console.error("Error fetching fresh user data:", error);
+          }
+        }
       }
 
       return token;
