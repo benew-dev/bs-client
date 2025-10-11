@@ -15,8 +15,8 @@ export const AuthProvider = ({ children }) => {
 
   const router = useRouter();
   // ✅ MODIFICATION: Gestion sécurisée de useSession
-  const session = useSession();
-  const updateSession = session?.update; // Éviter la déstructuration directe
+  // eslint-disable-next-line no-unused-vars
+  const { data: session, update: updateSession } = useSession();
 
   // ✅ NOUVELLE fonction pour synchroniser l'utilisateur avec session complète
   // 1. METTRE À JOUR syncUserWithSession pour inclure l'adresse :
@@ -211,9 +211,17 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Succès
-      if (data.success) {
+      if (data.success && data.data?.updatedUser) {
         console.log("User before update:", user);
         console.log("Updated user data:", data.data.updatedUser);
+
+        // ✅ IMPORTANT: Appeler update() de NextAuth pour rafraîchir la session
+        if (updateSession) {
+          await updateSession({
+            ...data.data.updatedUser,
+            trigger: "update",
+          });
+        }
 
         // Synchroniser avec la session
         const syncedUser = await syncUserWithSession(data.data.updatedUser);

@@ -1,9 +1,9 @@
 "use client";
 
-import { memo, useContext, useState, useEffect, useRef } from "react";
+import { memo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import AuthContext from "@/context/AuthContext";
+import { useSession } from "next-auth/react";
 import {
   EllipsisVertical,
   Lock,
@@ -14,7 +14,9 @@ import {
 } from "lucide-react";
 
 const Profile = () => {
-  const { user } = useContext(AuthContext);
+  const { data: session, status } = useSession(); // ✅ Obtenir la session
+  const user = session?.user; // ✅ Extraire l'utilisateur de la session
+
   const [isClient, setIsClient] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -80,7 +82,7 @@ const Profile = () => {
   };
 
   // Skeleton loading
-  if (!isClient || !user) {
+  if (status === "loading" || !isClient || !user) {
     return (
       <div className="animate-pulse space-y-6">
         <div className="bg-white rounded-lg shadow-md p-6">

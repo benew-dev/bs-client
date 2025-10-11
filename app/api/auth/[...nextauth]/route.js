@@ -137,23 +137,20 @@ const authOptions = {
 
   callbacks: {
     // Callback JWT enrichi
-    jwt: async ({ token, user }) => {
+    jwt: async ({ token, user, trigger, session }) => {
       if (user) {
-        token.user = {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          address: user.address,
-          role: user.role,
-          avatar: user.avatar,
-          isActive: user.isActive,
-          lastLogin: user.lastLogin,
-          createdAt: user.createdAt,
-        };
-
-        // Marquer comme nouvelle connexion
-        token.isNewLogin = true;
+        ((token.id = user._id),
+          (token.name = user.name),
+          (token.email = user.email),
+          (token.phone = user.phone),
+          (token.address = user.address),
+          (token.role = user.role),
+          (token.avatar = user.avatar),
+          (token.isActive = user.isActive),
+          (token.lastLogin = user.lastLogin),
+          (token.createdAt = user.createdAt),
+          // Marquer comme nouvelle connexion
+          (token.isNewLogin = true));
         token.loginTime = Date.now();
 
         // Mettre à jour lastLogin en base de données
@@ -178,17 +175,46 @@ const authOptions = {
         token.isNewLogin = false;
       }
 
+      if (trigger === "update" && session) {
+        // Mettre à jour le token avec les nouvelles données
+        token.name = session.name || token.name;
+        token.phone = session.phone || token.phone;
+        token.avatar = session.avatar || token.avatar;
+        token.address = session.address || token.address;
+        // Optionnel: Récupérer les données fraîches de la DB
+        if (token.id) {
+          try {
+            await dbConnect();
+            const freshUser = await User.findById(token.id).select("-password");
+            if (freshUser) {
+              token.name = freshUser.name;
+              token.phone = freshUser.phone;
+              token.avatar = freshUser.avatar;
+              token.address = freshUser.address;
+            }
+          } catch (error) {
+            console.error("Error fetching fresh user data:", error);
+          }
+        }
+      }
+
       return token;
     },
 
     // Session enrichie avec plus de données
     session: async ({ session, token }) => {
-      if (token?.user) {
+      if (token) {
         session.user = {
-          ...token.user,
+          _id: token.id,
+          name: token.name,
+          email: token.email,
+          phone: token.phone,
+          address: token.address,
+          role: token.role,
+          avatar: token.avatar,
           // Informations supplémentaires pour l'interface
-          memberSince: token.user.createdAt,
-          accountStatus: token.user.isActive ? "active" : "suspended",
+          memberSince: token.createdAt,
+          accountStatus: token.isActive ? "active" : "suspended",
         };
         session.isNewLogin = token.isNewLogin || false;
       }
