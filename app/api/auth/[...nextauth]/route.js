@@ -186,7 +186,12 @@ const authOptions = {
           phone: session.phone || token.user.phone,
           avatar: session.avatar || token.user.avatar,
           address: session.address || token.user.address,
-          ...token.user,
+          _id: token.user._id,
+          email: token.user.email,
+          role: token.user.role,
+          isActive: token.user.isActive,
+          lastLogin: token.user.lastLogin,
+          createdAt: token.user.createdAt,
         };
 
         // Optionnel: Récupérer les données fraîches de la DB
@@ -205,7 +210,9 @@ const authOptions = {
                 address: freshUser.address,
                 role: freshUser.role,
                 avatar: freshUser.avatar,
-                ...token.user,
+                isActive: freshUser.isActive,
+                lastLogin: freshUser.lastLogin,
+                createdAt: freshUser.createdAt,
               };
             }
           } catch (error) {
