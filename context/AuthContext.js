@@ -150,6 +150,7 @@ export const AuthProvider = ({ children }) => {
         name: name.trim(),
         phone: phone ? phone.trim() : "",
         avatar,
+        address,
       };
 
       // Simple fetch avec timeout court
