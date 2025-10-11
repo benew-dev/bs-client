@@ -17,6 +17,8 @@ const Profile = () => {
   const { data: session, status } = useSession(); // ✅ Obtenir la session
   const user = session?.user; // ✅ Extraire l'utilisateur de la session
 
+  console.log("user", user);
+
   const [isClient, setIsClient] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
