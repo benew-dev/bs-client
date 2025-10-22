@@ -139,7 +139,7 @@ const ReviewOrder = () => {
   }
 
   // Extraire les informations de paiement avec le nouveau modèle
-  const { platform, paymentAccountName, paymentAccountNumber } =
+  const { typePayment, paymentAccountName, paymentAccountNumber } =
     orderInfo.paymentInfo;
 
   return (
@@ -235,7 +235,7 @@ const ReviewOrder = () => {
                   <div className="flex justify-between py-2">
                     <span className="text-gray-600">Plateforme:</span>
                     <span className="font-medium text-gray-800 px-3 py-1 bg-blue-100 rounded-full text-sm">
-                      {platform}
+                      {typePayment}
                     </span>
                   </div>
                   <div className="flex justify-between py-2">
