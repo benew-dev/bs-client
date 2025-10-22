@@ -53,33 +53,53 @@ const orderItemSchema = new mongoose.Schema({
 
 /**
  * Schéma de paiement avec validation stricte
+ * Support du paiement CASH
  */
 const paymentInfoSchema = new mongoose.Schema({
   typePayment: {
     type: String,
     required: [true, "Type de paiement obligatoire"],
     enum: {
-      values: ["WAAFI", "D-MONEY", "CAC-PAY", "BCI-PAY"],
+      values: ["WAAFI", "D-MONEY", "CAC-PAY", "BCI-PAY", "CASH"],
       message: "Type de paiement non supporté: {VALUE}",
     },
   },
   paymentAccountNumber: {
     type: String,
-    required: [true, "Numéro de compte obligatoire"],
+    required: function () {
+      // Non requis pour le paiement CASH
+      return this.typePayment !== "CASH";
+    },
     trim: true,
     maxlength: [50, "Le numéro ne peut pas dépasser 50 caractères"],
+    default: function () {
+      return this.typePayment === "CASH" ? "CASH" : undefined;
+    },
     // Masquer les numéros sensibles dans les réponses
     get: function (val) {
       if (!val) return val;
+      if (val === "CASH") return "CASH";
       // Afficher seulement les 4 derniers caractères, masquer le reste
       return val.length > 4 ? "••••••" + val.slice(-4) : val;
     },
   },
   paymentAccountName: {
     type: String,
-    required: [true, "Nom du compte obligatoire"],
+    required: function () {
+      // Non requis pour le paiement CASH
+      return this.typePayment !== "CASH";
+    },
     trim: true,
     maxlength: [100, "Le nom ne peut pas dépasser 100 caractères"],
+    default: function () {
+      return this.typePayment === "CASH" ? "Paiement en espèces" : undefined;
+    },
+  },
+  isCashPayment: {
+    type: Boolean,
+    default: function () {
+      return this.typePayment === "CASH";
+    },
   },
   paymentDate: {
     type: Date,
@@ -109,10 +129,22 @@ const orderSchema = new mongoose.Schema(
     paymentStatus: {
       type: String,
       enum: {
-        values: ["unpaid", "processing", "paid", "refunded", "failed"],
+        values: [
+          "unpaid",
+          "processing",
+          "paid",
+          "refunded",
+          "failed",
+          "pending_cash",
+        ],
         message: "Statut de paiement non valide: {VALUE}",
       },
-      default: "unpaid",
+      default: function () {
+        // Si c'est un paiement CASH, statut par défaut est pending_cash
+        return this.paymentInfo?.typePayment === "CASH"
+          ? "pending_cash"
+          : "unpaid";
+      },
       index: true,
     },
     totalAmount: {
@@ -153,10 +185,11 @@ const orderSchema = new mongoose.Schema(
         delete ret.__v;
         // Ne pas exposer les informations sensibles
         if (ret.paymentInfo && ret.paymentInfo.paymentAccountNumber) {
-          // Masquer le numéro de compte en ne montrant que les 4 derniers chiffres
           const num = ret.paymentInfo.paymentAccountNumber;
-          ret.paymentInfo.paymentAccountNumber =
-            num.length > 4 ? "••••••" + num.slice(-4) : num;
+          if (num !== "CASH") {
+            ret.paymentInfo.paymentAccountNumber =
+              num.length > 4 ? "••••••" + num.slice(-4) : num;
+          }
         }
         return ret;
       },
@@ -215,6 +248,11 @@ orderSchema.pre("save", async function (next) {
           item.subtotal = item.price * item.quantity;
         }
       });
+    }
+
+    // Définir le statut de paiement initial pour CASH
+    if (this.paymentInfo?.typePayment === "CASH" && !this.paymentStatus) {
+      this.paymentStatus = "pending_cash";
     }
   }
 
@@ -289,6 +327,14 @@ orderSchema.methods.calculateTotal = function () {
   );
 };
 
+// Méthode pour vérifier si c'est un paiement en espèces
+orderSchema.methods.isCashPayment = function () {
+  return (
+    this.paymentInfo?.typePayment === "CASH" ||
+    this.paymentInfo?.isCashPayment === true
+  );
+};
+
 // Méthode statique pour trouver les commandes d'un utilisateur
 orderSchema.statics.findByUser = function (userId, limit = 10, page = 1) {
   const skip = (page - 1) * limit;
@@ -346,6 +392,16 @@ orderSchema.statics.getStats = async function () {
               },
             },
             { $sort: { _id: 1 } },
+          ],
+          cashOrders: [
+            { $match: { "paymentInfo.typePayment": "CASH" } },
+            {
+              $group: {
+                _id: "$paymentStatus",
+                count: { $sum: 1 },
+                total: { $sum: "$totalAmount" },
+              },
+            },
           ],
         },
       },
