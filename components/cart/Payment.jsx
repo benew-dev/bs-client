@@ -696,19 +696,16 @@ const PaymentMethodCard = memo(({ payment, isSelected, onSelect }) => {
         {isCash ? (
           <div className="text-sm text-gray-600">
             <p className="font-medium">
-              {payment?.description ||
-                "Paiement en espèces lors de la récupération"}
+              Paiement en espèces lors de la récupération
             </p>
           </div>
         ) : (
           <>
             <div className="text-sm text-gray-600">
-              <span className="font-medium">Titulaire:</span>{" "}
-              {payment?.paymentName}
+              <span className="font-medium">Titulaire:</span> {payment?.name}
             </div>
             <div className="text-sm text-gray-600">
-              <span className="font-medium">Numéro:</span>{" "}
-              {payment?.paymentNumber}
+              <span className="font-medium">Numéro:</span> {payment?.number}
             </div>
           </>
         )}
