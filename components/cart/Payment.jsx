@@ -64,7 +64,7 @@ const Payment = ({ paymentTypes }) => {
   // Contextes
   const { cart, cartTotal, cartCount } = useContext(CartContext);
 
-  const { orderInfo, setOrderInfo, error, clearErrors } =
+  const { orderInfo, setOrderInfo, setPaymentTypes, error, clearErrors } =
     useContext(OrderContext);
 
   const router = useRouter();
@@ -320,6 +320,8 @@ const Payment = ({ paymentTypes }) => {
         paymentInfo,
         totalAmount: totalAmount,
       };
+
+      setPaymentTypes(paymentTypes);
 
       setOrderInfo(finalOrderInfo);
       router.push("/review-order");

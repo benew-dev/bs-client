@@ -150,29 +150,6 @@ export const OrderProvider = ({ children }) => {
     setError(null);
   };
 
-  // Wrapper pour setters avec monitoring des erreurs critiques
-  const safeSetPaymentTypes = (types) => {
-    try {
-      if (!Array.isArray(types)) {
-        const validationError = new Error(
-          "Types de paiement invalides (non-array)",
-        );
-        captureClientError(
-          validationError,
-          "OrderContext",
-          "setPaymentTypes",
-          false,
-        );
-        setPaymentTypes([]);
-        return;
-      }
-      setPaymentTypes(types);
-    } catch (error) {
-      captureClientError(error, "OrderContext", "setPaymentTypes", true);
-      setPaymentTypes([]);
-    }
-  };
-
   return (
     <OrderContext.Provider
       value={{
@@ -182,7 +159,7 @@ export const OrderProvider = ({ children }) => {
         lowStockProducts,
         paymentTypes,
         orderInfo,
-        setPaymentTypes: safeSetPaymentTypes,
+        setPaymentTypes,
         setOrderInfo,
         addOrder,
         setUpdated,
