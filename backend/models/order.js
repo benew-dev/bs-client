@@ -199,7 +199,7 @@ const orderSchema = new mongoose.Schema(
 );
 
 // Indexer pour les requêtes fréquentes
-orderSchema.index({ "user.userId": 1, createdAt: -1 });
+// orderSchema.index({ "user.userId": 1, createdAt: -1 });
 orderSchema.index({ paymentStatus: 1, createdAt: -1 });
 orderSchema.index({ createdAt: -1 });
 
@@ -328,15 +328,15 @@ orderSchema.methods.isCashPayment = function () {
 };
 
 // Méthode statique pour trouver les commandes d'un utilisateur
-orderSchema.statics.findByUser = function (userId, limit = 10, page = 1) {
-  const skip = (page - 1) * limit;
-  return this.find({ "user.userId": userId })
-    .select("-__v")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
-};
+// orderSchema.statics.findByUser = function (userId, limit = 10, page = 1) {
+//   const skip = (page - 1) * limit;
+//   return this.find({ "user.userId": userId })
+//     .select("-__v")
+//     .sort({ createdAt: -1 })
+//     .skip(skip)
+//     .limit(limit)
+//     .lean();
+// };
 
 // Méthode statique pour trouver les commandes récentes
 orderSchema.statics.findRecent = function (limit = 20) {

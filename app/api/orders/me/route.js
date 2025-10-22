@@ -20,6 +20,7 @@ import { getToken } from "next-auth/jwt";
  * - X-Robots-Tag: noindex, nofollow
  *
  * Note: Les commandes sont des données sensibles privées
+ * Support du paiement CASH avec statut "pending_cash"
  */
 export const GET = withIntelligentRateLimit(
   async function (req) {
@@ -90,6 +91,10 @@ export const GET = withIntelligentRateLimit(
         user: user._id,
         paymentStatus: "unpaid",
       });
+      const ordersPendingCashCount = await Order.countDocuments({
+        user: user._id,
+        paymentStatus: "pending_cash",
+      });
 
       // Total de toutes les commandes d'un utilisateur (tous statuts confondus)
       const totalAmountOrders = await Order.getTotalAmountByUser(
@@ -110,6 +115,7 @@ export const GET = withIntelligentRateLimit(
               perPage: resPerPage,
               paidCount: 0,
               unpaidCount: 0,
+              pendingCashCount: 0,
               totalAmountOrders: { totalAmount: 0, orderCount: 0 },
               meta: {
                 hasOrders: false,
@@ -138,21 +144,43 @@ export const GET = withIntelligentRateLimit(
       // Calculer le nombre de pages
       const totalPages = Math.ceil(ordersCount / resPerPage);
 
-      // Formater la réponse
-      const formattedOrders = orders.map((order) => ({
-        ...order,
-        user: {
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-        },
-      }));
+      // Formater la réponse avec détection du paiement CASH
+      const formattedOrders = orders.map((order) => {
+        // Vérifier si c'est un paiement CASH
+        const isCashPayment =
+          order.paymentInfo?.typePayment === "CASH" ||
+          order.paymentInfo?.isCashPayment === true;
+
+        return {
+          ...order,
+          user: {
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+          },
+          // Ajouter un flag pour identifier facilement les paiements CASH
+          isCashPayment,
+          // Ajouter un message descriptif pour le statut
+          paymentStatusDescription: isCashPayment
+            ? "Paiement en espèces à la récupération"
+            : order.paymentStatus === "paid"
+              ? "Payé"
+              : order.paymentStatus === "unpaid"
+                ? "Non payé"
+                : order.paymentStatus === "processing"
+                  ? "En traitement"
+                  : order.paymentStatus === "pending_cash"
+                    ? "En attente de paiement en espèces"
+                    : "Statut inconnu",
+        };
+      });
 
       // Log pour audit (sans données sensibles)
       console.log("Order history accessed:", {
         userId: user._id,
         userEmail: user.email,
         ordersRetrieved: orders.length,
+        cashOrders: formattedOrders.filter((o) => o.isCashPayment).length,
         page,
         timestamp: new Date().toISOString(),
         ip:
@@ -170,8 +198,14 @@ export const GET = withIntelligentRateLimit(
             count: ordersCount,
             paidCount: ordersPaidCount,
             unpaidCount: ordersUnpaidCount,
+            pendingCashCount: ordersPendingCashCount,
             totalAmountOrders,
             perPage: resPerPage,
+            meta: {
+              hasCashOrders:
+                formattedOrders.filter((o) => o.isCashPayment).length > 0,
+              timestamp: new Date().toISOString(),
+            },
           },
         },
         { status: 200 },

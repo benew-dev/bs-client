@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
-import { memo } from 'react';
-import Image from 'next/image';
-import { Tag } from 'lucide-react';
+import { memo } from "react";
+import Image from "next/image";
+import { Tag } from "lucide-react";
 
 /**
  * Composant d'affichage d'un produit commandé
  * Version améliorée avec tous les champs du orderItemSchema
+ * Compatible avec tous les types de paiement (CASH inclus)
  */
 const OrderedProduct = memo(({ item }) => {
   // Validation de base
@@ -14,8 +15,8 @@ const OrderedProduct = memo(({ item }) => {
 
   // Extraction des données avec valeurs par défaut
   const {
-    name = 'Produit',
-    category = 'Non catégorisé',
+    name = "Produit",
+    category = "Non catégorisé",
     image,
     price = 0,
     quantity = 1,
@@ -28,7 +29,7 @@ const OrderedProduct = memo(({ item }) => {
   // Fonction pour tronquer le texte intelligemment
   const truncateText = (text, maxLength) => {
     if (!text || text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
+    return text.substring(0, maxLength) + "...";
   };
 
   // Fonction pour formater le prix
@@ -45,14 +46,14 @@ const OrderedProduct = memo(({ item }) => {
       <div className="flex-shrink-0">
         <div className="w-20 h-20 rounded-md border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
           <Image
-            src={image || '/images/default_product.png'}
+            src={image || "/images/default_product.png"}
             alt={name}
             title={`Image de ${name}`}
             width={80}
             height={80}
             className="object-cover w-full h-full"
             onError={(e) => {
-              e.target.src = '/images/default_product.png';
+              e.target.src = "/images/default_product.png";
             }}
           />
         </div>
@@ -69,14 +70,14 @@ const OrderedProduct = memo(({ item }) => {
           {/* Catégorie */}
           <p className="text-xs text-gray-500 mb-1">
             <span className="inline-flex items-center">
-              <Tag className="mr-2" />
+              <Tag className="mr-1" size={12} />
               {category}
             </span>
           </p>
 
           {/* Prix unitaire */}
           <p className="text-sm text-gray-600">
-            Prix unitaire:{' '}
+            Prix unitaire:{" "}
             <span className="font-medium">{formatPrice(price)}</span>
           </p>
         </div>
@@ -85,7 +86,7 @@ const OrderedProduct = memo(({ item }) => {
         <div className="mt-2 pt-2 border-t border-gray-100">
           <div className="flex justify-between items-center">
             <div className="text-sm">
-              <span className="text-gray-600">Quantité:</span>{' '}
+              <span className="text-gray-600">Quantité:</span>{" "}
               <span className="font-semibold text-gray-900">{quantity}</span>
             </div>
             <div className="text-right">
@@ -102,6 +103,6 @@ const OrderedProduct = memo(({ item }) => {
 });
 
 // Ajouter un displayName pour faciliter le débogage
-OrderedProduct.displayName = 'OrderedProduct';
+OrderedProduct.displayName = "OrderedProduct";
 
 export default OrderedProduct;

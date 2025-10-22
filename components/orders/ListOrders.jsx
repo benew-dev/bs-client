@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Banknote } from "lucide-react";
 import captureClientError from "@/monitoring/sentry";
 
 // Chargement dynamique des composants
@@ -44,7 +44,7 @@ const OrderItemSkeleton = () => (
 
 /**
  * Composant d'affichage de la liste des commandes
- * Adapté au modèle Order sans orderStatus ni shippingInfo
+ * Adapté au modèle Order avec support du paiement CASH
  */
 const ListOrders = ({ orders }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -74,14 +74,20 @@ const ListOrders = ({ orders }) => {
       : 1;
   }, [orders]);
 
-  // Filtrage et tri des commandes - ADAPTÉ AU NOUVEAU MODÈLE
+  // Calculer le nombre de commandes CASH
+  const cashOrdersCount = useMemo(() => {
+    if (!hasOrders) return 0;
+    return orders.orders.filter((order) => order.isCashPayment).length;
+  }, [hasOrders, orders]);
+
+  // Filtrage et tri des commandes - ADAPTÉ AU NOUVEAU MODÈLE AVEC CASH
   const filteredAndSortedOrders = useMemo(() => {
     try {
       if (!hasOrders) return [];
 
       let filtered = [...orders.orders];
 
-      // Filtrage par statut de paiement uniquement
+      // Filtrage par statut de paiement avec support CASH
       if (filterStatus !== "all") {
         filtered = filtered.filter((order) => {
           if (filterStatus === "paid") return order.paymentStatus === "paid";
@@ -93,6 +99,11 @@ const ListOrders = ({ orders }) => {
             return order.paymentStatus === "refunded";
           if (filterStatus === "failed")
             return order.paymentStatus === "failed";
+          if (filterStatus === "pending_cash")
+            return (
+              order.paymentStatus === "pending_cash" || order.isCashPayment
+            );
+          if (filterStatus === "cash") return order.isCashPayment === true;
           if (filterStatus === "cancelled") return !!order.cancelledAt;
           return true;
         });
@@ -180,27 +191,31 @@ const ListOrders = ({ orders }) => {
           Historique de vos commandes
         </h2>
 
-        {/* Filtres et tri - ADAPTÉ AU NOUVEAU MODÈLE */}
+        {/* Filtres et tri - ADAPTÉ AU NOUVEAU MODÈLE AVEC CASH */}
         {hasOrders && (
           <div className="flex gap-2 flex-wrap">
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Filtrer par statut"
             >
               <option value="all">Tous les statuts</option>
-              <option value="paid">Payées</option>
-              <option value="unpaid">Non payées</option>
-              <option value="processing">En traitement</option>
-              <option value="refunded">Remboursées</option>
-              <option value="failed">Échouées</option>
-              <option value="cancelled">Annulées</option>
+              <option value="paid">✓ Payées</option>
+              <option value="unpaid">✗ Non payées</option>
+              <option value="pending_cash">💵 En attente (Espèces)</option>
+              <option value="cash">💰 Paiement en espèces</option>
+              <option value="processing">⏳ En traitement</option>
+              <option value="refunded">↩ Remboursées</option>
+              <option value="failed">⚠ Échouées</option>
+              <option value="cancelled">🚫 Annulées</option>
             </select>
 
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Trier par date"
             >
               <option value="desc">Plus récentes</option>
               <option value="asc">Plus anciennes</option>
@@ -209,30 +224,61 @@ const ListOrders = ({ orders }) => {
         )}
       </div>
 
-      {/* Statistiques */}
+      {/* Statistiques avec support CASH */}
       {hasOrders && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <div className="bg-gray-50 p-3 rounded-md">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
             <p className="text-sm text-gray-600">Total commandes</p>
             <p className="text-xl font-bold text-gray-900">{orders.count}</p>
           </div>
-          <div className="bg-green-50 p-3 rounded-md">
+          <div className="bg-green-50 p-3 rounded-md border border-green-200">
             <p className="text-sm text-green-600">Payées</p>
             <p className="text-xl font-bold text-green-900">
               {orders.paidCount}
             </p>
           </div>
-          <div className="bg-red-50 p-3 rounded-md">
+          <div className="bg-red-50 p-3 rounded-md border border-red-200">
             <p className="text-sm text-red-600">Non payées</p>
             <p className="text-xl font-bold text-red-900">
               {orders.unpaidCount}
             </p>
           </div>
-          <div className="bg-purple-50 p-3 rounded-md">
+          <div className="bg-amber-50 p-3 rounded-md border border-amber-200">
+            <p className="text-sm text-amber-600 flex items-center gap-1">
+              <Banknote size={14} />
+              En espèces
+            </p>
+            <p className="text-xl font-bold text-amber-900">
+              {orders.pendingCashCount || cashOrdersCount}
+            </p>
+          </div>
+          <div className="bg-purple-50 p-3 rounded-md border border-purple-200">
             <p className="text-sm text-purple-600">Montant total</p>
             <p className="text-xl font-bold text-purple-900">
               ${orders.totalAmountOrders?.totalAmount?.toFixed(2) || "0.00"}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Message informatif pour les paiements en espèces */}
+      {hasOrders && cashOrdersCount > 0 && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-start">
+            <Banknote
+              className="mr-3 text-green-600 flex-shrink-0 mt-0.5"
+              size={20}
+            />
+            <div>
+              <h3 className="font-semibold text-green-800 mb-1">
+                Commandes avec paiement en espèces
+              </h3>
+              <p className="text-sm text-green-700">
+                Vous avez {cashOrdersCount} commande
+                {cashOrdersCount > 1 ? "s" : ""} avec paiement en espèces. Le
+                paiement sera effectué lors de la récupération.
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -246,7 +292,11 @@ const ListOrders = ({ orders }) => {
       ) : !hasOrders ? (
         <div className="flex flex-col items-center p-8 bg-gray-50 rounded-lg border border-gray-200">
           <div className="w-16 h-16 flex items-center justify-center rounded-full bg-blue-100 mb-4">
-            <ShoppingBag />
+            <ShoppingBag
+              size={32}
+              strokeWidth={1.5}
+              className="text-blue-600"
+            />
           </div>
           <h3 className="font-semibold text-lg mb-2">Aucune commande</h3>
           <p className="text-gray-600 text-center mb-4">
