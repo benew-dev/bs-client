@@ -52,7 +52,7 @@ const Payment = ({ paymentTypes }) => {
   // États locaux
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paymentType, setPaymentType] = useState(null);
+  const [selectedPayment, setSelectedPayment] = useState(null);
   const [accountName, setAccountName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [errors, setErrors] = useState({});
@@ -72,7 +72,7 @@ const Payment = ({ paymentTypes }) => {
   // Calcul du montant total
   const totalAmount = useMemo(() => {
     return Number(safeValue(cartTotal?.toFixed(2), 0));
-  }, []);
+  }, [cartTotal]);
 
   // Chemins de fil d'Ariane
   const breadCrumbs = useMemo(() => {
@@ -137,7 +137,14 @@ const Payment = ({ paymentTypes }) => {
     if (!dataInitialized) {
       initializePaymentPage();
     }
-  }, [paymentTypes, dataInitialized]);
+  }, [
+    paymentTypes,
+    dataInitialized,
+    cartTotal,
+    cartCount,
+    router,
+    setOrderInfo,
+  ]);
 
   // Handle auth context updates
   useEffect(() => {
@@ -164,8 +171,8 @@ const Payment = ({ paymentTypes }) => {
   }, [cart]);
 
   // Handlers pour les changements de champs
-  const handlePaymentTypeChange = useCallback((value) => {
-    setPaymentType(value);
+  const handlePaymentChange = useCallback((payment) => {
+    setSelectedPayment(payment);
   }, []);
 
   const handleAccountNameChange = useCallback((e) => {
@@ -173,25 +180,22 @@ const Payment = ({ paymentTypes }) => {
   }, []);
 
   const handleAccountNumberChange = useCallback((e) => {
-    // Permettre seulement les chiffres et formater pour une meilleure lisibilité
     const rawValue = e.target.value.replace(/[^\d]/g, "");
-
-    setAccountNumber(rawValue); // Stocke la valeur sans espaces pour le traitement
+    setAccountNumber(rawValue);
   }, []);
 
-  // 2. Créer une fonction d'adaptation pour mapper tes champs vers le schéma existant
-  const mapToPaymentSchema = (paymentType, accountName, accountNumber) => {
+  // Fonction d'adaptation pour mapper tes champs vers le schéma existant
+  const mapToPaymentSchema = (platform, accountName, accountNumber) => {
     return {
-      paymentPlatform: paymentType?.toLowerCase().replace(/[\s-]/g, "-"), // Adapter le nom
+      paymentPlatform: platform?.toLowerCase().replace(/[\s-]/g, "-"),
       accountHolderName: accountName,
-      phoneNumber: accountNumber, // En assumant que le numéro de compte est un téléphone
+      phoneNumber: accountNumber,
     };
   };
 
-  // Payment.jsx - Remplacer la ligne 253-283 par :
   const validatePaymentData = async () => {
     // Validation universelle d'abord
-    if (!paymentType || !accountName || !accountNumber) {
+    if (!selectedPayment || !accountName || !accountNumber) {
       return {
         isValid: false,
         errors: { general: "Tous les champs sont requis" },
@@ -208,16 +212,14 @@ const Payment = ({ paymentTypes }) => {
     }
 
     // Validation selon le type de compte
-    // Nettoyer le numéro (enlever espaces, tirets, etc.)
     const cleanNumber = accountNumber.replace(/\D/g, "");
 
-    // Validation selon le type de numéro
     let validationPassed = false;
 
     // Si c'est un numéro djiboutien (77XXXXXX)
     if (cleanNumber.match(/^77[0-9]{6}$/)) {
       const paymentData = mapToPaymentSchema(
-        paymentType,
+        selectedPayment.platform,
         accountName,
         cleanNumber,
       );
@@ -236,8 +238,6 @@ const Payment = ({ paymentTypes }) => {
       validationPassed = true;
     } else {
       // Validation pour TOUS les autres types de paiement
-      // Plus strict que juste vérifier la longueur
-
       if (cleanNumber.length < 4 || cleanNumber.length > 30) {
         toast.error(
           "Le numéro de compte doit contenir entre 4 et 30 chiffres",
@@ -250,7 +250,6 @@ const Payment = ({ paymentTypes }) => {
         return;
       }
 
-      // Vérifier que ce n'est pas juste des zéros ou un pattern simple
       if (/^0+$/.test(cleanNumber) || /^(\d)\1+$/.test(cleanNumber)) {
         toast.error("Numéro de compte invalide", {
           position: "bottom-right",
@@ -260,7 +259,6 @@ const Payment = ({ paymentTypes }) => {
         return;
       }
 
-      // Validation du nom (pour tous les types)
       const words = accountName.trim().split(/\s+/);
       if (words.length < 2 || words.some((w) => w.length < 2)) {
         toast.error("Veuillez saisir votre prénom et nom complets", {
@@ -274,7 +272,6 @@ const Payment = ({ paymentTypes }) => {
       validationPassed = true;
     }
 
-    // Si on arrive ici, la validation est passée
     if (!validationPassed) {
       toast.error("Validation échouée", { position: "bottom-right" });
       setIsSubmitting(false);
@@ -286,7 +283,6 @@ const Payment = ({ paymentTypes }) => {
   };
 
   const handlePayment = useCallback(async () => {
-    // Empêcher les soumissions multiples rapides
     submitAttempts.current += 1;
     if (submitAttempts.current > 1) {
       setTimeout(() => {
@@ -300,7 +296,6 @@ const Payment = ({ paymentTypes }) => {
     try {
       setIsSubmitting(true);
 
-      // Validation des données
       const validationResult = await validatePaymentData();
       if (!validationResult.isValid) {
         const errorMessages = Object.values(validationResult.errors || {});
@@ -312,30 +307,25 @@ const Payment = ({ paymentTypes }) => {
         return;
       }
 
-      // Création des informations de paiement
+      // Création des informations de paiement avec le nouveau modèle
       const paymentInfo = {
-        typePayment: paymentType,
+        platform: selectedPayment.platform,
+        typePayment: selectedPayment.name,
         paymentAccountNumber: accountNumber,
         paymentAccountName: accountName,
         paymentDate: new Date().toISOString(),
       };
 
-      // MODIFICATION ICI : Au lieu d'envoyer directement la commande,
-      // on stocke les données dans le contexte et on redirige vers la page de révision
       const finalOrderInfo = {
         ...orderInfo,
         paymentInfo,
         totalAmount: totalAmount,
       };
 
-      // Stocker les informations complètes de la commande dans le contexte
       setOrderInfo(finalOrderInfo);
-
-      // Rediriger vers la page de révision au lieu d'envoyer directement
       router.push("/review-order");
 
-      // Réinitialiser l'état du formulaire
-      setPaymentType(null);
+      setSelectedPayment(null);
       setAccountName("");
       setAccountNumber("");
     } catch (error) {
@@ -344,7 +334,7 @@ const Payment = ({ paymentTypes }) => {
         tags: { component: "Payment", action: "handlePayment" },
         extra: {
           hasOrderInfo: !!orderInfo,
-          hasPaymentType: !!paymentType,
+          hasPaymentType: !!selectedPayment,
         },
       });
 
@@ -361,21 +351,19 @@ const Payment = ({ paymentTypes }) => {
       submitAttempts.current = 0;
     }
   }, [
-    paymentType,
+    selectedPayment,
     accountName,
     accountNumber,
     totalAmount,
     orderInfo,
-    setOrderInfo, // Ajouter setOrderInfo dans les dépendances
+    setOrderInfo,
     router,
   ]);
 
-  // Rendu conditionnel pour le cas de chargement
   if (isLoading) {
     return <PaymentPageSkeleton />;
   }
 
-  // Rendu conditionnel pour le cas où le panier est vide
   if (!cart || !Array.isArray(cart) || cartCount === 0) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -420,8 +408,8 @@ const Payment = ({ paymentTypes }) => {
                       <PaymentMethodCard
                         key={payment?._id}
                         payment={payment}
-                        isSelected={paymentType === payment?.name}
-                        onSelect={handlePaymentTypeChange}
+                        isSelected={selectedPayment?._id === payment?._id}
+                        onSelect={handlePaymentChange}
                       />
                     ))}
                   </div>
@@ -568,7 +556,6 @@ const Payment = ({ paymentTypes }) => {
   );
 };
 
-// Message quand aucun moyen de paiement n'est disponible
 const NoPaymentMethodsFound = memo(() => (
   <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
     <HandCoins className="mr-2" />
@@ -589,30 +576,53 @@ const NoPaymentMethodsFound = memo(() => (
 ));
 NoPaymentMethodsFound.displayName = "NoPaymentMethodsFound";
 
-// Carte de méthode de paiement
-const PaymentMethodCard = memo(({ payment, isSelected, onSelect }) => (
-  <label
-    className={`flex p-4 border rounded-lg transition-all duration-200 cursor-pointer ${
-      isSelected
-        ? "bg-blue-50 border-blue-400 shadow-sm"
-        : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-    }`}
-  >
-    <span className="flex items-center">
-      <input
-        name="payment"
-        type="radio"
-        value={payment?.name}
-        checked={isSelected}
-        onChange={() => onSelect(payment?.name)}
-        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-      />
-      <div className="ml-3">
-        <span className="font-medium text-gray-800">{payment?.name}</span>
+const PaymentMethodCard = memo(({ payment, isSelected, onSelect }) => {
+  const platformColors = {
+    WAAFI: "from-blue-500 to-blue-600",
+    "D-MONEY": "from-purple-500 to-purple-600",
+    "CAC-PAY": "from-green-500 to-green-600",
+    "BCI-PAY": "from-orange-500 to-orange-600",
+  };
+
+  const colorScheme =
+    platformColors[payment?.platform] || "from-emerald-500 to-green-600";
+
+  return (
+    <label
+      className={`flex flex-col p-4 border rounded-lg transition-all duration-200 cursor-pointer ${
+        isSelected
+          ? "bg-blue-50 border-blue-400 shadow-sm"
+          : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+      }`}
+    >
+      <span className="flex items-center mb-3">
+        <input
+          name="payment"
+          type="radio"
+          value={payment?._id}
+          checked={isSelected}
+          onChange={() => onSelect(payment)}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+        />
+        <div className="ml-3">
+          <span
+            className={`inline-block px-3 py-1 rounded-full text-white text-sm font-bold bg-gradient-to-r ${colorScheme}`}
+          >
+            {payment?.platform}
+          </span>
+        </div>
+      </span>
+      <div className="ml-7 space-y-1">
+        <div className="text-sm text-gray-600">
+          <span className="font-medium">Titulaire:</span> {payment?.name}
+        </div>
+        <div className="text-sm text-gray-600">
+          <span className="font-medium">Numéro:</span> {payment?.number}
+        </div>
       </div>
-    </span>
-  </label>
-));
+    </label>
+  );
+});
 PaymentMethodCard.displayName = "PaymentMethodCard";
 
 export default Payment;

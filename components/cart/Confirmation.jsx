@@ -1,17 +1,17 @@
 // components/cart/Confirmation.jsx
-'use client';
+"use client";
 
-import CartContext from '@/context/CartContext';
-import OrderContext from '@/context/OrderContext';
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { useContext, useEffect } from 'react';
-import { toast } from 'react-toastify';
-import BreadCrumbs from '../layouts/BreadCrumbs';
-import { CircleCheckBig } from 'lucide-react';
+import CartContext from "@/context/CartContext";
+import OrderContext from "@/context/OrderContext";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { useContext, useEffect } from "react";
+import { toast } from "react-toastify";
+import BreadCrumbs from "../layouts/BreadCrumbs";
+import { CircleCheckBig } from "lucide-react";
 
 const Confirmation = () => {
-  const { orderId, paymentTypes } = useContext(OrderContext);
+  const { orderId } = useContext(OrderContext);
   const { setCartToState } = useContext(CartContext);
 
   useEffect(() => {
@@ -20,21 +20,21 @@ const Confirmation = () => {
       try {
         await setCartToState();
       } catch (error) {
-        console.error('Erreur lors du chargement du panier:', error);
-        toast.error('Impossible de charger votre panier. Veuillez réessayer.');
+        console.error("Erreur lors du chargement du panier:", error);
+        toast.error("Impossible de charger votre panier. Veuillez réessayer.");
       }
     };
 
     loadCart();
-  }, []);
+  }, [setCartToState]);
 
   if (orderId === undefined || orderId === null) {
     return notFound();
   }
 
   const breadCrumbs = [
-    { name: 'Home', url: '/' },
-    { name: 'Confirmation', url: '' },
+    { name: "Home", url: "/" },
+    { name: "Confirmation", url: "" },
   ];
 
   return (
@@ -53,14 +53,19 @@ const Confirmation = () => {
             </h1>
 
             <p className="text-gray-600">
-              Numéro de commande :{' '}
+              Numéro de commande :{" "}
               <span className="font-mono font-semibold">{orderId}</span>
             </p>
           </div>
 
-          {/* Détails de la commande */}
-          <div className="border-t border-gray-200 pt-6">
-            {/* Afficher les détails de manière sécurisée */}
+          {/* Message de confirmation */}
+          <div className="border-t border-gray-200 pt-6 mb-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                Votre commande a été enregistrée avec succès. Vous pouvez
+                consulter les détails de votre commande dans votre historique.
+              </p>
+            </div>
           </div>
 
           {/* Actions */}

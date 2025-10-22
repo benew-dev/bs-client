@@ -6,11 +6,11 @@ import { captureException } from "@/monitoring/sentry";
 import { withIntelligentRateLimit } from "@/utils/rateLimit";
 
 /**
- * GET /api/payment-platforms
+ * GET /api/paymentPlatform
  * Récupère toutes les plateformes de paiement disponibles
  * Rate limit: Configuration intelligente - publicRead (100 req/min) ou authenticatedRead (200 req/min)
  *
- * Headers de sécurité gérés par next.config.mjs pour /api/payment-platforms/* :
+ * Headers de sécurité gérés par next.config.mjs pour /api/paymentPlatform/* :
  * - Cache-Control: public, max-age=300, stale-while-revalidate=600
  * - CDN-Cache-Control: max-age=600
  * - X-Content-Type-Options: nosniff
@@ -34,7 +34,7 @@ export const GET = withIntelligentRateLimit(
 
       // Récupérer toutes les plateformes de paiement
       const paymentPlatforms = await PaymentType.find()
-        .sort({ paymentName: 1 })
+        .sort({ platform: 1 })
         .lean();
 
       // Vérifier s'il y a des plateformes
@@ -56,9 +56,10 @@ export const GET = withIntelligentRateLimit(
         );
       }
 
-      // Formater les plateformes pour optimiser la réponse
+      // Formater les plateformes pour optimiser la réponse avec le nouveau modèle
       const formattedPaymentPlatforms = paymentPlatforms.map((payment) => ({
         _id: payment._id,
+        platform: payment.platform,
         name: payment.paymentName,
         number: payment.paymentNumber,
       }));
