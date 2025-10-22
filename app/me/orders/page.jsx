@@ -185,11 +185,7 @@ const getAllOrders = async (searchParams) => {
       paymentInfo: order.paymentInfo
         ? {
             ...order.paymentInfo,
-            paymentAccountNumber:
-              order.paymentInfo.paymentAccountNumber?.includes("••••••")
-                ? order.paymentInfo.paymentAccountNumber
-                : "••••••" +
-                  (order.paymentInfo.paymentAccountNumber?.slice(-4) || ""),
+            paymentAccountNumber: order.paymentInfo.paymentAccountNumber,
           }
         : order.paymentInfo,
     }));
