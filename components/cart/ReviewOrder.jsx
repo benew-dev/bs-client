@@ -20,6 +20,7 @@ import {
   LoaderCircle,
   Package,
   Info,
+  Banknote,
 } from "lucide-react";
 
 // Helpers
@@ -39,6 +40,14 @@ const ReviewOrder = () => {
   // Contextes
   const { cart, cartTotal, cartCount } = useContext(CartContext);
   const { orderInfo, addOrder, error, clearErrors } = useContext(OrderContext);
+
+  // Vérifier si c'est un paiement CASH
+  const isCashPayment = useMemo(() => {
+    return (
+      orderInfo?.paymentInfo?.typePayment === "CASH" ||
+      orderInfo?.paymentInfo?.isCashPayment === true
+    );
+  }, [orderInfo]);
 
   // Vérification que les données de paiement sont présentes
   useEffect(() => {
@@ -220,7 +229,11 @@ const ReviewOrder = () => {
               <div className="bg-white shadow rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-800 flex items-center">
-                    <CreditCard className="mr-2 text-blue-600" size={20} />
+                    {isCashPayment ? (
+                      <Banknote className="mr-2 text-green-600" size={20} />
+                    ) : (
+                      <CreditCard className="mr-2 text-blue-600" size={20} />
+                    )}
                     Informations de paiement
                   </h2>
                   <Link
@@ -231,35 +244,91 @@ const ReviewOrder = () => {
                   </Link>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex justify-between py-2">
-                    <span className="text-gray-600">Plateforme:</span>
-                    <span className="font-medium text-gray-800 px-3 py-1 bg-blue-100 rounded-full text-sm">
-                      {typePayment}
-                    </span>
+                {isCashPayment ? (
+                  // Affichage spécifique pour paiement CASH
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <Banknote
+                        className="mr-3 text-green-600 flex-shrink-0 mt-0.5"
+                        size={24}
+                      />
+                      <div>
+                        <h3 className="font-semibold text-green-800 mb-2">
+                          Paiement en espèces
+                        </h3>
+                        <p className="text-sm text-green-700 mb-2">
+                          Vous paierez en espèces lors de la récupération de
+                          votre commande.
+                        </p>
+                        <div className="mt-3 pt-3 border-t border-green-300">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-green-700">
+                              Montant à préparer:
+                            </span>
+                            <span className="font-bold text-green-800">
+                              {formatPrice(totalAmount)}
+                            </span>
+                          </div>
+                          <p className="text-xs text-green-600 mt-2">
+                            💡 Conseil: Préparez la somme exacte pour faciliter
+                            la transaction
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between py-2">
-                    <span className="text-gray-600">Nom du compte:</span>
-                    <span className="font-medium text-gray-800">
-                      {paymentAccountName}
-                    </span>
+                ) : (
+                  // Affichage pour paiement électronique
+                  <div className="space-y-3">
+                    <div className="flex justify-between py-2">
+                      <span className="text-gray-600">Plateforme:</span>
+                      <span className="font-medium text-gray-800 px-3 py-1 bg-blue-100 rounded-full text-sm">
+                        {typePayment}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-2">
+                      <span className="text-gray-600">Nom du compte:</span>
+                      <span className="font-medium text-gray-800">
+                        {paymentAccountName}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-2">
+                      <span className="text-gray-600">Numéro de compte:</span>
+                      <span className="font-medium text-gray-800">
+                        {paymentAccountNumber}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between py-2">
-                    <span className="text-gray-600">Numéro de compte:</span>
-                    <span className="font-medium text-gray-800">
-                      {paymentAccountNumber}
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
 
-              {/* Message d'information */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="flex items-start text-sm text-blue-700">
+              {/* Message d'information adapté */}
+              <div
+                className={`border rounded-lg p-4 ${
+                  isCashPayment
+                    ? "bg-green-50 border-green-200"
+                    : "bg-blue-50 border-blue-200"
+                }`}
+              >
+                <p
+                  className={`flex items-start text-sm ${
+                    isCashPayment ? "text-green-700" : "text-blue-700"
+                  }`}
+                >
                   <Info className="mr-2 flex-shrink-0 mt-0.5" size={16} />
-                  En cliquant sur &quot;Confirmer et payer&quot;, vous acceptez
-                  nos conditions générales de vente et confirmez que toutes les
-                  informations fournies sont correctes.
+                  {isCashPayment ? (
+                    <>
+                      En confirmant votre commande, vous vous engagez à payer en
+                      espèces lors de la récupération. Votre commande sera
+                      préparée et vous serez contacté une fois prête.
+                    </>
+                  ) : (
+                    <>
+                      En cliquant sur &quot;Confirmer et payer&quot;, vous
+                      acceptez nos conditions générales de vente et confirmez
+                      que toutes les informations fournies sont correctes.
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -282,8 +351,14 @@ const ReviewOrder = () => {
                   </div>
                   <div className="border-t pt-3">
                     <div className="flex justify-between text-lg font-bold">
-                      <span>Total à payer:</span>
-                      <span className="text-blue-600">
+                      <span>
+                        {isCashPayment ? "Total à préparer:" : "Total à payer:"}
+                      </span>
+                      <span
+                        className={
+                          isCashPayment ? "text-green-600" : "text-blue-600"
+                        }
+                      >
                         {formatPrice(totalAmount)}
                       </span>
                     </div>
@@ -298,7 +373,9 @@ const ReviewOrder = () => {
                     className={`w-full px-5 py-3 text-white font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                       isSubmitting
                         ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                        : isCashPayment
+                          ? "bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                          : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
                     }`}
                   >
                     {isSubmitting ? (
@@ -309,7 +386,9 @@ const ReviewOrder = () => {
                     ) : (
                       <span className="flex items-center justify-center">
                         <CheckCircle className="mr-2" size={20} />
-                        Confirmer et payer
+                        {isCashPayment
+                          ? "Confirmer la commande"
+                          : "Confirmer et payer"}
                       </span>
                     )}
                   </button>
@@ -327,7 +406,11 @@ const ReviewOrder = () => {
                 <div className="mt-6 pt-6 border-t">
                   <div className="flex items-center justify-center space-x-2 text-gray-500">
                     <CheckCircle size={16} />
-                    <span className="text-xs">Paiement sécurisé</span>
+                    <span className="text-xs">
+                      {isCashPayment
+                        ? "Commande sécurisée"
+                        : "Paiement sécurisé"}
+                    </span>
                   </div>
                 </div>
               </div>

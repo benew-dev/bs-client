@@ -12,26 +12,14 @@ import { getToken } from "next-auth/jwt";
 
 /**
  * POST /api/orders/webhook
- * Crée une commande après paiement confirmé
+ * Crée une commande après paiement confirmé (ou avec paiement CASH en attente)
  * Rate limit: 5 commandes par 10 minutes (protection anti-abus strict)
  * Adapté pour ~500 visiteurs/jour
  *
- * Headers de sécurité gérés par next.config.mjs pour /api/orders/* :
- * - Cache-Control: private, no-cache, no-store, must-revalidate
- * - Pragma: no-cache
- * - X-Content-Type-Options: nosniff
- * - X-Robots-Tag: noindex, nofollow
- * - X-Download-Options: noopen
- *
- * Headers globaux de sécurité (toutes routes) :
- * - Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
- * - X-Frame-Options: SAMEORIGIN
- * - Referrer-Policy: strict-origin-when-cross-origin
- * - Permissions-Policy: [configuration restrictive]
- * - Content-Security-Policy: [configuration complète]
- *
- * Note: Cette route est critique pour le business et utilise des transactions
- * MongoDB pour garantir la cohérence des données (stock, panier, commande)
+ * Support du paiement CASH:
+ * - Pas de validation des champs de compte pour CASH
+ * - Statut initial: "pending_cash"
+ * - Informations de paiement: "CASH" / "Paiement en espèces"
  */
 export const POST = withIntelligentRateLimit(
   async function (req) {
@@ -109,14 +97,40 @@ export const POST = withIntelligentRateLimit(
         );
       }
 
-      // Validation du paiement
-      const { typePayment, paymentAccountNumber, paymentAccountName } =
-        orderData.paymentInfo || {};
-      if (!typePayment || !paymentAccountNumber || !paymentAccountName) {
+      // Validation du paiement avec support CASH
+      const {
+        typePayment,
+        paymentAccountNumber,
+        paymentAccountName,
+        isCashPayment,
+      } = orderData.paymentInfo || {};
+
+      if (!typePayment) {
         return NextResponse.json(
-          { success: false, message: "Incomplete payment information" },
+          { success: false, message: "Payment type is required" },
           { status: 400 },
         );
+      }
+
+      // Vérifier si c'est un paiement CASH
+      const isCash = typePayment === "CASH" || isCashPayment === true;
+
+      // Pour les paiements non-CASH, vérifier les informations de compte
+      if (!isCash && (!paymentAccountNumber || !paymentAccountName)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Account information required for non-cash payments",
+          },
+          { status: 400 },
+        );
+      }
+
+      // Pour CASH, normaliser les informations
+      if (isCash) {
+        orderData.paymentInfo.paymentAccountNumber = "CASH";
+        orderData.paymentInfo.paymentAccountName = "Paiement en espèces";
+        orderData.paymentInfo.isCashPayment = true;
       }
 
       // 5. Vérifier le stock et traiter la commande en transaction
@@ -264,17 +278,19 @@ export const POST = withIntelligentRateLimit(
         // Transaction réussie - Récupérer la commande complète
         const order = await Order.findOne({ user: user._id })
           .sort({ createdAt: -1 })
-          .select("_id orderNumber")
+          .select("_id orderNumber paymentStatus")
           .lean();
 
-        // Log de sécurité pour audit
+        // Log de sécurité pour audit avec info CASH
         console.log("🔒 Security event - Order created:", {
           userId: user._id,
           userEmail: user.email,
           orderId: order._id,
           orderNumber: order.orderNumber,
-          totalAmount: order.totalAmount,
+          totalAmount: orderData.totalAmount,
           paymentType: typePayment,
+          isCashPayment: isCash,
+          paymentStatus: order.paymentStatus,
           itemCount: orderData.orderItems.length,
           timestamp: new Date().toISOString(),
           ip:
@@ -282,29 +298,16 @@ export const POST = withIntelligentRateLimit(
             "unknown",
         });
 
-        // ============================================
-        // NOUVELLE IMPLÉMENTATION : Headers de sécurité
-        //
-        // Les headers sont maintenant gérés de manière centralisée
-        // par next.config.mjs pour garantir la cohérence et la sécurité
-        //
-        // Pour /api/orders/* sont appliqués automatiquement :
-        // - Cache privé uniquement (données sensibles de commande)
-        // - Pas de cache navigateur (no-store, no-cache)
-        // - Protection contre l'indexation (X-Robots-Tag)
-        // - Protection téléchargements (X-Download-Options)
-        // - Protection MIME (X-Content-Type-Options)
-        //
-        // Ces headers garantissent que les données de commande
-        // ne sont jamais mises en cache publiquement ou indexées
-        // ============================================
-
         return NextResponse.json(
           {
             success: true,
             id: order.orderNumber,
             orderNumber: order.orderNumber,
-            message: "Order placed successfully",
+            message: isCash
+              ? "Order placed successfully - Cash payment on pickup"
+              : "Order placed successfully",
+            isCashPayment: isCash,
+            paymentStatus: order.paymentStatus,
           },
           { status: 201 },
         );
