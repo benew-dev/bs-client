@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 const Confirmation = () => {
-  const { orderId, orderInfo } = useContext(OrderContext);
+  const { orderId, orderInfo, paymentTypes } = useContext(OrderContext);
   const { setCartToState } = useContext(CartContext);
 
   // Déterminer si c'est un paiement CASH
@@ -28,8 +28,16 @@ const Confirmation = () => {
     );
   }, [orderInfo]);
 
+  // Récupérer les informations de la plateforme de paiement
+  const paymentPlatformInfo = useMemo(() => {
+    if (!paymentTypes || !orderInfo?.paymentInfo?.typePayment) return null;
+
+    return paymentTypes.find(
+      (pt) => pt.platform === orderInfo.paymentInfo.typePayment,
+    );
+  }, [paymentTypes, orderInfo]);
+
   useEffect(() => {
-    // Chargement initial du panier - OPTIMISÉ
     const loadCart = async () => {
       try {
         await setCartToState();
@@ -141,19 +149,68 @@ const Confirmation = () => {
                 </div>
               </div>
             ) : (
-              // Message pour paiement électronique
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start">
-                  <CreditCard
-                    className="mr-3 text-blue-600 flex-shrink-0 mt-0.5"
-                    size={20}
-                  />
-                  <div>
-                    <p className="text-sm text-blue-800">
-                      Votre commande a été enregistrée avec succès. Vous pouvez
-                      consulter les détails de votre commande dans votre
-                      historique.
-                    </p>
+              // Message pour paiement électronique avec infos plateforme
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <CreditCard
+                      className="mr-3 text-blue-600 flex-shrink-0 mt-0.5"
+                      size={20}
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-blue-800 mb-2">
+                        Informations de paiement
+                      </h3>
+                      <p className="text-sm text-blue-700 mb-3">
+                        Votre commande a été enregistrée avec succès. Veuillez
+                        effectuer le paiement via la plateforme sélectionnée.
+                      </p>
+
+                      {/* Affichage des informations de la plateforme */}
+                      {paymentPlatformInfo && (
+                        <div className="mt-3 pt-3 border-t border-blue-300 space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-blue-700">Plateforme:</span>
+                            <span className="font-semibold text-blue-900">
+                              {paymentPlatformInfo.platform}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-blue-700">
+                              Nom du compte:
+                            </span>
+                            <span className="font-medium text-blue-900">
+                              {paymentPlatformInfo.paymentName ||
+                                paymentPlatformInfo.name}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-blue-700">Numéro:</span>
+                            <span className="font-mono font-medium text-blue-900">
+                              {paymentPlatformInfo.paymentNumber ||
+                                paymentPlatformInfo.number}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <Info
+                      className="mr-3 text-amber-600 flex-shrink-0 mt-0.5"
+                      size={20}
+                    />
+                    <div>
+                      <p className="text-sm text-amber-800">
+                        <span className="font-medium">Important:</span>{" "}
+                        Effectuez le paiement vers le compte indiqué ci-dessus.
+                        Votre commande sera traitée une fois le paiement
+                        confirmé.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -181,17 +238,15 @@ const Confirmation = () => {
             </Link>
           </div>
 
-          {/* Informations de contact pour CASH */}
-          {isCashPayment && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-600 text-center">
-                Des questions ? Consultez notre{" "}
-                <Link href="/contact" className="text-blue-600 hover:underline">
-                  page de contact
-                </Link>
-              </p>
-            </div>
-          )}
+          {/* Informations de contact */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <p className="text-sm text-gray-600 text-center">
+              Des questions ? Consultez notre{" "}
+              <Link href="/contact" className="text-blue-600 hover:underline">
+                page de contact
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
