@@ -139,7 +139,7 @@ const ReviewOrder = () => {
   }
 
   // Extraire les informations de paiement avec le nouveau modèle
-  const { platform, typePayment, paymentAccountName, paymentAccountNumber } =
+  const { platform, paymentAccountName, paymentAccountNumber } =
     orderInfo.paymentInfo;
 
   return (

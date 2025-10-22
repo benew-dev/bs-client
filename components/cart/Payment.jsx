@@ -64,7 +64,7 @@ const Payment = ({ paymentTypes }) => {
   // Contextes
   const { cart, cartTotal, cartCount } = useContext(CartContext);
 
-  const { orderInfo, setOrderInfo, addOrder, error, clearErrors } =
+  const { orderInfo, setOrderInfo, error, clearErrors } =
     useContext(OrderContext);
 
   const router = useRouter();
@@ -309,8 +309,7 @@ const Payment = ({ paymentTypes }) => {
 
       // Création des informations de paiement avec le nouveau modèle
       const paymentInfo = {
-        platform: selectedPayment.platform,
-        typePayment: selectedPayment.name,
+        typePayment: selectedPayment.platform,
         paymentAccountNumber: accountNumber,
         paymentAccountName: accountName,
         paymentDate: new Date().toISOString(),
