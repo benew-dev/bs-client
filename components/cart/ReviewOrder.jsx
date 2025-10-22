@@ -239,12 +239,6 @@ const ReviewOrder = () => {
                     </span>
                   </div>
                   <div className="flex justify-between py-2">
-                    <span className="text-gray-600">Moyen de paiement:</span>
-                    <span className="font-medium text-gray-800">
-                      {typePayment}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-2">
                     <span className="text-gray-600">Nom du compte:</span>
                     <span className="font-medium text-gray-800">
                       {paymentAccountName}
@@ -253,9 +247,7 @@ const ReviewOrder = () => {
                   <div className="flex justify-between py-2">
                     <span className="text-gray-600">Numéro de compte:</span>
                     <span className="font-medium text-gray-800">
-                      {paymentAccountNumber?.slice(0, 2)}
-                      ••••••
-                      {paymentAccountNumber?.slice(-4)}
+                      {paymentAccountNumber}
                     </span>
                   </div>
                 </div>
