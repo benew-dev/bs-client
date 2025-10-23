@@ -5,7 +5,7 @@ import CartContext from "@/context/CartContext";
 import OrderContext from "@/context/OrderContext";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { useContext, useEffect, useMemo } from "react";
+import { useContext, useEffect } from "react";
 import { toast } from "react-toastify";
 import BreadCrumbs from "../layouts/BreadCrumbs";
 import {
@@ -14,28 +14,42 @@ import {
   CreditCard,
   Package,
   Info,
+  Smartphone,
+  Building2,
 } from "lucide-react";
+
+// Configuration des plateformes de paiement
+const PLATFORM_CONFIG = {
+  WAAFI: {
+    color: "bg-purple-100 text-purple-700 border-purple-200",
+    icon: Smartphone,
+    displayName: "Waafi",
+  },
+  "D-MONEY": {
+    color: "bg-blue-100 text-blue-700 border-blue-200",
+    icon: Smartphone,
+    displayName: "D-Money",
+  },
+  "CAC-PAY": {
+    color: "bg-green-100 text-green-700 border-green-200",
+    icon: Building2,
+    displayName: "CAC Pay",
+  },
+  "BCI-PAY": {
+    color: "bg-orange-100 text-orange-700 border-orange-200",
+    icon: Building2,
+    displayName: "BCI Pay",
+  },
+  CASH: {
+    color: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    icon: Banknote,
+    displayName: "Espèces",
+  },
+};
 
 const Confirmation = () => {
   const { orderId, orderInfo, paymentTypes } = useContext(OrderContext);
   const { setCartToState } = useContext(CartContext);
-
-  // Déterminer si c'est un paiement CASH
-  const isCashPayment = useMemo(() => {
-    return (
-      orderInfo?.paymentInfo?.typePayment === "CASH" ||
-      orderInfo?.paymentInfo?.isCashPayment === true
-    );
-  }, [orderInfo]);
-
-  // Récupérer les informations de la plateforme de paiement
-  const paymentPlatformInfo = useMemo(() => {
-    if (!paymentTypes || !orderInfo?.paymentInfo?.typePayment) return null;
-
-    return paymentTypes.find(
-      (pt) => pt.platform === orderInfo.paymentInfo.typePayment,
-    );
-  }, [paymentTypes, orderInfo]);
 
   useEffect(() => {
     const loadCart = async () => {
@@ -62,19 +76,15 @@ const Confirmation = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <BreadCrumbs breadCrumbs={breadCrumbs} />
-      <div className="container max-w-2xl mx-auto px-4">
+      <div className="container max-w-4xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow p-8">
-          {/* Icône de succès avec couleur adaptée */}
+          {/* Icône de succès */}
           <div className="text-center mb-8">
-            <div
-              className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${
-                isCashPayment ? "bg-green-100" : "bg-blue-100"
-              }`}
-            >
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-green-100">
               <CircleCheckBig
                 size={72}
                 strokeWidth={1.5}
-                className={isCashPayment ? "text-green-600" : "text-blue-600"}
+                className="text-green-600"
               />
             </div>
 
@@ -88,144 +98,174 @@ const Confirmation = () => {
             </p>
           </div>
 
-          {/* Message de confirmation adapté au type de paiement */}
-          <div className="border-t border-gray-200 pt-6 mb-6">
-            {isCashPayment ? (
-              // Message pour paiement CASH
-              <div className="space-y-4">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <Banknote
-                      className="mr-3 text-green-600 flex-shrink-0 mt-0.5"
-                      size={24}
-                    />
-                    <div>
-                      <h3 className="font-semibold text-green-800 mb-2">
-                        Paiement en espèces à la récupération
-                      </h3>
-                      <p className="text-sm text-green-700 mb-2">
-                        Votre commande a été enregistrée avec succès. Vous
-                        paierez en espèces lors de la récupération de votre
-                        commande.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+          {/* Informations de paiement */}
+          <div className="border-t border-gray-200 pt-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <CreditCard className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Moyens de paiement disponibles
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Utilisez l'un de ces moyens pour effectuer votre paiement
+                </p>
+              </div>
+            </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <Package
-                      className="mr-3 text-blue-600 flex-shrink-0 mt-0.5"
-                      size={20}
-                    />
-                    <div>
-                      <h4 className="font-medium text-blue-800 mb-1">
-                        Prochaines étapes
-                      </h4>
-                      <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
-                        <li>Nous préparons votre commande</li>
-                        <li>Vous serez contacté une fois la commande prête</li>
-                        <li>Préparez le montant exact en espèces</li>
-                        <li>Récupérez votre commande et payez sur place</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+            {paymentTypes && paymentTypes.length > 0 ? (
+              <div className="flex flex-col gap-4">
+                {paymentTypes.map((payment, index) => {
+                  const config = PLATFORM_CONFIG[payment?.platform] || {
+                    color: "bg-gray-100 text-gray-700 border-gray-200",
+                    icon: CreditCard,
+                    displayName: payment?.platform || "Inconnu",
+                  };
+                  const IconComponent = config.icon;
+                  const isCash =
+                    payment?.platform === "CASH" || payment?.isCashPayment;
 
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <Info
-                      className="mr-3 text-amber-600 flex-shrink-0 mt-0.5"
-                      size={20}
-                    />
-                    <div>
-                      <p className="text-sm text-amber-800">
-                        <span className="font-medium">Important:</span>{" "}
-                        Assurez-vous d&apos;avoir le montant exact en espèces
-                        lors de la récupération pour faciliter la transaction.
-                      </p>
+                  return (
+                    <div
+                      key={payment._id || index}
+                      className="group relative p-5 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300"
+                    >
+                      <div className="flex items-center gap-6">
+                        {/* Icône de la plateforme */}
+                        <div
+                          className={`flex-shrink-0 p-4 rounded-xl ${config.color} border-2`}
+                        >
+                          <IconComponent className="w-8 h-8" />
+                        </div>
+
+                        {/* Contenu principal - responsive */}
+                        <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                          {/* Section gauche - Nom de la plateforme */}
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-xl font-bold text-gray-900">
+                              {config.displayName}
+                            </h3>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold ${config.color} border`}
+                            >
+                              Disponible
+                            </span>
+                          </div>
+
+                          {/* Section droite - Informations de paiement */}
+                          {isCash ? (
+                            <div className="flex items-center gap-2">
+                              <div className="px-4 py-2 bg-emerald-50 rounded-lg border border-emerald-200">
+                                <p className="text-sm text-emerald-700 font-medium">
+                                  Paiement à la livraison
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                              {/* Titulaire */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500 uppercase">
+                                  Titulaire:
+                                </span>
+                                <span className="font-semibold text-gray-900">
+                                  {payment?.paymentName ||
+                                    payment?.name ||
+                                    "Non renseigné"}
+                                </span>
+                              </div>
+
+                              {/* Séparateur */}
+                              <div className="hidden sm:block w-px h-8 bg-gray-300"></div>
+
+                              {/* Numéro */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500 uppercase">
+                                  N°:
+                                </span>
+                                <span className="font-mono font-bold text-gray-900">
+                                  {payment?.paymentNumber ||
+                                    payment?.number ||
+                                    "Non renseigné"}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Indicateur hover */}
+                      <div className="absolute top-0 right-0 w-2 h-full bg-blue-500 rounded-r-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             ) : (
-              // Message pour paiement électronique avec infos plateforme
-              <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <CreditCard
-                      className="mr-3 text-blue-600 flex-shrink-0 mt-0.5"
-                      size={20}
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-blue-800 mb-2">
-                        Informations de paiement
-                      </h3>
-                      <p className="text-sm text-blue-700 mb-3">
-                        Votre commande a été enregistrée avec succès. Veuillez
-                        effectuer le paiement via la plateforme sélectionnée.
-                      </p>
-
-                      {/* Affichage des informations de la plateforme */}
-                      {paymentPlatformInfo && (
-                        <div className="mt-3 pt-3 border-t border-blue-300 space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-blue-700">Plateforme:</span>
-                            <span className="font-semibold text-blue-900">
-                              {paymentPlatformInfo.platform}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-blue-700">
-                              Nom du compte:
-                            </span>
-                            <span className="font-medium text-blue-900">
-                              {paymentPlatformInfo.paymentName ||
-                                paymentPlatformInfo.name}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-blue-700">Numéro:</span>
-                            <span className="font-mono font-medium text-blue-900">
-                              {paymentPlatformInfo.paymentNumber ||
-                                paymentPlatformInfo.number}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+              <div className="p-6 bg-yellow-50 rounded-xl border-2 border-yellow-200">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-yellow-100 rounded-lg">
+                    <CreditCard className="w-5 h-5 text-yellow-600" />
                   </div>
-                </div>
-
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <Info
-                      className="mr-3 text-amber-600 flex-shrink-0 mt-0.5"
-                      size={20}
-                    />
-                    <div>
-                      <p className="text-sm text-amber-800">
-                        <span className="font-medium">Important:</span>{" "}
-                        Effectuez le paiement vers le compte indiqué ci-dessus.
-                        Votre commande sera traitée une fois le paiement
-                        confirmé.
-                      </p>
-                    </div>
+                  <div>
+                    <p className="font-semibold text-yellow-900 mb-1">
+                      Aucune information de paiement disponible
+                    </p>
+                    <p className="text-sm text-yellow-700">
+                      Veuillez contacter le support pour plus d'informations.
+                    </p>
                   </div>
                 </div>
               </div>
             )}
+
+            {/* Informations générales */}
+            <div className="mt-6 space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <Package
+                    className="mr-3 text-blue-600 flex-shrink-0 mt-0.5"
+                    size={20}
+                  />
+                  <div>
+                    <h4 className="font-medium text-blue-800 mb-1">
+                      Prochaines étapes
+                    </h4>
+                    <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
+                      <li>Nous préparons votre commande</li>
+                      <li>
+                        Effectuez le paiement via l'un des moyens ci-dessus
+                      </li>
+                      <li>Vous serez contacté une fois la commande prête</li>
+                      <li>Récupérez votre commande au point de retrait</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <Info
+                    className="mr-3 text-amber-600 flex-shrink-0 mt-0.5"
+                    size={20}
+                  />
+                  <div>
+                    <p className="text-sm text-amber-800">
+                      <span className="font-medium">Important:</span> Effectuez
+                      le paiement vers l'un des comptes indiqués ci-dessus.
+                      Votre commande sera traitée une fois le paiement confirmé.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Actions */}
           <div className="mt-8 flex flex-col sm:flex-row gap-4">
             <Link
               href="/me/orders"
-              className={`flex-1 px-6 py-3 text-white rounded-md text-center font-medium transition-colors ${
-                isCashPayment
-                  ? "bg-green-600 hover:bg-green-700"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
+              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center font-medium transition-colors"
             >
               Voir mes commandes
             </Link>
