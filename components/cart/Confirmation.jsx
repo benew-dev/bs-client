@@ -48,7 +48,7 @@ const PLATFORM_CONFIG = {
 };
 
 const Confirmation = () => {
-  const { orderId, orderInfo, paymentTypes } = useContext(OrderContext);
+  const { orderId, paymentTypes } = useContext(OrderContext);
   const { setCartToState } = useContext(CartContext);
 
   useEffect(() => {
@@ -109,7 +109,7 @@ const Confirmation = () => {
                   Moyens de paiement disponibles
                 </h2>
                 <p className="text-sm text-gray-600">
-                  Utilisez l'un de ces moyens pour effectuer votre paiement
+                  Utilisez l&apos;un de ces moyens pour effectuer votre paiement
                 </p>
               </div>
             </div>
@@ -212,7 +212,8 @@ const Confirmation = () => {
                       Aucune information de paiement disponible
                     </p>
                     <p className="text-sm text-yellow-700">
-                      Veuillez contacter le support pour plus d'informations.
+                      Veuillez contacter le support pour plus
+                      d&apos;informations.
                     </p>
                   </div>
                 </div>
@@ -234,7 +235,7 @@ const Confirmation = () => {
                     <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
                       <li>Nous préparons votre commande</li>
                       <li>
-                        Effectuez le paiement via l'un des moyens ci-dessus
+                        Effectuez le paiement via l&apos;un des moyens ci-dessus
                       </li>
                       <li>Vous serez contacté une fois la commande prête</li>
                       <li>Récupérez votre commande au point de retrait</li>
@@ -252,7 +253,7 @@ const Confirmation = () => {
                   <div>
                     <p className="text-sm text-amber-800">
                       <span className="font-medium">Important:</span> Effectuez
-                      le paiement vers l'un des comptes indiqués ci-dessus.
+                      le paiement vers l&apos;un des comptes indiqués ci-dessus.
                       Votre commande sera traitée une fois le paiement confirmé.
                     </p>
                   </div>
