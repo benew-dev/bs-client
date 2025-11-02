@@ -10,7 +10,6 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "react-toastify";
-import PropTypes from "prop-types"; // Pour la validation des props
 import Image from "next/image";
 import Link from "next/link";
 
@@ -478,7 +477,7 @@ const RelatedProductsCarousel = memo(function RelatedProductsCarousel({
             {filteredProducts.map((product) => (
               <div
                 key={product?._id}
-                className="flex-shrink-0 px-2"
+                className="shrink-0 px-2"
                 style={{
                   // Chaque slide occupe exactement la largeur nécessaire selon slidesPerView
                   width: `${100 / slidesPerView}%`,
@@ -524,7 +523,7 @@ const RelatedProductsCarousel = memo(function RelatedProductsCarousel({
 
                   {/* Informations du produit */}
                   <div className="space-y-2">
-                    <h3 className="font-medium text-gray-800 group-hover/card:text-blue-600 transition-colors line-clamp-2 text-sm leading-tight min-h-[2.5rem]">
+                    <h3 className="font-medium text-gray-800 group-hover/card:text-blue-600 transition-colors line-clamp-2 text-sm leading-tight min-h-10">
                       {product?.name || "Produit sans nom"}
                     </h3>
 
@@ -815,37 +814,5 @@ function ProductDetails({ product, sameCategoryProducts }) {
     </div>
   );
 }
-
-// Validation des props pour une meilleure robustesse
-ProductDetails.propTypes = {
-  product: PropTypes.shape({
-    _id: PropTypes.string,
-    name: PropTypes.string,
-    price: PropTypes.number,
-    oldPrice: PropTypes.number,
-    description: PropTypes.string,
-    stock: PropTypes.number,
-    sold: PropTypes.number,
-    createdAt: PropTypes.string,
-    images: PropTypes.arrayOf(
-      PropTypes.shape({
-        url: PropTypes.string,
-      }),
-    ),
-    category: PropTypes.shape({
-      _id: PropTypes.string,
-      categoryName: PropTypes.string,
-    }),
-    specifications: PropTypes.object,
-    verified: PropTypes.bool,
-  }),
-  sameCategoryProducts: PropTypes.array,
-};
-
-// Valeurs par défaut pour éviter les erreurs
-ProductDetails.defaultProps = {
-  product: null,
-  sameCategoryProducts: [],
-};
 
 export default memo(ProductDetails);

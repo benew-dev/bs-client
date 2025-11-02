@@ -38,7 +38,7 @@ const ServiceWorkerManager = () => {
           for (const registration of registrations) {
             registration.unregister();
             console.log(
-              "Service Worker désinscrit (environnement de développement)"
+              "Service Worker désinscrit (environnement de développement)",
             );
           }
         })
