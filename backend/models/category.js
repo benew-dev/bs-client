@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import slug from 'mongoose-slug-updater';
+import mongoose from "mongoose";
+import slug from "mongoose-slug-updater";
 
 // Initialiser le plugin de slug
 mongoose.plugin(slug);
@@ -8,18 +8,18 @@ const categorySchema = new mongoose.Schema(
   {
     categoryName: {
       type: String,
-      required: [true, 'Le nom de la catégorie est obligatoire'],
+      required: [true, "Le nom de la catégorie est obligatoire"],
       trim: true,
       maxlength: [
         50,
-        'Le nom de la catégorie ne peut pas dépasser 50 caractères',
+        "Le nom de la catégorie ne peut pas dépasser 50 caractères",
       ],
       unique: true,
       index: true,
     },
     slug: {
       type: String,
-      slug: 'categoryName',
+      slug: "categoryName",
       unique: true,
       index: true,
     },
@@ -50,7 +50,7 @@ const categorySchema = new mongoose.Schema(
 );
 
 // Index pour la recherche textuelle
-categorySchema.index({ categoryName: 'text' });
+categorySchema.index({ categoryName: "text" });
 
 // Virtual pour récupérer les produits dans cette catégorie
 // categorySchema.virtual('products', {
@@ -60,13 +60,13 @@ categorySchema.index({ categoryName: 'text' });
 // });
 
 // Middleware pre-save pour mettre à jour le champ updatedAt
-categorySchema.pre('save', function (next) {
+categorySchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
 // Assurer que les modèles ne sont pas redéfinis en cas de hot-reload
 const Category =
-  mongoose.models.Category || mongoose.model('Category', categorySchema);
+  mongoose.models.Category || mongoose.model("Category", categorySchema);
 
 export default Category;

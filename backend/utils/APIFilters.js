@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 class APIFilters {
   constructor(query, queryStr) {
@@ -8,11 +8,11 @@ class APIFilters {
   }
 
   search() {
-    const keyword = this.queryStr.get('keyword')
+    const keyword = this.queryStr.get("keyword")
       ? {
           name: {
-            $regex: this.queryStr.get('keyword'),
-            $options: 'i',
+            $regex: this.queryStr.get("keyword"),
+            $options: "i",
           },
         }
       : {};
@@ -34,36 +34,36 @@ class APIFilters {
   filter() {
     let queryCopy = {};
 
-    if (this.queryStr.get('category')) {
+    if (this.queryStr.get("category")) {
       queryCopy = {
-        category: this.queryStr.get('category'),
+        category: this.queryStr.get("category"),
         ...queryCopy,
       };
     }
 
-    if (this.queryStr.get('price[gt]')) {
+    if (this.queryStr.get("price[gt]")) {
       queryCopy = {
-        'price[gt]': this.queryStr.get('price[gt]'),
+        "price[gt]": this.queryStr.get("price[gt]"),
         ...queryCopy,
       };
     }
 
-    if (this.queryStr.get('price[lt]')) {
+    if (this.queryStr.get("price[lt]")) {
       queryCopy = {
-        'price[lt]': this.queryStr.get('price[lt]'),
+        "price[lt]": this.queryStr.get("price[lt]"),
         ...queryCopy,
       };
     }
 
-    const removeFields = ['keyword', 'page'];
+    const removeFields = ["keyword", "page"];
     removeFields.forEach((el) => delete queryCopy[el]);
 
     let output = {};
-    let prop = '';
+    let prop = "";
 
     for (let key in queryCopy) {
       if (!key.match(/\b(gt|gte|lt|lte)/)) {
-        if (key === 'category') {
+        if (key === "category") {
           const categoryId = new mongoose.Types.ObjectId(queryCopy[key]);
 
           output[key] = categoryId;
@@ -71,7 +71,7 @@ class APIFilters {
           output[key] = queryCopy[key];
         }
       } else {
-        prop = key.split('[')[0];
+        prop = key.split("[")[0];
 
         let operator = key.match(/\[(.*)\]/)[1];
 
@@ -89,7 +89,7 @@ class APIFilters {
   }
 
   pagination(resPerPage) {
-    const currentPage = Number(this.queryStr.get('page')) || 1;
+    const currentPage = Number(this.queryStr.get("page")) || 1;
     const skip = resPerPage * (currentPage - 1);
 
     this.query = this.query.limit(resPerPage).skip(skip);
