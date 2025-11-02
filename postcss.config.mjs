@@ -1,9 +1,13 @@
 const config = {
   plugins: {
     // Plugin Tailwind CSS v4 - OBLIGATOIRE
-    "@tailwindcss/postcss": {},
+    "@tailwindcss/postcss": {
+      // IMPORTANT : Désactiver l'optimisation intégrée pour éviter la double minification
+      optimize: false,
+      minify: false,
+    },
 
-    // Minification CSS pour production - OPTIONNEL mais recommandé
+    // Minification CSS pour production avec cssnano
     ...(process.env.NODE_ENV === "production" && {
       cssnano: {
         preset: [
@@ -16,8 +20,8 @@ const config = {
             minifyGradients: true,
             mergeLonghand: true,
             colormin: true,
-            zindex: false, // Éviter les problèmes de z-index
-            reduceIdents: false, // Éviter les problèmes avec animations/keyframes
+            zindex: false, // ✅ Bon : évite les problèmes
+            reduceIdents: false, // ✅ Bon : évite les problèmes avec animations
           },
         ],
       },
