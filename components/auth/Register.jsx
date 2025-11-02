@@ -3,8 +3,9 @@
 import { useState, useContext, useEffect, useRef } from "react";
 import Link from "next/link";
 import { toast } from "react-toastify";
-import { CheckCircle, LoaderCircle, Mail } from "lucide-react";
+import { CheckCircle, LoaderCircle } from "lucide-react";
 import AuthContext from "@/context/AuthContext";
+import { signUp } from "@/lib/auth-client"; // ✅ Better Auth
 import captureClientError from "@/monitoring/sentry";
 
 const Register = () => {
@@ -190,18 +191,15 @@ const Register = () => {
         return;
       }
 
-      // Appel direct à l'API
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+      // Inscription avec Better Auth
+      const { data, error } = await signUp.email({
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+        phone: formData.phone,
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (data) {
         // ✅ SUCCÈS: Inscription réussie
         setRegistrationSuccess(true);
         setRegistrationData(data.data);
@@ -216,7 +214,7 @@ const Register = () => {
         setPasswordStrength(0);
 
         // Toast de succès
-        toast.success(data.message || "Inscription réussie !");
+        toast.success(data || "Inscription réussie !");
 
         // Log pour développement
         if (process.env.NODE_ENV === "development") {
@@ -224,7 +222,7 @@ const Register = () => {
             user: data.data?.user?.email,
           });
         }
-      } else {
+      } else if (error) {
         // ✅ ERREUR: Gestion des erreurs spécifiques avec monitoring
         let errorType = "generic";
         let isCritical = false;
@@ -265,7 +263,7 @@ const Register = () => {
           isCritical,
           {
             errorType,
-            statusCode: response.status,
+            // statusCode: response.status,
             originalError: data.message,
             errorCode: data.code,
             hasValidationErrors: !!data.errors,

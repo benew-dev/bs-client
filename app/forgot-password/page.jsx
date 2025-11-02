@@ -30,20 +30,20 @@ export const metadata = {
  * Server Component qui vérifie l'authentification
  */
 export default async function ForgotPasswordPage() {
+  // Vérifier si l'utilisateur est déjà connecté
+  const headersList = await headers();
+  const user = await getAuthenticatedUser(headersList);
+
+  if (user) {
+    console.log("User already logged in, redirecting from forgot-password:", {
+      userId: user._id?.substring(0, 8) + "...",
+      email: user.email?.substring(0, 3) + "***",
+    });
+    // Rediriger vers le tableau de bord si déjà connecté
+    return redirect("/me");
+  }
+
   try {
-    // Vérifier si l'utilisateur est déjà connecté
-    const headersList = await headers();
-    const user = await getAuthenticatedUser(headersList);
-
-    if (user) {
-      console.log("User already logged in, redirecting from forgot-password:", {
-        userId: user._id?.substring(0, 8) + "...",
-        email: user.email?.substring(0, 3) + "***",
-      });
-      // Rediriger vers le tableau de bord si déjà connecté
-      return redirect("/me");
-    }
-
     // Récupérer les en-têtes pour le logging et la sécurité
     const userAgent = headersList.get("user-agent") || "unknown";
     const referer = headersList.get("referer") || "direct";

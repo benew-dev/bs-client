@@ -12,8 +12,8 @@ import Link from "next/link";
 import Image from "next/image";
 import * as Sentry from "@sentry/nextjs";
 import CartContext from "@/context/CartContext";
-import { signOut, useSession } from "next-auth/react";
-import AuthContext from "@/context/AuthContext";
+import { useSession, signOut } from "@/lib/auth-client"; // ✅ Better Auth
+// import AuthContext from "@/context/AuthContext";
 import { Menu, ShoppingCart, User, X } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -128,12 +128,16 @@ const UserDropdown = memo(({ user }) => {
 UserDropdown.displayName = "UserDropdown";
 
 const Header = () => {
-  const {
-    user,
-    setLoading: setAuthLoading,
-    setUser,
-    clearUser,
-  } = useContext(AuthContext);
+  // const {
+  //   user,
+  //   setLoading: setAuthLoading,
+  //   setUser,
+  //   clearUser,
+  // } = useContext(AuthContext);
+
+  const { data: session } = useSession();
+  const user = session?.user;
+
   const { setCartToState, cartCount, clearCartOnLogout } =
     useContext(CartContext);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -189,7 +193,7 @@ const Header = () => {
 
     if (data && mounted) {
       try {
-        setUser(data?.user);
+        // setUser(data?.user);
 
         if (loadCartTimeoutRef.current) {
           clearTimeout(loadCartTimeoutRef.current);
@@ -211,13 +215,13 @@ const Header = () => {
         });
       }
     } else if (data === null && mounted) {
-      setUser(null);
+      // setUser(null);
     }
 
     return () => {
       mounted = false;
     };
-  }, [data, setUser, loadCart]);
+  }, [data, loadCart]);
 
   // Fermer le menu mobile si on clique en dehors
   useEffect(() => {
@@ -258,9 +262,9 @@ const Header = () => {
   // handleSignOut optimisé
   const handleSignOut = useCallback(async () => {
     try {
-      clearUser();
+      // clearUser();
       clearCartOnLogout();
-      await signOut({ callbackUrl: "/login" });
+      await signOut();
 
       signOutTimeoutRef.current = setTimeout(() => {
         window.location.href = "/login";
@@ -271,7 +275,7 @@ const Header = () => {
       }
       window.location.href = "/login";
     }
-  }, [clearUser, clearCartOnLogout]);
+  }, [clearCartOnLogout]);
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
@@ -364,7 +368,7 @@ const Header = () => {
 
           {/* Search - Desktop */}
           <div className="hidden md:block md:flex-1 max-w-xl mx-4">
-            <Search setLoading={setAuthLoading} />
+            <Search setLoading={true} />
           </div>
 
           {/* User navigation - Desktop */}
@@ -396,7 +400,7 @@ const Header = () => {
             aria-label="Menu principal"
           >
             <div className="mb-4">
-              <Search setLoading={setAuthLoading} />
+              <Search setLoading={true} />
             </div>
             {user ? (
               <div className="space-y-3">

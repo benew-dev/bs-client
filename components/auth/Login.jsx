@@ -1,17 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-toastify";
 
-import { parseCallbackUrl } from "@/helpers/helpers";
 import { validateLogin } from "@/helpers/validation/schemas/auth";
+import { signIn } from "@/lib/auth-client"; // ✅ Better Auth
 import { LoaderCircle } from "lucide-react";
 import { captureException } from "@/monitoring/sentry";
 
-const Login = ({ csrfToken }) => {
+const Login = () => {
   // États du formulaire
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -78,37 +77,31 @@ const Login = ({ csrfToken }) => {
       }
 
       // Tentative de connexion
-      const data = await signIn("credentials", {
+      const { data, error } = await signIn.email({
         email,
         password,
-        callbackUrl: callBackUrl ? parseCallbackUrl(callBackUrl) : "/",
-        csrfToken,
-        redirect: false, // Désactiver la redirection automatique pour gérer les erreurs
       });
 
-      if (data?.error !== null) {
+      if (error !== null) {
         // Classification et monitoring des erreurs de connexion
         let errorType = "generic";
         let isCritical = false;
 
-        if (
-          data.error.includes("rate limit") ||
-          data.error.includes("too many")
-        ) {
+        if (error.includes("rate limit") || error.includes("too many")) {
           errorType = "rate_limit";
           isCritical = true; // Peut indiquer une attaque
           toast.error(
             "Trop de tentatives de connexion. Veuillez réessayer ultérieurement.",
           );
-        } else if (data.error.includes("locked")) {
+        } else if (error.includes("locked")) {
           errorType = "account_locked";
           isCritical = true;
           toast.error(
             "Votre compte est temporairement verrouillé suite à plusieurs tentatives.",
           );
         } else if (
-          data.error.toLowerCase().includes("email") ||
-          data.error.toLowerCase().includes("password")
+          error.toLowerCase().includes("email") ||
+          error.toLowerCase().includes("password")
         ) {
           errorType = "invalid_credentials";
           isCritical = false; // Erreur normale
@@ -118,18 +111,18 @@ const Login = ({ csrfToken }) => {
         } else {
           errorType = "unknown";
           isCritical = true; // Erreur inconnue = critique
-          toast.error(data.error || "Échec de connexion");
+          toast.error(error || "Échec de connexion");
         }
 
         // Monitoring avec contexte riche
         const loginError = new Error(`Échec connexion: ${errorType}`);
         console.error(loginError, "Login", "signIn", isCritical, {
           errorType,
-          originalError: data.error,
+          originalError: error,
           hasCallbackUrl: !!callBackUrl,
           emailDomain: email ? email.split("@")[1] : null,
         });
-      } else if (data?.ok) {
+      } else if (data) {
         toast.success("Connexion réussie!");
         router.push("/");
       }
