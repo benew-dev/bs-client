@@ -5,7 +5,7 @@ import { captureException } from "@/monitoring/sentry";
 
 import logger from "@/utils/logger";
 import { getCookieName } from "@/helpers/helpers";
-import { getAuthenticatedUser } from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth-utils";
 
 // Ajoutez après les imports
 export const dynamic = "force-dynamic";

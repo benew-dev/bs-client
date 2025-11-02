@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getAuthenticatedUser } from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth-utils";
 
 // Vous avez déjà cette ligne, gardez-la !
 export const dynamic = "force-dynamic";

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 // MODIFICATION: Import depuis un fichier lib centralisé
-import { getAuthenticatedUser } from "@/lib/auth";
+import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { headers } from "next/headers";
 
 // Ajoutez après les imports
