@@ -128,7 +128,7 @@ export default function RootLayout({ children }) {
           <Suspense>
             <Header />
           </Suspense>
-          <main className="flex-grow">{children}</main>
+          <main className="grow">{children}</main>
           <Footer />
         </GlobalProvider>
       </body>
