@@ -1,7 +1,7 @@
 // app/forgot-password/page.jsx
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getAuthenticatedUser } from "@/lib/auth-utils";
+import { getAuthenticatedUser } from "@/lib/auth";
 import ForgotPassword from "@/components/auth/ForgotPassword";
 
 export const dynamic = "force-dynamic";

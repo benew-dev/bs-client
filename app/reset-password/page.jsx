@@ -2,7 +2,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { getAuthenticatedUser } from "@/lib/auth-utils";
+import { getAuthenticatedUser } from "@/lib/auth";
 import ResetPassword from "@/components/auth/ResetPassword";
 
 export const dynamic = "force-dynamic";

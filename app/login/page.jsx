@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { getCsrfToken } from "next-auth/react";
 import Login from "@/components/auth/Login";
-import { getAuthenticatedUser } from "@/lib/auth-utils";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -91,7 +91,11 @@ async function LoginPage() {
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <Login />
+            <Login
+              csrfToken={csrfToken}
+              callbackUrl={callbackUrl}
+              referer={referer}
+            />
           </div>
         </div>
       </div>

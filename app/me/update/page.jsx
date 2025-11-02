@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { captureException } from "@/monitoring/sentry";
 import UpdateProfile from "@/components/auth/UpdateProfile";
-import { getAuthenticatedUser } from "@/lib/auth-utils";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 // Force dynamic rendering pour garantir l'état d'authentification à jour
 export const dynamic = "force-dynamic";

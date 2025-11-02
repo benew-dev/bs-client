@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { lazy } from "react";
-import { getAuthenticatedUser } from "@/lib/auth-utils";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 // Chargement dynamique optimisé avec retries
 const Register = lazy(() => import("@/components/auth/Register"));
