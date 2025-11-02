@@ -434,7 +434,7 @@ const RelatedProductsCarousel = memo(function RelatedProductsCarousel({
         setIsAutoScrolling(false);
       }
     },
-    onSwiping: (eventData) => {
+    onSwiping: () => {
       // Optionnel : retour visuel pendant le swipe
       // Vous pouvez utiliser eventData.deltaX pour animer le carousel pendant le swipe
       setIsAutoScrolling(false);
@@ -627,11 +627,10 @@ function ProductDetails({ product, sameCategoryProducts }) {
     if (!product) return null;
 
     return [
-      { name: "Accueil", url: "/" },
-      { name: "Produits", url: "/products" },
+      { name: "Produits", url: "/" },
       {
         name: product.category?.categoryName || "Catégorie",
-        url: `/category/${product.category?._id || "all"}`,
+        url: `/?category=${product.category?._id || "all"}`,
       },
       {
         name: product.name
