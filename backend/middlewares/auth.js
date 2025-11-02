@@ -1,10 +1,13 @@
-import { auth } from "@/app/api/auth/[...all]/route";
-import { getServerSession } from "next-auth";
+import { auth } from "@/lib/auth";
+// import { getServerSession } from "next-auth";
 
 const isAuthenticatedUser = async (req, res) => {
-  const session = await getServerSession(auth);
+  // const session = await getServerSession(auth);
+  const session = await auth.api.getSession({
+    headers: req.headers,
+  });
 
-  if (!session) {
+  if (!session || !session.user) {
     return res.error("Login first to access this route", 401);
   }
 
