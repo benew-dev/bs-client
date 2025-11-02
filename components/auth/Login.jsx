@@ -82,6 +82,9 @@ const Login = () => {
         password,
       });
 
+      console.log("Data Response if exists", data && data);
+      console.log("Error Response if exists", error && error);
+
       if (error !== null) {
         // Classification et monitoring des erreurs de connexion
         let errorType = "generic";
