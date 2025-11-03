@@ -9,10 +9,7 @@ const DEBUG = process.env.NEXT_PUBLIC_DEBUG === "true";
 const PROTECTED_PATHS = [
   "/api/:path*",
   "/me/:path*",
-  "/address/:path*",
   "/cart",
-  "/shipping",
-  "/shipping-choice",
   "/payment",
   "/review-order",
   "/confirmation",
@@ -21,6 +18,7 @@ const PUBLIC_PATHS = [
   "/login",
   "/register",
   "/product",
+  "/forgot-password",
   "/_next/",
   "/favicon.ico",
   "/images/",
