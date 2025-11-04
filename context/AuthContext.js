@@ -212,9 +212,6 @@ export const AuthProvider = ({ children }) => {
 
       // Succès
       if (data.success && data.data?.updatedUser) {
-        console.log("User before update:", user);
-        console.log("Updated user data:", data.data.updatedUser);
-
         // ✅ IMPORTANT: Appeler update() de NextAuth pour rafraîchir la session
         if (updateSession) {
           await updateSession({
@@ -224,9 +221,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         // Synchroniser avec la session
-        const syncedUser = await syncUserWithSession(data.data.updatedUser);
-
-        console.log("User after sync:", syncedUser);
+        await syncUserWithSession(data.data.updatedUser);
 
         toast.success("Profil mis à jour avec succès!");
 
