@@ -43,6 +43,10 @@ const productSchema = new mongoose.Schema(
         },
       },
     ],
+    c: {
+      type: String,
+      default: null,
+    },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       required: [true, "La catégorie du produit est obligatoire"],
