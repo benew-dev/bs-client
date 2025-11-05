@@ -43,7 +43,7 @@ const productSchema = new mongoose.Schema(
         },
       },
     ],
-    c: {
+    backgroundImageColor: {
       type: String,
       default: null,
     },
