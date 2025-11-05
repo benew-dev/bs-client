@@ -96,8 +96,7 @@ const ProductItem = memo(({ product }) => {
               height={240}
               crop="fill"
               gravity="auto"
-              removeBackground
-              background={backgroundColor || undefined}
+              background={backgroundColor || null}
               sizes="(max-width: 768px) 80vw, 240px"
               className="object-contain"
             />
