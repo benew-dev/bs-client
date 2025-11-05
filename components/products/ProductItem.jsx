@@ -22,6 +22,7 @@ const ProductItem = memo(({ product }) => {
   const productDescription = product.description || "";
   const productPrice = product.price || 0;
   const productCategory = product.category?.categoryName || "Non catégorisé";
+  const backgroundColor = product.backgroundImageColor || null;
 
   // URL de l'image avec fallback
   const imageUrl = product.images?.[0]?.url || "/images/default_product.png";
@@ -56,7 +57,12 @@ const ProductItem = memo(({ product }) => {
   );
 
   return (
-    <article className="border border-gray-200 overflow-hidden bg-white shadow-xs rounded-sm mb-5">
+    <article
+      className="border border-gray-200 overflow-hidden shadow-xs rounded-sm mb-5"
+      style={
+        backgroundColor ? { backgroundColor } : { backgroundColor: "white" }
+      }
+    >
       <Link
         href={`/product/${productId}`}
         className="flex flex-col md:flex-row hover:bg-blue-50"
