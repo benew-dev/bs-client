@@ -1,9 +1,7 @@
-"use client";
-
 import { memo, useCallback, useContext } from "react";
 import { toast } from "react-toastify";
 import Link from "next/link";
-import { CldImage } from "next-cloudinary";
+import Image from "next/image";
 
 import CartContext from "@/context/CartContext";
 import { INCREASE } from "@/helpers/constants";
@@ -24,31 +22,9 @@ const ProductItem = memo(({ product }) => {
   const productDescription = product.description || "";
   const productPrice = product.price || 0;
   const productCategory = product.category?.categoryName || "Non catégorisé";
-  const backgroundColor = product.backgroundImageColor || "";
 
-  // URL de l'image avec fallback - extraire le public_id
+  // URL de l'image avec fallback
   const imageUrl = product.images?.[0]?.url || "/images/default_product.png";
-
-  // Extraire le public_id de l'URL Cloudinary
-  const getPublicIdFromUrl = (url) => {
-    try {
-      // Format: https://res.cloudinary.com/[cloud]/image/upload/v[version]/[public_id]
-      const parts = url.split("/upload/");
-      if (parts.length > 1) {
-        const afterUpload = parts[1];
-        // Enlever la version si présente (v123456/)
-        const withoutVersion = afterUpload.replace(/^v\d+\//, "");
-        // Enlever l'extension
-        return withoutVersion.replace(/\.[^/.]+$/, "");
-      }
-      return url;
-    } catch (error) {
-      console.error("Error extracting public_id:", error);
-      return url;
-    }
-  };
-
-  const publicId = getPublicIdFromUrl(imageUrl);
 
   // Optimisation avec useCallback pour éviter les recréations à chaque rendu
   const addToCartHandler = useCallback(
@@ -76,7 +52,7 @@ const ProductItem = memo(({ product }) => {
         console.error("Erreur d'ajout au panier:", error);
       }
     },
-    [user, cart, productId, addItemToCart, updateCart],
+    [user, cart, productId],
   );
 
   return (
@@ -88,17 +64,20 @@ const ProductItem = memo(({ product }) => {
       >
         <div className="md:w-1/4 flex p-3">
           <div className="relative w-full aspect-square">
-            <CldImage
-              src={publicId}
+            <Image
+              src={imageUrl}
               alt={productName}
               title={productName}
               width={240}
               height={240}
-              crop="fill"
-              gravity="auto"
-              background={backgroundColor || null}
+              onError={(e) => {
+                e.currentTarget.src = "/images/default_product.png";
+                e.currentTarget.onerror = null;
+              }}
+              style={{ objectFit: "contain" }}
+              priority={false}
+              loading="lazy"
               sizes="(max-width: 768px) 80vw, 240px"
-              className="object-contain"
             />
           </div>
         </div>

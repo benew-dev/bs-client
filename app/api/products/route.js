@@ -66,9 +66,7 @@ export const GET = withIntelligentRateLimit(
       // Créer les filtres avec les paramètres validés
       const apiFilters = new APIFilters(
         Product.find({ isActive: true })
-          .select(
-            "name description stock price images category backgroundImageColor",
-          )
+          .select("name description stock price images category")
           .slice("images", 1),
         searchParams,
       )
