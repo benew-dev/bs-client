@@ -27,29 +27,28 @@ const ProductItem = memo(({ product }) => {
   const backgroundColor = product.backgroundImageColor || "";
 
   // URL de l'image avec fallback - extraire le public_id
-  const imageUrl =
-    product.images?.[0]?.public_id || "/images/default_product.png";
+  const imageUrl = product.images?.[0]?.url || "/images/default_product.png";
 
   // Extraire le public_id de l'URL Cloudinary
-  // const getPublicIdFromUrl = (url) => {
-  //   try {
-  //     // Format: https://res.cloudinary.com/[cloud]/image/upload/v[version]/[public_id]
-  //     const parts = url.split("/upload/");
-  //     if (parts.length > 1) {
-  //       const afterUpload = parts[1];
-  //       // Enlever la version si présente (v123456/)
-  //       const withoutVersion = afterUpload.replace(/^v\d+\//, "");
-  //       // Enlever l'extension
-  //       return withoutVersion.replace(/\.[^/.]+$/, "");
-  //     }
-  //     return url;
-  //   } catch (error) {
-  //     console.error("Error extracting public_id:", error);
-  //     return url;
-  //   }
-  // };
+  const getPublicIdFromUrl = (url) => {
+    try {
+      // Format: https://res.cloudinary.com/[cloud]/image/upload/v[version]/[public_id]
+      const parts = url.split("/upload/");
+      if (parts.length > 1) {
+        const afterUpload = parts[1];
+        // Enlever la version si présente (v123456/)
+        const withoutVersion = afterUpload.replace(/^v\d+\//, "");
+        // Enlever l'extension
+        return withoutVersion.replace(/\.[^/.]+$/, "");
+      }
+      return url;
+    } catch (error) {
+      console.error("Error extracting public_id:", error);
+      return url;
+    }
+  };
 
-  const publicId = imageUrl;
+  const publicId = getPublicIdFromUrl(imageUrl);
 
   // Optimisation avec useCallback pour éviter les recréations à chaque rendu
   const addToCartHandler = useCallback(
