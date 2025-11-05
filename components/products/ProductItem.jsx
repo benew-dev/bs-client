@@ -64,10 +64,7 @@ const ProductItem = memo(({ product }) => {
         aria-label={`Voir les détails du produit: ${productName}`}
       >
         <div className="md:w-1/4 flex p-3">
-          <div
-            className="relative w-full aspect-square"
-            style={backgroundColor ? { backgroundColor } : {}}
-          >
+          <div className="relative w-full aspect-square">
             <Image
               src={imageUrl}
               alt={productName}
@@ -78,7 +75,11 @@ const ProductItem = memo(({ product }) => {
                 e.currentTarget.src = "/images/default_product.png";
                 e.currentTarget.onerror = null;
               }}
-              style={{ objectFit: "contain" }}
+              style={
+                backgroundColor
+                  ? { objectFit: "contain", backgroundColor }
+                  : { objectFit: "contain" }
+              }
               priority={false}
               loading="lazy"
               sizes="(max-width: 768px) 80vw, 240px"
