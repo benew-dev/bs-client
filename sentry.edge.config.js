@@ -64,9 +64,6 @@ if (isValidDSN(sentryDSN)) {
     debug: !isProd,
     enabled: isProd,
 
-    // Logs désactivés pour simplifier
-    enableLogs: true,
-
     // Traitement des breadcrumbs
     beforeBreadcrumb(breadcrumb) {
       // Filtrer les requêtes vers des routes sensibles
@@ -171,7 +168,7 @@ if (isValidDSN(sentryDSN)) {
       // Tags du projet
       event.tags = {
         ...event.tags,
-        project: "buyitnow-client-n15-prv1",
+        project: "bs-client",
         runtime: "edge",
       };
 

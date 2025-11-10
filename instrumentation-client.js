@@ -105,7 +105,7 @@ Sentry.init({
     // Tags du projet
     event.tags = {
       ...event.tags,
-      project: "buyitnow-client-n15-prv1",
+      project: "bs-client",
       runtime: "browser",
     };
 

@@ -1,98 +1,122 @@
-// monitoring/sentry.js - VERSION REFACTORISÉE
+// monitoring/sentry.js - Utilitaire de capture (PAS d'initialisation)
 import * as Sentry from "@sentry/nextjs";
 
 /**
- * NE PAS initialiser Sentry ici !
- * L'initialisation se fait dans instrumentation.js / sentry.server.config.js
+ * ⚠️ IMPORTANT : Ce fichier N'INITIALISE PAS Sentry !
+ *
+ * L'initialisation se fait automatiquement par Next.js via :
+ * - instrumentation-client.js (client/navigateur)
+ * - sentry.server.config.js (serveur Node.js)
+ * - sentry.edge.config.js (edge runtime)
+ *
+ * Ce fichier fournit uniquement des fonctions utilitaires
+ * qui utilisent Sentry DÉJÀ initialisé.
  */
-
-const captureClientError = (error, component, action, isCritical = false) => {
-  // Ne capturer que si Sentry est initialisé
-  if (typeof window === "undefined") return;
-
-  // Pour 500 users/jour, être sélectif
-  if (!isCritical && Math.random() > 0.3) return; // 30% sampling non-critique
-
-  captureException(error, {
-    tags: {
-      component,
-      action,
-      critical: isCritical,
-      client_side: true,
-    },
-    fingerprint: [component, action, error.name], // Grouper les erreurs similaires
-  });
-};
 
 /**
- * Capture une exception avec des informations contextuelles supplémentaires
+ * Capture une erreur client avec contexte et sampling
  * @param {Error} error - L'erreur à capturer
- * @param {Object} context - Contexte supplémentaire sur l'erreur
+ * @param {string} component - Nom du composant
+ * @param {string} action - Action qui a causé l'erreur
+ * @param {boolean} isCritical - Si l'erreur est critique
  */
-export const captureException = (error, context = {}) => {
+export const captureClientError = (
+  error,
+  component,
+  action,
+  isCritical = false,
+) => {
   // Vérifier que Sentry est initialisé
   if (!Sentry.getCurrentScope()) {
     console.error("Sentry not initialized:", error);
     return;
   }
 
+  // Ne capturer que si on est côté client
+  if (typeof window === "undefined") return;
+
+  // Sampling pour les erreurs non-critiques (30%)
+  if (!isCritical && Math.random() > 0.3) return;
+
+  Sentry.captureException(error, {
+    tags: {
+      component,
+      action,
+      critical: isCritical,
+      client_side: true,
+    },
+    fingerprint: [component, action, error.name],
+  });
+};
+
+/**
+ * Capture une exception avec contexte personnalisé
+ * Fonctionne côté client, serveur et edge
+ * @param {Error} error - L'erreur à capturer
+ * @param {Object} context - Contexte supplémentaire
+ */
+export const captureException = (error, context = {}) => {
+  if (!Sentry.getCurrentScope()) {
+    console.error("Sentry not initialized:", error);
+    return;
+  }
+
   Sentry.withScope((scope) => {
-    // Ajouter des tags pour faciliter le filtrage dans Sentry
+    // Tags
     Object.entries(context.tags || {}).forEach(([key, value]) => {
       scope.setTag(key, value);
     });
 
-    // Ajouter des données supplémentaires
+    // Extra data
     Object.entries(context.extra || {}).forEach(([key, value]) => {
       scope.setExtra(key, value);
     });
 
-    // Définir le niveau de l'erreur
+    // Niveau
     if (context.level) {
       scope.setLevel(context.level);
     }
 
-    // Capturer l'exception
+    // Fingerprint pour grouper les erreurs similaires
+    if (context.fingerprint) {
+      scope.setFingerprint(context.fingerprint);
+    }
+
     Sentry.captureException(error);
   });
 };
 
 /**
- * Capture un message avec des informations contextuelles supplémentaires
+ * Capture un message (log) avec contexte
  * @param {string} message - Le message à capturer
- * @param {Object} context - Contexte supplémentaire sur le message
+ * @param {Object} context - Contexte supplémentaire
  */
 export const captureMessage = (message, context = {}) => {
-  // Vérifier que Sentry est initialisé
   if (!Sentry.getCurrentScope()) {
     console.warn("Sentry not initialized:", message);
     return;
   }
 
   Sentry.withScope((scope) => {
-    // Ajouter des tags pour faciliter le filtrage dans Sentry
     Object.entries(context.tags || {}).forEach(([key, value]) => {
       scope.setTag(key, value);
     });
 
-    // Ajouter des données supplémentaires
     Object.entries(context.extra || {}).forEach(([key, value]) => {
       scope.setExtra(key, value);
     });
 
-    // Définir le niveau du message
     if (context.level) {
       scope.setLevel(context.level);
     }
 
-    // Capturer le message
-    Sentry.captureMessage(message);
+    Sentry.captureMessage(message, context.level || "info");
   });
 };
 
 /**
- * Enregistre l'utilisateur actuel dans Sentry pour le suivi des erreurs
- * @param {Object} user - Informations de l'utilisateur à enregistrer
+ * Définit l'utilisateur actuel pour le tracking
+ * @param {Object} user - Informations utilisateur
  */
 export const setUser = (user) => {
   if (!Sentry.getCurrentScope()) {
@@ -104,26 +128,23 @@ export const setUser = (user) => {
     return;
   }
 
-  // Ne jamais envoyer d'informations sensibles à Sentry
+  // Anonymisation pour la confidentialité
   Sentry.setUser({
     id: user.id || user._id,
-    // Anonymiser l'email en ne conservant que son hachage
     email: user.email ? `${hashCode(user.email)}@anonymized.user` : undefined,
     role: user.role || "user",
   });
 };
 
 /**
- * Fonction auxiliaire pour créer un hachage simple d'une chaîne
- * @param {string} str - La chaîne à hacher
- * @returns {string} - Le hachage en hexadécimal
+ * Hachage simple pour anonymiser les emails
  */
 function hashCode(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Conversion en 32bit integer
+    hash = hash & hash;
   }
   return Math.abs(hash).toString(16);
 }
