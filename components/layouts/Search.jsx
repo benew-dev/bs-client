@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { Search as SearchIcon } from "lucide-react"; // ✅ Ajouter cet import
 
 // Fonction de debounce pour limiter les requêtes
 const useDebounce = (fn, delay) => {
@@ -41,18 +42,28 @@ const Search = ({ setLoading }) => {
       // Éviter les soumissions multiples
       if (isSubmitting) return;
       setIsSubmitting(true);
-      setLoading(true);
+
+      // ✅ MODIFIÉ : Appeler setLoading UNIQUEMENT si la fonction existe
+      if (setLoading && typeof setLoading === "function") {
+        setLoading(true);
+      }
 
       try {
         // Vérification simple avant validation
         if (!keyword || keyword.trim() === "") {
           toast.error("Veuillez entrer un terme de recherche");
-          setLoading(false);
+          // ✅ MODIFIÉ : Vérifier avant d'appeler
+          if (setLoading && typeof setLoading === "function") {
+            setLoading(false);
+          }
           setIsSubmitting(false);
           return;
         }
 
-        setLoading(false);
+        // ✅ MODIFIÉ : Vérifier avant d'appeler
+        if (setLoading && typeof setLoading === "function") {
+          setLoading(false);
+        }
         setIsSubmitting(false);
         // Navigation vers la page de résultats
         router.push(`/?keyword=${encodeURIComponent(keyword.trim())}`);
@@ -70,11 +81,14 @@ const Search = ({ setLoading }) => {
           );
         }
 
-        setLoading(false);
+        // ✅ MODIFIÉ : Vérifier avant d'appeler
+        if (setLoading && typeof setLoading === "function") {
+          setLoading(false);
+        }
         setIsSubmitting(false);
       }
     },
-    [keyword],
+    [keyword, setLoading],
   );
 
   // Soumettre sur appui de la touche Entrée avec debounce
@@ -93,7 +107,7 @@ const Search = ({ setLoading }) => {
 
   return (
     <form
-      className="flex flex-nowrap items-center w-full order-last md:order-none mt-5 md:mt-0 md:w-1/3 lg:w-2/4"
+      className="flex flex-nowrap items-center w-full order-last md:order-0 mt-5 md:mt-0 md:w-1/3 lg:w-2/4"
       onSubmit={(e) => {
         e.preventDefault();
         debouncedSubmit(e);
@@ -120,11 +134,17 @@ const Search = ({ setLoading }) => {
             ? "bg-blue-400 cursor-not-allowed"
             : "bg-blue-600 hover:bg-blue-700"
         } text-white rounded-md transition-colors`}
-        onClick={debouncedSubmit} // Utiliser debouncedSubmit ici
+        onClick={debouncedSubmit}
         disabled={isSubmitting}
         aria-label="Lancer la recherche"
       >
-        {isSubmitting ? "Recherche..." : "Rechercher"}
+        {/* ✅ Afficher l'icône sur mobile, le texte sur desktop */}
+        <span className="md:hidden">
+          <SearchIcon className="w-5 h-5" />
+        </span>
+        <span className="hidden md:inline">
+          {isSubmitting ? "Recherche..." : "Rechercher"}
+        </span>
       </button>
     </form>
   );
