@@ -62,7 +62,7 @@ if (isValidDSN(sentryDSN)) {
 
     // Configuration Edge - Erreurs uniquement
     debug: !isProd,
-    enabled: isProd,
+    enabled: true,
 
     tracesSampleRate: 0, // Désactive explicitement le tracing
 

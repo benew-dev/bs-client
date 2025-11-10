@@ -60,7 +60,7 @@ if (isValidDSN(sentryDSN)) {
 
     // Configuration serveur - Erreurs uniquement
     debug: !isProd,
-    enabled: isProd,
+    enabled: true,
 
     tracesSampleRate: 0, // Désactive explicitement le tracing
 

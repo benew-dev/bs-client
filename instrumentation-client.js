@@ -51,7 +51,7 @@ Sentry.init({
 
   // Configuration de base
   debug: !isProd,
-  enabled: isProd,
+  enabled: true,
 
   tracesSampleRate: 0, // Désactive explicitement le tracing
 
