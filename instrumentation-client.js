@@ -268,3 +268,19 @@ Sentry.init({
 });
 
 console.log(`✅ Sentry client initialized (errors only) - ${environment}`);
+
+/**
+ * ⚠️ IMPORTANT - Export requis pour Next.js 15
+ *
+ * Cette fonction permet à Sentry de capturer les transitions de navigation
+ * dans votre application Next.js (changements de route côté client).
+ *
+ * Cela permet de :
+ * - Tracer les navigations dans les breadcrumbs
+ * - Comprendre le parcours utilisateur avant une erreur
+ * - Capturer les erreurs qui surviennent pendant la navigation
+ *
+ * Note : Cela ne crée PAS de spans de performance car vous n'avez pas
+ * défini tracesSampleRate (monitoring d'erreurs uniquement).
+ */
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
