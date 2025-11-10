@@ -530,7 +530,7 @@ const sentryWebpackPluginOptions = {
   debug: false,
 
   // Ignorer l'erreur de résolution API si configuré
-  // tunnelRoute: '/monitoring',
+  tunnelRoute: "/monitoring",
 
   // Configuration des fichiers à inclure
   include: ".next",

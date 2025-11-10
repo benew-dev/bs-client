@@ -62,6 +62,8 @@ if (isValidDSN(sentryDSN)) {
     debug: !isProd,
     enabled: isProd,
 
+    tracesSampleRate: 0, // Désactive explicitement le tracing
+
     // Traitement des breadcrumbs
     beforeBreadcrumb(breadcrumb) {
       // Filtrer les requêtes vers des routes sensibles

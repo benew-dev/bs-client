@@ -53,6 +53,8 @@ Sentry.init({
   debug: !isProd,
   enabled: isProd,
 
+  tracesSampleRate: 0, // Désactive explicitement le tracing
+
   // Traitement des événements avant envoi
   beforeSend(event, hint) {
     // Ajouter le contexte navigateur
