@@ -5,7 +5,7 @@ import CartContext from "@/context/CartContext";
 import OrderContext from "@/context/OrderContext";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import BreadCrumbs from "../layouts/BreadCrumbs";
 import {
@@ -16,6 +16,11 @@ import {
   Info,
   Smartphone,
   Building2,
+  Copy,
+  CheckCircle2,
+  MessageSquare,
+  Phone,
+  Mail,
 } from "lucide-react";
 
 // Configuration des plateformes de paiement
@@ -51,6 +56,9 @@ const Confirmation = () => {
   const { orderId, paymentTypes } = useContext(OrderContext);
   const { setCartToState } = useContext(CartContext);
 
+  // ✅ NOUVEAU: État pour gérer la copie du numéro de commande
+  const [isCopied, setIsCopied] = useState(false);
+
   useEffect(() => {
     const loadCart = async () => {
       try {
@@ -67,6 +75,28 @@ const Confirmation = () => {
   if (orderId === undefined || orderId === null) {
     return notFound();
   }
+
+  // ✅ NOUVEAU: Fonction pour copier le numéro de commande
+  const handleCopyOrderId = async () => {
+    try {
+      await navigator.clipboard.writeText(orderId);
+      setIsCopied(true);
+      toast.success("Numéro de commande copié !", {
+        position: "bottom-right",
+        autoClose: 2000,
+      });
+
+      // Réinitialiser l'état après 3 secondes
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 3000);
+    } catch (error) {
+      console.error("Erreur lors de la copie:", error);
+      toast.error("Impossible de copier. Veuillez le noter manuellement.", {
+        position: "bottom-right",
+      });
+    }
+  };
 
   const breadCrumbs = [
     { name: "Home", url: "/" },
@@ -88,14 +118,104 @@ const Confirmation = () => {
               />
             </div>
 
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
               Commande confirmée !
             </h1>
 
-            <p className="text-gray-600">
-              Numéro de commande :{" "}
-              <span className="font-mono font-semibold">{orderId}</span>
-            </p>
+            {/* ✅ NOUVEAU: Instructions de paiement détaillées */}
+            <div className="max-w-2xl mx-auto mb-6 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl">
+              <div className="text-left space-y-3">
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  <span className="font-semibold text-blue-900">
+                    📝 Votre commande a été bien enregistrée.
+                  </span>
+                </p>
+
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  <span className="font-semibold text-orange-700">
+                    ⚠️ Important :
+                  </span>{" "}
+                  Copiez et gardez précieusement ce numéro de commande.
+                </p>
+
+                <div className="bg-white/70 rounded-lg p-4 border border-blue-300">
+                  <p className="text-sm text-gray-800 font-medium mb-2">
+                    💳 Après le paiement de votre commande :
+                  </p>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    Envoyez-nous les informations suivantes pour confirmer votre
+                    paiement :
+                  </p>
+                  <ul className="mt-2 space-y-1.5 text-sm text-gray-700">
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>
+                        <strong>Plateforme de paiement</strong> utilisée (ex:
+                        Waafi, D-Money, CAC Pay)
+                      </span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>
+                        <strong>Nom et numéro</strong> du compte utilisé pour le
+                        paiement
+                      </span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>
+                        <strong>Numéro de commande</strong> (voir ci-dessous)
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="bg-white/70 rounded-lg p-4 border border-green-300">
+                  <p className="text-sm text-gray-800 font-medium mb-2">
+                    📬 Moyens de contact :
+                  </p>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <div className="flex items-center">
+                      <MessageSquare size={16} className="mr-2 text-blue-600" />
+                      <span>
+                        Message via votre{" "}
+                        <Link
+                          href="/me/contact"
+                          className="text-blue-600 hover:underline font-semibold"
+                        >
+                          espace personnel
+                        </Link>
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <Phone size={16} className="mr-2 text-green-600" />
+                      <span>WhatsApp ou SMS</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ AMÉLIORATION: Numéro de commande avec bouton de copie */}
+            <div className="inline-block">
+              <p className="text-gray-600 mb-2">Numéro de commande :</p>
+              <div className="flex items-center gap-3 bg-gray-50 px-6 py-3 rounded-lg border-2 border-gray-300">
+                <span className="font-mono font-bold text-xl text-gray-900">
+                  {orderId}
+                </span>
+                <button
+                  onClick={handleCopyOrderId}
+                  className={`p-2 rounded-md transition-all duration-200 ${
+                    isCopied
+                      ? "bg-green-100 text-green-600"
+                      : "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                  }`}
+                  title={isCopied ? "Copié !" : "Copier le numéro"}
+                >
+                  {isCopied ? <CheckCircle2 size={20} /> : <Copy size={20} />}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Informations de paiement */}
@@ -237,6 +357,10 @@ const Confirmation = () => {
                       <li>
                         Effectuez le paiement via l&apos;un des moyens ci-dessus
                       </li>
+                      <li>
+                        Envoyez-nous la confirmation de paiement avec le numéro
+                        de commande
+                      </li>
                       <li>Vous serez contacté une fois la commande prête</li>
                       <li>Récupérez votre commande au point de retrait</li>
                     </ul>
@@ -254,7 +378,8 @@ const Confirmation = () => {
                     <p className="text-sm text-amber-800">
                       <span className="font-medium">Important:</span> Effectuez
                       le paiement vers l&apos;un des comptes indiqués ci-dessus.
-                      Votre commande sera traitée une fois le paiement confirmé.
+                      Votre commande sera traitée une fois le paiement confirmé
+                      et les informations envoyées.
                     </p>
                   </div>
                 </div>
@@ -264,6 +389,14 @@ const Confirmation = () => {
 
           {/* Actions */}
           <div className="mt-8 flex flex-col sm:flex-row gap-4">
+            <Link
+              href="/me/contact"
+              className="flex-1 px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 text-center font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <MessageSquare size={20} />
+              Envoyer confirmation de paiement
+            </Link>
+
             <Link
               href="/me/orders"
               className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center font-medium transition-colors"
@@ -283,7 +416,10 @@ const Confirmation = () => {
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-600 text-center">
               Des questions ? Consultez notre{" "}
-              <Link href="/contact" className="text-blue-600 hover:underline">
+              <Link
+                href="/me/contact"
+                className="text-blue-600 hover:underline"
+              >
                 page de contact
               </Link>
             </p>
