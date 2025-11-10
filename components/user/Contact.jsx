@@ -1,33 +1,39 @@
-'use client';
+"use client";
 
-import { useState, useContext, useRef, useEffect } from 'react';
-import { toast } from 'react-toastify';
-import AuthContext from '@/context/AuthContext';
-import captureClientError from '@/monitoring/sentry';
+import { useState, useContext, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import AuthContext from "@/context/AuthContext";
+import captureClientError from "@/monitoring/sentry";
 
 /**
  * Formulaire de contact sécurisé avec validation avancée
+ * et message de confirmation après envoi
  *
  * @returns {JSX.Element} Composant de formulaire de contact
  */
 const Contact = () => {
   // États du formulaire
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [charCount, setCharCount] = useState(0);
+
+  // ✅ NOUVEAU: État pour gérer l'affichage du message de confirmation
+  const [isMessageSent, setIsMessageSent] = useState(false);
 
   // Références pour améliorer l'UX
   const subjectRef = useRef(null);
   const formRef = useRef(null);
 
-  // Contexte d'authentification
+  // Contexte d'authentification et router
   const { sendEmail, error, clearErrors } = useContext(AuthContext);
+  const router = useRouter();
 
   // Focus sur le premier champ au chargement
   useEffect(() => {
-    if (subjectRef.current) {
+    if (subjectRef.current && !isMessageSent) {
       subjectRef.current.focus();
     }
 
@@ -35,9 +41,9 @@ const Contact = () => {
     const loadTime = Date.now();
 
     return () => {
-      window.localStorage.setItem('contactFormLoadTime', loadTime.toString());
+      window.localStorage.setItem("contactFormLoadTime", loadTime.toString());
     };
-  }, []);
+  }, [isMessageSent]);
 
   // Handle auth context updates
   useEffect(() => {
@@ -68,13 +74,13 @@ const Contact = () => {
 
       // Protection anti-bot: vérifier si le formulaire est soumis trop rapidement
       const loadTime = parseInt(
-        window.localStorage.getItem('contactFormLoadTime') || '0',
+        window.localStorage.getItem("contactFormLoadTime") || "0",
       );
       const timeSinceLoad = Date.now() - loadTime;
 
       if (timeSinceLoad < 1500) {
-        const botError = new Error('Soumission trop rapide détectée');
-        captureClientError(botError, 'Contact', 'botDetection', true, {
+        const botError = new Error("Soumission trop rapide détectée");
+        captureClientError(botError, "Contact", "botDetection", true, {
           timeSinceLoad,
           subjectLength: subject ? subject.length : 0,
           messageLength: message ? message.length : 0,
@@ -82,41 +88,127 @@ const Contact = () => {
         // Moins de 1.5 secondes
         // Simuler un succès mais ne pas envoyer réellement
         // (pour ne pas alerter les bots qu'ils ont été détectés)
-        toast.success('Votre message a été envoyé');
-        resetForm();
+        toast.success("Votre message a été envoyé");
+        setIsMessageSent(true);
         return;
       }
 
       // Validation côté client avec notre schéma amélioré
       const emailData = { subject, message };
 
-      await sendEmail(emailData);
+      // ✅ MODIFICATION: Récupérer le résultat de sendEmail
+      const result = await sendEmail(emailData);
+
+      // ✅ NOUVEAU: Gérer le résultat
+      if (result && result.success) {
+        // Afficher le message de confirmation
+        setIsMessageSent(true);
+      } else if (result && result.status === 401) {
+        // Session expirée, rediriger vers login
+        setTimeout(() => {
+          router.push("/login?callbackUrl=/me/contact");
+        }, 2000);
+      }
+      // Si result.success est false, l'erreur est déjà gérée par le context
+      // et affichée via le useEffect qui écoute le changement de 'error'
     } catch (error) {
       console.error("Erreur lors de l'envoi du message:", error);
-      captureClientError(error, 'Contact', 'sendError', true, {
+      captureClientError(error, "Contact", "sendError", true, {
         errorMessage: error.message,
         hasSubject: !!subject,
         hasMessage: !!message,
       });
       toast.error(
         error.message ||
-          'Une erreur inattendue est survenue. Veuillez réessayer.',
+          "Une erreur inattendue est survenue. Veuillez réessayer.",
       );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Réinitialisation du formulaire
+  // ✅ NOUVEAU: Gestionnaire pour le bouton OK
+  const handleConfirmationOk = () => {
+    router.push("/me");
+  };
+
+  // Réinitialisation du formulaire (conservé pour usage futur si besoin)
   const resetForm = () => {
-    setSubject('');
-    setMessage('');
+    setSubject("");
+    setMessage("");
     setErrors({});
+    setIsMessageSent(false);
     if (subjectRef.current) {
       subjectRef.current.focus();
     }
   };
 
+  // ✅ NOUVEAU: Affichage conditionnel - Message de confirmation
+  if (isMessageSent) {
+    return (
+      <div className="mt-1 mb-20 p-4 md:p-7 mx-auto rounded-lg bg-white shadow-sm border border-gray-100 max-w-[480px]">
+        <div className="text-center space-y-6">
+          {/* Icône de succès */}
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <svg
+                className="w-8 h-8 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+          </div>
+
+          {/* Titre */}
+          <h2 className="text-2xl font-semibold text-gray-800">
+            Message envoyé avec succès !
+          </h2>
+
+          {/* Message de confirmation */}
+          <div className="space-y-3 text-gray-600">
+            <p className="text-base">
+              Votre message a bien été envoyé à notre équipe.
+            </p>
+            <p className="text-sm">
+              Vous recevrez une réponse dans votre boîte email sous peu.
+            </p>
+            <p className="text-xs text-gray-500">
+              Pensez à vérifier vos courriers indésirables si vous ne trouvez
+              pas notre réponse.
+            </p>
+          </div>
+
+          {/* Bouton OK */}
+          <button
+            onClick={handleConfirmationOk}
+            className="w-full px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md transition-colors"
+            aria-label="Retour à mon profil"
+          >
+            OK
+          </button>
+
+          {/* Lien optionnel pour renvoyer un autre message */}
+          <button
+            onClick={resetForm}
+            className="text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Envoyer un autre message
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Affichage par défaut - Formulaire
   return (
     <div className="mt-1 mb-20 p-4 md:p-7 mx-auto rounded-lg bg-white shadow-sm border border-gray-100 max-w-[480px]">
       <form
@@ -140,15 +232,15 @@ const Contact = () => {
             id="subject"
             ref={subjectRef}
             className={`appearance-none block w-full px-3 py-2 border ${
-              errors.subject ? 'border-red-500' : 'border-gray-300'
+              errors.subject ? "border-red-500" : "border-gray-300"
             } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
             type="text"
             placeholder="De quoi avez-vous besoin ?"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             maxLength={100}
-            aria-invalid={errors.subject ? 'true' : 'false'}
-            aria-describedby={errors.subject ? 'subject-error' : undefined}
+            aria-invalid={errors.subject ? "true" : "false"}
+            aria-describedby={errors.subject ? "subject-error" : undefined}
           />
           {errors.subject && (
             <p id="subject-error" className="mt-1 text-sm text-red-600">
@@ -168,20 +260,20 @@ const Contact = () => {
             <textarea
               id="message"
               className={`appearance-none block w-full px-3 py-2 border ${
-                errors.message ? 'border-red-500' : 'border-gray-300'
+                errors.message ? "border-red-500" : "border-gray-300"
               } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
               placeholder="Écrivez votre message..."
               rows="9"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               maxLength={1000}
-              aria-invalid={errors.message ? 'true' : 'false'}
-              aria-describedby={errors.message ? 'message-error' : 'char-count'}
+              aria-invalid={errors.message ? "true" : "false"}
+              aria-describedby={errors.message ? "message-error" : "char-count"}
             ></textarea>
             <div
               id="char-count"
               className={`absolute bottom-2 right-2 text-xs ${
-                charCount > 900 ? 'text-orange-500' : 'text-gray-500'
+                charCount > 900 ? "text-orange-500" : "text-gray-500"
               }`}
             >
               {charCount}/1000
@@ -200,7 +292,7 @@ const Contact = () => {
           className="w-full px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-busy={isSubmitting}
         >
-          {isSubmitting ? 'Envoi en cours...' : 'Envoyer'}
+          {isSubmitting ? "Envoi en cours..." : "Envoyer"}
         </button>
       </form>
     </div>

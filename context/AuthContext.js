@@ -379,7 +379,7 @@ export const AuthProvider = ({ children }) => {
         console.error(validationError, "AuthContext", "sendEmail", false);
         setError("Le sujet est obligatoire");
         setLoading(false);
-        return;
+        return { success: false, error: "Le sujet est obligatoire" };
       }
 
       if (!message || !message.trim()) {
@@ -387,7 +387,7 @@ export const AuthProvider = ({ children }) => {
         console.error(validationError, "AuthContext", "sendEmail", false);
         setError("Le message est obligatoire");
         setLoading(false);
-        return;
+        return { success: false, error: "Le message est obligatoire" };
       }
 
       if (subject.length > 200) {
@@ -397,7 +397,10 @@ export const AuthProvider = ({ children }) => {
         console.error(validationError, "AuthContext", "sendEmail", false);
         setError("Le sujet est trop long (max 200 caractères)");
         setLoading(false);
-        return;
+        return {
+          success: false,
+          error: "Le sujet est trop long (max 200 caractères)",
+        };
       }
 
       if (message.length > 5000) {
@@ -407,7 +410,10 @@ export const AuthProvider = ({ children }) => {
         console.error(validationError, "AuthContext", "sendEmail", false);
         setError("Le message est trop long (max 5000 caractères)");
         setLoading(false);
-        return;
+        return {
+          success: false,
+          error: "Le message est trop long (max 5000 caractères)",
+        };
       }
 
       // Simple fetch avec timeout
@@ -436,7 +442,7 @@ export const AuthProvider = ({ children }) => {
             break;
           case 401:
             errorMessage = "Session expirée. Veuillez vous reconnecter";
-            setTimeout(() => router.push("/login"), 2000);
+            // Note: On ne fait plus la redirection ici, le composant la gèrera
             break;
           case 404:
             errorMessage = "Utilisateur non trouvé";
@@ -458,24 +464,30 @@ export const AuthProvider = ({ children }) => {
 
         setError(errorMessage);
         setLoading(false);
-        return;
+        return { success: false, error: errorMessage, status: res.status };
       }
 
       if (data.success) {
+        // ✅ MODIFICATION: Ne plus faire de redirection ici
+        // Le composant gérera l'affichage et la redirection
         toast.success("Message envoyé avec succès!");
-        router.push("/me");
+        setLoading(false);
+        return { success: true, message: "Message envoyé avec succès!" };
       }
     } catch (error) {
+      let errorMessage = "";
       if (error.name === "AbortError") {
-        setError("La requête a pris trop de temps");
+        errorMessage = "La requête a pris trop de temps";
         console.error(error, "AuthContext", "sendEmail", false);
       } else {
-        setError("Problème de connexion. Vérifiez votre connexion.");
+        errorMessage = "Problème de connexion. Vérifiez votre connexion.";
         console.error(error, "AuthContext", "sendEmail", true);
       }
+
+      setError(errorMessage);
       console.error("Email send error:", error.message);
-    } finally {
       setLoading(false);
+      return { success: false, error: errorMessage };
     }
   };
 
