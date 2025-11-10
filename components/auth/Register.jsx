@@ -310,8 +310,8 @@ const Register = () => {
     try {
       throw new Error("🧪 Test Sentry depuis Register");
     } catch (error) {
-      captureClientError(error, "Register", "test", true);
       console.log("Erreur envoyée à Sentry !");
+      captureClientError(error, "Register", "test", true);
     }
   };
 
