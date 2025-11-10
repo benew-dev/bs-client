@@ -23,7 +23,6 @@ const validateEnv = () => {
     "NEXT_PUBLIC_API_URL",
     "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME",
     "NEXT_PUBLIC_CLOUDINARY_API_KEY",
-    "NEXT_PUBLIC_SENTRY_DSN",
     "NEXT_PUBLIC_ENABLE_SW",
   ];
 
@@ -38,6 +37,7 @@ const validateEnv = () => {
     "SENTRY_PROJECT",
     "SENTRY_ORG",
     "SENTRY_AUTH_TOKEN",
+    "SENTRY_DSN",
     "SENTRY_IGNORE_API_RESOLUTION_ERROR",
     "DEFAULT_PRODUCTS_PER_PAGE",
     "MAX_PRODUCTS_PER_PAGE",
@@ -110,7 +110,7 @@ const nextConfig = {
   compress: true,
 
   // Configuration des packages externes
-  serverExternalPackages: ["mongoose"],
+  serverExternalPackages: ["mongoose", "autoprefixer", "prettier"],
 
   // Configuration des images Cloudinary
   images: {
@@ -446,11 +446,6 @@ const nextConfig = {
         permanent: true,
       },
     ];
-  },
-
-  // Configuration du runtime serveur
-  serverRuntimeConfig: {
-    PROJECT_ROOT: __dirname,
   },
 
   // Configuration Webpack simplifiée

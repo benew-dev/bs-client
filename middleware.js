@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { captureException } from "./monitoring/sentry";
 
 // Configuration
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
@@ -95,6 +96,13 @@ export async function middleware(req) {
 
     return response;
   } catch (error) {
+    // Sentry est déjà initialisé par sentry.edge.config.js
+    captureException(error, {
+      tags: {
+        middleware: true,
+        path: req.nextUrl.pathname,
+      },
+    });
     // Log d'erreur uniquement en production pour Sentry
     if (IS_PRODUCTION) {
       console.error("[Middleware] Authentication error:", {

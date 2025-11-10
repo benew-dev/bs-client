@@ -52,7 +52,7 @@ const isValidDSN = (dsn) => {
   return dsn && /^https:\/\/[^@]+@[^/]+\/\d+$/.test(dsn);
 };
 
-const sentryDSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
+const sentryDSN = process.env.SENTRY_DSN;
 
 if (isValidDSN(sentryDSN)) {
   Sentry.init({
