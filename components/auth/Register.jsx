@@ -5,7 +5,7 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 import { CheckCircle, LoaderCircle } from "lucide-react";
 import AuthContext from "@/context/AuthContext";
-import {captureClientError} from "@/monitoring/sentry";
+import { captureClientError } from "@/monitoring/sentry";
 
 const Register = () => {
   // Contexte d'authentification
@@ -305,27 +305,9 @@ const Register = () => {
     );
   }
 
-  // FONCTION DE TEST TEMPORAIRE
-  const testSentryCapture = () => {
-    try {
-      throw new Error("🧪 Test Sentry depuis Register");
-    } catch (error) {
-      console.log("Erreur envoyée à Sentry !");
-      captureClientError(error, "Register", "test", true);
-    }
-  };
-
   // ✅ FORMULAIRE D'INSCRIPTION (état normal)
   return (
     <div className="max-w-md w-full mx-auto mt-8 mb-16 p-4 md:p-7 rounded-lg bg-white shadow-lg">
-      {/* BOUTON DE TEST TEMPORAIRE */}
-      <button
-        onClick={testSentryCapture}
-        className="mb-4 w-full bg-red-600 text-white px-4 py-2 rounded"
-      >
-        🧪 Tester Sentry
-      </button>
-
       <form ref={formRef} onSubmit={submitHandler} noValidate>
         {/* Alerte hors ligne */}
         {isOffline && (
