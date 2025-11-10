@@ -23,7 +23,23 @@ export async function register() {
     } catch (error) {
       console.error(
         "❌ Failed to load Sentry server configuration:",
-        error.message
+        error.message,
+      );
+    }
+  }
+  // Import conditionnel selon l'environnement
+  if (process.env.NEXT_RUNTIME === "edge") {
+    console.log("🔧 Loading Sentry server configuration...");
+
+    try {
+      // Import dynamique de la configuration serveur
+      console.log("🔧 Loading Sentry edge configuration...");
+      await import("./sentry.edge.config.js");
+      console.log("✅ Sentry edge configuration loaded");
+    } catch (error) {
+      console.error(
+        "❌ Failed to load Sentry edge configuration:",
+        error.message,
       );
     }
   }

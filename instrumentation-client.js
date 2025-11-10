@@ -49,19 +49,9 @@ Sentry.init({
   environment,
   release: process.env.NEXT_PUBLIC_VERSION || "0.1.0",
 
-  // Erreurs uniquement - Pas de performance monitoring
-  tracesSampleRate: 0,
-
-  // Pas de session replay
-  replaysSessionSampleRate: 0,
-  replaysOnErrorSampleRate: 0,
-
   // Configuration de base
   debug: !isProd,
   enabled: isProd,
-
-  // Intégrations vides - Erreurs uniquement
-  integrations: [],
 
   // Traitement des événements avant envoi
   beforeSend(event, hint) {
@@ -92,7 +82,7 @@ Sentry.init({
               if (url.searchParams.has(param)) {
                 url.searchParams.set(param, "[FILTERED]");
               }
-            }
+            },
           );
 
           // Généraliser les pages sensibles

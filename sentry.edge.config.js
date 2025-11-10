@@ -1,6 +1,7 @@
-// sentry.server.config.js
-// Configuration Sentry serveur standard - Erreurs uniquement
+// sentry.edge.config.js
+// Configuration Sentry Edge Runtime - Erreurs uniquement
 // Next.js 15 - buyitnow-client-n15-prv1
+// Utilisé par : Middleware, Edge Functions, Edge API Routes
 
 import * as Sentry from "@sentry/nextjs";
 
@@ -19,8 +20,8 @@ const containsSensitiveData = (str) => {
     /key/i,
     /secret/i,
     /waafi|cac-pay|bci-pay|d-money/i,
-    /mongodb/i,
-    /connection/i,
+    /session/i,
+    /cookie/i,
     /email[=:]/i,
     /user[=:]/i,
   ];
@@ -36,11 +37,12 @@ const categorizeError = (error) => {
   const name = (error.name || "").toLowerCase();
   const combined = message + " " + name;
 
-  if (/mongo|database|db|connection|timeout/.test(combined)) return "database";
-  if (/network|fetch|http|request|api/.test(combined)) return "network";
-  if (/auth|permission|unauthorized|forbidden/.test(combined))
+  if (/auth|permission|unauthorized|forbidden|session/.test(combined))
     return "authentication";
+  if (/network|fetch|http|request|api/.test(combined)) return "network";
   if (/validation|schema|required|invalid/.test(combined)) return "validation";
+  if (/middleware|route|redirect/.test(combined)) return "routing";
+  if (/timeout|abort/.test(combined)) return "timeout";
 
   return "application";
 };
@@ -58,7 +60,7 @@ if (isValidDSN(sentryDSN)) {
     environment,
     release: process.env.NEXT_PUBLIC_VERSION || "0.1.0",
 
-    // Configuration serveur - Erreurs uniquement
+    // Configuration Edge - Erreurs uniquement
     debug: !isProd,
     enabled: isProd,
 
@@ -114,6 +116,10 @@ if (isValidDSN(sentryDSN)) {
       if (error) {
         event.tags = event.tags || {};
         event.tags.error_category = categorizeError(error);
+
+        // Ajouter des tags spécifiques Edge
+        event.tags.runtime_edge = true;
+        event.tags.edge_location = "auto"; // Vercel Edge détermine automatiquement
       }
 
       // Anonymiser les headers
@@ -123,12 +129,19 @@ if (isValidDSN(sentryDSN)) {
           "authorization",
           "x-auth-token",
           "session",
+          "set-cookie",
+          "x-forwarded-for", // Anonymiser l'IP
         ];
         sensitiveHeaders.forEach((header) => {
           if (event.request.headers[header]) {
             event.request.headers[header] = "[FILTERED]";
           }
         });
+      }
+
+      // Anonymiser les cookies dans l'URL
+      if (event.request?.cookies) {
+        event.request.cookies = "[FILTERED]";
       }
 
       // Anonymiser les données utilisateur
@@ -147,17 +160,25 @@ if (isValidDSN(sentryDSN)) {
         event.message = "[Message filtré contenant des données sensibles]";
       }
 
+      // Filtrer les query params sensibles
+      if (event.request?.query_string) {
+        const queryString = event.request.query_string;
+        if (containsSensitiveData(queryString)) {
+          event.request.query_string = "[FILTERED]";
+        }
+      }
+
       // Tags du projet
       event.tags = {
         ...event.tags,
-        project: "bs-client",
-        runtime: "nodejs",
+        project: "buyitnow-client-n15-prv1",
+        runtime: "edge",
       };
 
       return event;
     },
 
-    // Erreurs à ignorer (conservées telles quelles)
+    // Erreurs à ignorer (spécifiques Edge + générales)
     ignoreErrors: [
       // Erreurs réseau
       "Connection refused",
@@ -183,12 +204,6 @@ if (isValidDSN(sentryDSN)) {
       "getaddrinfo ENOTFOUND",
       "getaddrinfo EAI_AGAIN",
 
-      // Erreurs de base de données
-      "database timeout",
-      "MongoNetworkError",
-      "MongoError",
-      "SequelizeConnectionError",
-
       // Erreurs Next.js
       "NEXT_REDIRECT",
       "NEXT_NOT_FOUND",
@@ -198,10 +213,27 @@ if (isValidDSN(sentryDSN)) {
       // Erreurs d'opérations abandonnées
       "AbortError",
       "Operation was aborted",
+      "The operation was aborted",
+
+      // Erreurs de middleware courantes (non-critiques)
+      "MIDDLEWARE_NO_RESPONSE",
+      "Edge function timeout",
+      "Request timeout",
+
+      // Erreurs de session NextAuth
+      "Session token not found",
+      "Invalid session token",
+      "JWT expired",
+
+      // Erreurs de redirection (attendues)
+      "redirect",
+      "Redirect",
+      "MOVED_PERMANENTLY",
+      "FOUND",
     ],
   });
 
-  console.log("✅ Sentry server initialized (errors only)");
+  console.log("✅ Sentry Edge initialized (errors only)");
 } else {
-  console.warn("⚠️ Sentry server: Invalid or missing DSN");
+  console.warn("⚠️ Sentry Edge: Invalid or missing DSN");
 }
