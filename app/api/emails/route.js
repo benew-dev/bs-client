@@ -7,7 +7,6 @@ import User from "@/backend/models/user";
 import { validateContactMessage } from "@/helpers/validation/schemas/contact";
 import { captureException } from "@/monitoring/sentry";
 import { withIntelligentRateLimit } from "@/utils/rateLimit";
-import DOMPurify from "isomorphic-dompurify";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -106,15 +105,9 @@ export const POST = withIntelligentRateLimit(
       }
 
       // Sanitizer le contenu pour éviter les injections XSS dans l'email
-      const sanitizedSubject = DOMPurify.sanitize(validation.data.subject, {
-        ALLOWED_TAGS: [],
-        ALLOWED_ATTR: [],
-      });
+      const sanitizedSubject = validation.data.subject;
 
-      const sanitizedMessage = DOMPurify.sanitize(validation.data.message, {
-        ALLOWED_TAGS: ["b", "i", "em", "strong", "p", "br"],
-        ALLOWED_ATTR: [],
-      });
+      const sanitizedMessage = validation.data.message;
 
       // Vérifier la configuration Resend
       if (!process.env.RESEND_API_KEY) {
