@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { ShoppingCart, Home, RefreshCw, X } from "lucide-react";
 import * as Sentry from "@sentry/nextjs";
+import { useRouter } from "next/navigation";
 
 /**
  * Composant Error Boundary pour la route /cart
@@ -14,6 +15,8 @@ import * as Sentry from "@sentry/nextjs";
  * @see https://docs.sentry.io/platforms/javascript/guides/nextjs/
  */
 export default function CartError({ error, reset }) {
+  const router = useRouter();
+
   useEffect(() => {
     // Capturer l'erreur dans Sentry avec contexte complet
     Sentry.captureException(error, {
@@ -46,6 +49,11 @@ export default function CartError({ error, reset }) {
       stack: error.stack,
     });
   }, [error]);
+
+  const handleRetry = () => {
+    reset(); // Efface l'erreur
+    router.refresh(); // Force un re-fetch des données serveur
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
@@ -82,7 +90,7 @@ export default function CartError({ error, reset }) {
         <div className="space-y-3">
           {/* Bouton Réessayer */}
           <button
-            onClick={() => reset()}
+            onClick={handleRetry}
             className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm"
           >
             <RefreshCw size={20} />

@@ -21,16 +21,6 @@ import useCartOperations from "../../hooks/useCartOperations"; // ✅ Hook avec 
 import CartSkeleton from "../skeletons/CartSkeleton";
 
 const Cart = () => {
-  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
-  const testError = new URLSearchParams(window.location.search).get(
-    "test-error",
-  );
-  if (testError === "true") {
-    throw new Error(
-      "Erreur de test du panier - Ceci est une erreur intentionnelle",
-    );
-  }
-
   const {
     loading,
     cart,
