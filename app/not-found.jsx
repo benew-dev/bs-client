@@ -1,13 +1,6 @@
 // app/not-found.jsx
 import Link from "next/link";
-import {
-  Home,
-  Search,
-  ShoppingBag,
-  ArrowLeft,
-  MapPin,
-  Package,
-} from "lucide-react";
+import { Home, Search, ShoppingBag, MapPin, Package } from "lucide-react";
 
 /**
  * Composant Not Found global pour Next.js 15 App Router

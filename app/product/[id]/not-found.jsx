@@ -1,14 +1,6 @@
 // app/product/[id]/not-found.jsx
 import Link from "next/link";
-import {
-  Package,
-  Search,
-  ShoppingBag,
-  Home,
-  ArrowLeft,
-  Sparkles,
-  TrendingUp,
-} from "lucide-react";
+import { Package, Search, ShoppingBag, Home } from "lucide-react";
 
 /**
  * Composant Not Found pour un produit spécifique

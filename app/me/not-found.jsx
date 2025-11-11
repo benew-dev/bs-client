@@ -1,14 +1,6 @@
 // app/me/not-found.jsx
 import Link from "next/link";
-import {
-  User,
-  ShoppingBag,
-  Settings,
-  Lock,
-  Mail,
-  ArrowLeft,
-  Home,
-} from "lucide-react";
+import { User, ShoppingBag, Settings, Lock, Mail, Home } from "lucide-react";
 
 /**
  * Composant Not Found pour la section /me (espace personnel)
