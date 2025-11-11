@@ -28,20 +28,20 @@ export const metadata = {
  * Composant de contenu de la page de réinitialisation
  */
 async function ResetPasswordContent({ searchParams }) {
+  // Récupérer le token depuis les paramètres d'URL
+  const token = await searchParams?.token;
+
+  // Vérifier la présence du token
+  if (!token) {
+    console.warn("Reset password page accessed without token", {
+      timestamp: new Date().toISOString(),
+    });
+
+    // Rediriger vers forgot-password si pas de token
+    redirect("/forgot-password?error=missing_token");
+  }
+
   try {
-    // Récupérer le token depuis les paramètres d'URL
-    const token = await searchParams?.token;
-
-    // Vérifier la présence du token
-    if (!token) {
-      console.warn("Reset password page accessed without token", {
-        timestamp: new Date().toISOString(),
-      });
-
-      // Rediriger vers forgot-password si pas de token
-      redirect("/forgot-password?error=missing_token");
-    }
-
     // Validation basique du format du token
     if (token.length < 10 || token.length > 200) {
       console.warn("Invalid token format on reset password page", {

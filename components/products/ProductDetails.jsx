@@ -588,6 +588,16 @@ const RelatedProductsCarousel = memo(function RelatedProductsCarousel({
 
 // Composant principal
 function ProductDetails({ product, sameCategoryProducts }) {
+  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
+  if (typeof window !== "undefined") {
+    const testError = new URLSearchParams(window.location.search).get(
+      "test-error",
+    );
+    if (testError === "true") {
+      throw new Error("Test erreur un seul produit - Chargement du Produit");
+    }
+  }
+
   const { user } = useContext(AuthContext);
   const { addItemToCart, updateCart, cart, error, clearError } =
     useContext(CartContext);
