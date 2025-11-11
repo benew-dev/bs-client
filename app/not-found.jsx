@@ -96,7 +96,7 @@ export default function NotFound() {
 
             {/* Voir les produits */}
             <Link
-              href="/products"
+              href="/"
               className="flex items-center gap-3 p-4 rounded-lg border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all group"
             >
               <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">

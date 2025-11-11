@@ -139,13 +139,13 @@ export default function HomePageError({ error, reset }) {
           </button>
 
           {/* Bouton Rafraîchir la page */}
-          <button
-            onClick={() => window.location.reload()}
+          <Link
+            href="/"
             className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-sm"
           >
             <Home size={20} />
-            <span>Rafraîchir la page</span>
-          </button>
+            <span>Accueil</span>
+          </Link>
         </div>
 
         {/* Suggestions d'actions alternatives */}
