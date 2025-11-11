@@ -212,21 +212,28 @@ const ProductDetailsPage = async ({ params }) => {
   try {
     // Validation de l'ID
     if (!id || typeof id !== "string") {
-      throw new ProductNotFoundError("invalid");
+      console.warn("Invalid product ID: missing or wrong type");
+      notFound(); // 👈 REDIRECTION VERS not-found.jsx
     }
 
     // Sanitization basique de l'ID (à adapter selon votre format d'ID)
     if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
-      throw new ProductNotFoundError("invalid format");
+      console.warn("Invalid product ID format:", id);
+      notFound(); // 👈 REDIRECTION VERS not-found.jsx
     }
 
-    const data = await getProductDetails(id).catch((error) => {
-      throw new ProductFetchError(id, error);
-    });
+    const data = await getProductDetails(id);
 
-    // Vérifier si le produit existe
-    if (!data?.product) {
-      throw new ProductNotFoundError(id);
+    // 3. Vérifier si la fonction a retourné un flag notFound
+    if (data?.notFound === true) {
+      console.warn("Product not found:", id);
+      notFound(); // 👈 REDIRECTION VERS not-found.jsx
+    }
+
+    // 4. Vérifier si le produit existe dans les données
+    if (!data?.success || !data?.product) {
+      console.warn("Product data missing or invalid:", id);
+      notFound(); // 👈 REDIRECTION VERS not-found.jsx
     }
 
     return (
