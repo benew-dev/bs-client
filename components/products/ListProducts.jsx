@@ -28,6 +28,16 @@ const ProductItem = dynamic(() => import("./ProductItem"), {
 });
 
 const ListProducts = ({ data, categories }) => {
+  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
+  if (typeof window !== "undefined") {
+    const testError = new URLSearchParams(window.location.search).get(
+      "test-error",
+    );
+    if (testError === "true") {
+      throw new Error("Test erreur Accueil - Chargement des Produits");
+    }
+  }
+
   // États locaux
   const [localLoading, setLocalLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);

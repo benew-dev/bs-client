@@ -14,16 +14,6 @@ import {
 } from "lucide-react";
 
 const Profile = () => {
-  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
-  if (typeof window !== "undefined") {
-    const testError = new URLSearchParams(window.location.search).get(
-      "test-error",
-    );
-    if (testError === "true") {
-      throw new Error("Test erreur profile - Chargement du profil utilisateur");
-    }
-  }
-
   const { data: session, status } = useSession(); // ✅ Obtenir la session
   const user = session?.user; // ✅ Extraire l'utilisateur de la session
 
