@@ -33,6 +33,18 @@ const BreadCrumbs = dynamic(() => import("@/components/layouts/BreadCrumbs"), {
 });
 
 const ReviewOrder = () => {
+  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
+  if (typeof window !== "undefined") {
+    const testError = new URLSearchParams(window.location.search).get(
+      "test-error",
+    );
+    if (testError === "true") {
+      throw new Error(
+        "Test erreur révision - Blocage avant confirmation commande",
+      );
+    }
+  }
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();

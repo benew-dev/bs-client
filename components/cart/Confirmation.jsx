@@ -52,16 +52,6 @@ const PLATFORM_CONFIG = {
 };
 
 const Confirmation = () => {
-  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
-  if (typeof window !== "undefined") {
-    const testError = new URLSearchParams(window.location.search).get(
-      "test-error",
-    );
-    if (testError === "true") {
-      throw new Error("Test erreur confirmation - Commande post-paiement");
-    }
-  }
-
   const { orderId, paymentTypes } = useContext(OrderContext);
   const { setCartToState } = useContext(CartContext);
 
