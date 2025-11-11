@@ -1,5 +1,3 @@
-"use client";
-
 // app/me/not-found.jsx
 import Link from "next/link";
 import {
@@ -173,15 +171,6 @@ export default function MeNotFound() {
 
         {/* Boutons d'action */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-          {/* Retour en arrière */}
-          <button
-            onClick={() => window.history.back()}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-800 text-white font-medium rounded-lg hover:bg-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 shadow-sm"
-          >
-            <ArrowLeft size={20} />
-            <span>Page précédente</span>
-          </button>
-
           {/* Retour à l'accueil */}
           <Link
             href="/"

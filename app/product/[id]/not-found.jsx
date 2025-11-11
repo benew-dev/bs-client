@@ -1,5 +1,3 @@
-"use client";
-
 // app/product/[id]/not-found.jsx
 import Link from "next/link";
 import {
@@ -153,99 +151,8 @@ export default function ProductNotFound() {
           </Link>
         </div>
 
-        {/* Suggestions de navigation */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Sparkles size={20} className="text-purple-600" />
-            Découvrez notre catalogue
-          </h2>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Link
-              href="/?sort=newest"
-              className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition-all group text-center"
-            >
-              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-2 group-hover:bg-purple-200 transition-colors">
-                <Sparkles size={24} className="text-purple-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-900 group-hover:text-purple-600">
-                Nouveautés
-              </span>
-            </Link>
-
-            <Link
-              href="/?sort=popular"
-              className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all group text-center"
-            >
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-2 group-hover:bg-blue-200 transition-colors">
-                <TrendingUp size={24} className="text-blue-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
-                Populaires
-              </span>
-            </Link>
-
-            <Link
-              href="/?sort=price_asc"
-              className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all group text-center"
-            >
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-2 group-hover:bg-green-200 transition-colors">
-                <svg
-                  className="w-6 h-6 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <span className="text-sm font-medium text-gray-900 group-hover:text-green-600">
-                Petits prix
-              </span>
-            </Link>
-
-            <Link
-              href="/?featured=true"
-              className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-red-500 hover:bg-red-50 transition-all group text-center"
-            >
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-2 group-hover:bg-red-200 transition-colors">
-                <svg
-                  className="w-6 h-6 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
-                  />
-                </svg>
-              </div>
-              <span className="text-sm font-medium text-gray-900 group-hover:text-red-600">
-                Promotions
-              </span>
-            </Link>
-          </div>
-        </div>
-
         {/* Actions secondaires */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          {/* Retour en arrière */}
-          <button
-            onClick={() => window.history.back()}
-            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gray-800 text-white font-medium rounded-lg hover:bg-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 shadow-sm"
-          >
-            <ArrowLeft size={20} />
-            <span>Page précédente</span>
-          </button>
-
           {/* Retour à l'accueil */}
           <Link
             href="/"
