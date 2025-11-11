@@ -47,18 +47,6 @@ const OrderItemSkeleton = () => (
  * Adapté au modèle Order avec support du paiement CASH
  */
 const ListOrders = ({ orders }) => {
-  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
-  if (typeof window !== "undefined") {
-    const testError = new URLSearchParams(window.location.search).get(
-      "test-error",
-    );
-    if (testError === "true") {
-      throw new Error(
-        "Test erreur orders - Chargement des commandes de l'utilisateur",
-      );
-    }
-  }
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");

@@ -25,18 +25,6 @@ import { useRouter } from "next/navigation";
  * @param {string} props.referer - URL referer pour le suivi de navigation
  */
 const UpdatePassword = ({ userId, referer }) => {
-  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
-  if (typeof window !== "undefined") {
-    const testError = new URLSearchParams(window.location.search).get(
-      "test-error",
-    );
-    if (testError === "true") {
-      throw new Error(
-        "Test erreur update password - Chargement du formulaire de mis a jour du mot de passe",
-      );
-    }
-  }
-
   const { error, updatePassword, clearErrors } = useContext(AuthContext);
 
   // Références pour focus et manipulation du formulaire
