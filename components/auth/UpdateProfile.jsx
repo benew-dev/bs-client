@@ -15,6 +15,18 @@ import { useRouter } from "next/navigation";
  * Composant de mise à jour de profil utilisateur avec adresse
  */
 const UpdateProfile = ({ userId, initialEmail, referer }) => {
+  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
+  if (typeof window !== "undefined") {
+    const testError = new URLSearchParams(window.location.search).get(
+      "test-error",
+    );
+    if (testError === "true") {
+      throw new Error(
+        "Test erreur update profile - Chargement du formulaire de mis a jour du profil",
+      );
+    }
+  }
+
   const { user, error, loading, updateProfile, clearErrors } =
     useContext(AuthContext);
 

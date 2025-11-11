@@ -23,18 +23,6 @@ import captureClientError from "@/monitoring/sentry";
  * Composant de réinitialisation de mot de passe avec token
  */
 const ResetPassword = ({ token }) => {
-  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
-  if (typeof window !== "undefined") {
-    const testError = new URLSearchParams(window.location.search).get(
-      "test-error",
-    );
-    if (testError === "true") {
-      throw new Error(
-        "Test erreur reset-password - Chargement du composant ResetPassword",
-      );
-    }
-  }
-
   const router = useRouter();
 
   // Références pour focus

@@ -13,6 +13,18 @@ import captureClientError from "@/monitoring/sentry";
  * @returns {JSX.Element} Composant de formulaire de contact
  */
 const Contact = () => {
+  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
+  if (typeof window !== "undefined") {
+    const testError = new URLSearchParams(window.location.search).get(
+      "test-error",
+    );
+    if (testError === "true") {
+      throw new Error(
+        "Test erreur contact - Chargement du formulaire de contact",
+      );
+    }
+  }
+
   // États du formulaire
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
