@@ -12,6 +12,18 @@ import { LoaderCircle } from "lucide-react";
 import { captureException } from "@/monitoring/sentry";
 
 const Login = ({ csrfToken }) => {
+  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
+  if (typeof window !== "undefined") {
+    const testError = new URLSearchParams(window.location.search).get(
+      "test-error",
+    );
+    if (testError === "true") {
+      throw new Error(
+        "Test erreur login - Chargement du formulaire de connexion",
+      );
+    }
+  }
+
   // États du formulaire
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

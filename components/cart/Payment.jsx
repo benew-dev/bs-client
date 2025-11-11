@@ -57,16 +57,6 @@ CartItemSkeleton.displayName = "CartItemSkeleton";
  * Permet à l'utilisateur de sélectionner un moyen de paiement local (y compris CASH) et finaliser sa commande
  */
 const Payment = ({ paymentTypes }) => {
-  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
-  if (typeof window !== "undefined") {
-    const testError = new URLSearchParams(window.location.search).get(
-      "test-error",
-    );
-    if (testError === "true") {
-      throw new Error("Test erreur paiement - Chargement moyens de paiement");
-    }
-  }
-
   // États locaux
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
