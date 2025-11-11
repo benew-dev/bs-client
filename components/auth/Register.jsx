@@ -8,18 +8,6 @@ import AuthContext from "@/context/AuthContext";
 import { captureClientError } from "@/monitoring/sentry";
 
 const Register = () => {
-  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
-  if (typeof window !== "undefined") {
-    const testError = new URLSearchParams(window.location.search).get(
-      "test-error",
-    );
-    if (testError === "true") {
-      throw new Error(
-        "Test erreur login - Chargement du formulaire de connexion",
-      );
-    }
-  }
-
   // Contexte d'authentification
   const {
     registerUser,

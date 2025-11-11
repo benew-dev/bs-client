@@ -19,6 +19,18 @@ import captureClientError from "@/monitoring/sentry";
  * Composant de demande de réinitialisation de mot de passe
  */
 const ForgotPassword = () => {
+  // ⚠️ CODE DE TEST - À SUPPRIMER APRÈS TEST
+  if (typeof window !== "undefined") {
+    const testError = new URLSearchParams(window.location.search).get(
+      "test-error",
+    );
+    if (testError === "true") {
+      throw new Error(
+        "Test erreur forgot-password - Chargement du composant forgotPassword",
+      );
+    }
+  }
+
   // États du composant
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState({});
