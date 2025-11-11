@@ -1,3 +1,5 @@
+"use client";
+
 // app/me/not-found.jsx
 import Link from "next/link";
 import {

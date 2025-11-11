@@ -1,0 +1,311 @@
+"use client";
+
+// app/product/[id]/not-found.jsx
+import Link from "next/link";
+import {
+  Package,
+  Search,
+  ShoppingBag,
+  Home,
+  ArrowLeft,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
+
+/**
+ * Composant Not Found pour un produit spécifique
+ * Affiché lorsqu'un produit n'existe pas ou a été supprimé
+ *
+ * Contexte:
+ * - Page publique
+ * - Produit inexistant, supprimé ou ID invalide
+ * - Impact critique sur le tunnel de conversion
+ * - Opportunité de rediriger vers d'autres produits
+ *
+ * @see https://nextjs.org/docs/app/api-reference/file-conventions/not-found
+ */
+
+export const metadata = {
+  title: "Produit introuvable - 404 | Buy It Now",
+  description:
+    "Le produit que vous recherchez n'existe pas ou n'est plus disponible.",
+  robots: {
+    index: false,
+    follow: true, // Follow pour les autres liens de navigation
+  },
+};
+
+export default function ProductNotFound() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center px-4 py-12">
+      <div className="max-w-2xl w-full">
+        {/* Animation 404 avec package */}
+        <div className="flex justify-center mb-8">
+          <div className="relative">
+            {/* Cercle de fond animé */}
+            <div className="absolute inset-0 bg-orange-100 rounded-full animate-pulse"></div>
+
+            {/* Icône et texte 404 */}
+            <div className="relative bg-white rounded-full p-8 shadow-lg">
+              <div className="text-center">
+                <div className="text-6xl md:text-7xl font-bold text-orange-600 mb-2">
+                  404
+                </div>
+                <Package
+                  className="mx-auto text-orange-500"
+                  size={32}
+                  strokeWidth={2}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Titre principal */}
+        <h1 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">
+          Produit introuvable
+        </h1>
+
+        {/* Message explicatif */}
+        <p className="text-center text-gray-600 text-lg mb-8 leading-relaxed">
+          Le produit que vous recherchez n&apos;existe pas, a été retiré de
+          notre catalogue ou le lien est invalide. Ne vous inquiétez pas, nous
+          avons plein d&apos;autres produits à vous proposer !
+        </p>
+
+        {/* Causes possibles */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6 border border-orange-100">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Search size={20} className="text-orange-600" />
+            Pourquoi ce produit est introuvable ?
+          </h2>
+
+          <ul className="space-y-3 text-gray-700">
+            <li className="flex items-start">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center mt-0.5 mr-3">
+                <span className="text-orange-600 font-semibold text-sm">1</span>
+              </div>
+              <div>
+                <span className="font-medium">Le produit a été retiré</span>
+                <p className="text-sm text-gray-600 mt-1">
+                  Il n&apos;est plus disponible dans notre catalogue
+                </p>
+              </div>
+            </li>
+
+            <li className="flex items-start">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center mt-0.5 mr-3">
+                <span className="text-orange-600 font-semibold text-sm">2</span>
+              </div>
+              <div>
+                <span className="font-medium">Le lien est obsolète</span>
+                <p className="text-sm text-gray-600 mt-1">
+                  L&apos;URL provient peut-être d&apos;un ancien favori ou
+                  d&apos;un lien partagé
+                </p>
+              </div>
+            </li>
+
+            <li className="flex items-start">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center mt-0.5 mr-3">
+                <span className="text-orange-600 font-semibold text-sm">3</span>
+              </div>
+              <div>
+                <span className="font-medium">Rupture définitive de stock</span>
+                <p className="text-sm text-gray-600 mt-1">
+                  Le produit était en stock limité et est désormais épuisé
+                </p>
+              </div>
+            </li>
+
+            <li className="flex items-start">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center mt-0.5 mr-3">
+                <span className="text-orange-600 font-semibold text-sm">4</span>
+              </div>
+              <div>
+                <span className="font-medium">Identifiant invalide</span>
+                <p className="text-sm text-gray-600 mt-1">
+                  L&apos;ID du produit dans l&apos;URL est incorrect
+                </p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        {/* Boutons d'action principaux */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+          {/* Voir tous les produits - ACTION PRIORITAIRE */}
+          <Link
+            href="/"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 shadow-sm"
+          >
+            <ShoppingBag size={20} />
+            <span>Voir tous les produits</span>
+          </Link>
+
+          {/* Rechercher */}
+          <Link
+            href="/?search=true"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm"
+          >
+            <Search size={20} />
+            <span>Rechercher un produit</span>
+          </Link>
+        </div>
+
+        {/* Suggestions de navigation */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Sparkles size={20} className="text-purple-600" />
+            Découvrez notre catalogue
+          </h2>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Link
+              href="/?sort=newest"
+              className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition-all group text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-2 group-hover:bg-purple-200 transition-colors">
+                <Sparkles size={24} className="text-purple-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-900 group-hover:text-purple-600">
+                Nouveautés
+              </span>
+            </Link>
+
+            <Link
+              href="/?sort=popular"
+              className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all group text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-2 group-hover:bg-blue-200 transition-colors">
+                <TrendingUp size={24} className="text-blue-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                Populaires
+              </span>
+            </Link>
+
+            <Link
+              href="/?sort=price_asc"
+              className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all group text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-2 group-hover:bg-green-200 transition-colors">
+                <svg
+                  className="w-6 h-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <span className="text-sm font-medium text-gray-900 group-hover:text-green-600">
+                Petits prix
+              </span>
+            </Link>
+
+            <Link
+              href="/?featured=true"
+              className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-red-500 hover:bg-red-50 transition-all group text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-2 group-hover:bg-red-200 transition-colors">
+                <svg
+                  className="w-6 h-6 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
+                  />
+                </svg>
+              </div>
+              <span className="text-sm font-medium text-gray-900 group-hover:text-red-600">
+                Promotions
+              </span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Actions secondaires */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          {/* Retour en arrière */}
+          <button
+            onClick={() => window.history.back()}
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gray-800 text-white font-medium rounded-lg hover:bg-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 shadow-sm"
+          >
+            <ArrowLeft size={20} />
+            <span>Page précédente</span>
+          </button>
+
+          {/* Retour à l'accueil */}
+          <Link
+            href="/"
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-700 font-medium rounded-lg border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          >
+            <Home size={20} />
+            <span>Accueil</span>
+          </Link>
+        </div>
+
+        {/* Section aide */}
+        <div className="bg-blue-50 rounded-lg p-6 border border-blue-100">
+          <h3 className="font-semibold text-blue-900 mb-3 text-center">
+            Vous cherchiez un produit spécifique ?
+          </h3>
+          <p className="text-sm text-blue-800 text-center mb-4">
+            Notre équipe peut vous aider à trouver un produit similaire ou vous
+            informer quand il sera de nouveau disponible.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/contact?subject=produit-introuvable"
+              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+              Contacter le support
+            </Link>
+
+            <Link
+              href="/help"
+              className="inline-flex items-center justify-center px-4 py-2 bg-white text-blue-600 text-sm font-medium rounded-md border border-blue-600 hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Centre d&apos;aide
+            </Link>
+          </div>
+        </div>
+
+        {/* Footer informatif */}
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-500">
+            Code erreur: <span className="font-mono font-semibold">404</span> -
+            Product Not Found
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Si ce problème persiste, veuillez nous contacter
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
