@@ -10,8 +10,8 @@ import { validateProductFilters } from "@/helpers/validation/schemas/product";
 import { withIntelligentRateLimit } from "@/utils/rateLimit";
 
 // Configuration simple
-const DEFAULT_PER_PAGE = 10;
-const MAX_PER_PAGE = 50;
+const DEFAULT_PER_PAGE = process.env.DEFAULT_PRODUCTS_PER_PAGE;
+const MAX_PER_PAGE = process.env.MAX_PRODUCTS_PER_PAGE;
 
 /**
  * GET /api/products
