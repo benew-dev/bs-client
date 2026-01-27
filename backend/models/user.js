@@ -281,6 +281,7 @@ userSchema.pre("save", async function (next) {
 
     next();
   } catch (error) {
+    console.log("Error in hash password model", error);
     logger.error("Error hashing password", {
       userId: this._id,
       error: error.message,
