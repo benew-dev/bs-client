@@ -263,6 +263,8 @@ userSchema.index({ _id: 1, role: 1 });
 // Middleware avant la sauvegarde
 userSchema.pre("save", async function (next) {
   try {
+    console.log("bcrypt object:", bcrypt);
+    console.log("bcrypt.hash:", typeof bcrypt.hash);
     // Si le mot de passe n'a pas été modifié, passer à la suite
     if (!this.isModified("password")) {
       return next();
