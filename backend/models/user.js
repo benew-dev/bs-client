@@ -275,7 +275,8 @@ userSchema.pre("save", async function (next) {
     // Hasher le mot de passe avec un coût adaptatif
     // En production, on pourrait augmenter à 12 pour plus de sécurité
     const saltRounds = process.env.NODE_ENV === "production" ? 12 : 10;
-    this.password = await bcrypt.hash(this.password, saltRounds);
+    const salt = await bcrypt.genSalt(saltRounds);
+    this.password = await bcrypt.hash(this.password, salt);
 
     // next();
   } catch (error) {
