@@ -89,9 +89,7 @@ export const POST = withAuthRateLimit(
       }
 
       // Créer l'utilisateur avec tous les champs appropriés
-      const user = {};
-
-      await User.create({
+      const user = await User.create({
         name: validation.data.name,
         email: validation.data.email,
         phone: validation.data.phone,
@@ -102,9 +100,7 @@ export const POST = withAuthRateLimit(
           public_id: null,
           url: null,
         },
-      })
-        .then((result) => console.log("Registration api", result))
-        .catch((error) => console.log("Registration api", error));
+      });
 
       console.log("✅ User registered successfully:", {
         id: user._id,
