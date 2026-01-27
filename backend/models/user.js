@@ -278,6 +278,7 @@ userSchema.pre("save", async function (next) {
     console.log("We are here starting the hash");
     this.password = await bcrypt.hash(this.password, saltRounds);
     console.log("Finished Hash");
+    console.log("password hash", this.password);
 
     next();
   } catch (error) {
