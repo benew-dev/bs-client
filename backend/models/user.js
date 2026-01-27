@@ -263,8 +263,6 @@ userSchema.index({ _id: 1, role: 1 });
 // Middleware avant la sauvegarde
 userSchema.pre("save", async function (next) {
   try {
-    console.log("bcrypt object:", bcrypt);
-    console.log("bcrypt.hash:", typeof bcrypt.hash);
     // Si le mot de passe n'a pas été modifié, passer à la suite
     if (!this.isModified("password")) {
       return next();
@@ -274,9 +272,9 @@ userSchema.pre("save", async function (next) {
     this.passwordChangedAt = Date.now() - 1000;
 
     // Hasher le mot de passe avec un coût adaptatif
+    // En production, on pourrait augmenter à 12 pour plus de sécurité
     const saltRounds = process.env.NODE_ENV === "production" ? 12 : 10;
-    const salt = bcrypt.genSaltSync(saltRounds);
-    this.password = bcrypt.hashSync(this.password, salt);
+    this.password = await bcrypt.hash(this.password, saltRounds);
 
     next();
   } catch (error) {
