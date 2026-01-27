@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 // import { captureException } from '@/monitoring/sentry';
 import logger from "@/utils/logger";
+import { captureException } from "@/monitoring/sentry";
 
 /**
  * Schéma utilisateur avancé avec validation, indexation et méthodes d'instance
@@ -282,9 +283,9 @@ userSchema.pre("save", async function (next) {
       userId: this._id,
       error: error.message,
     });
-    // captureException(error, {
-    //   tags: { component: 'user-model', operation: 'password-hashing' },
-    // });
+    captureException(error, {
+      tags: { component: "user-model", operation: "password-hashing" },
+    });
     next(error);
   }
 });
@@ -305,9 +306,9 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
       userId: this._id,
       error: error.message,
     });
-    // captureException(error, {
-    //   tags: { component: 'user-model', operation: 'password-compare' },
-    // });
+    captureException(error, {
+      tags: { component: "user-model", operation: "password-compare" },
+    });
     return false;
   }
 };
@@ -341,7 +342,7 @@ userSchema.methods.incrementLoginAttempts = async function () {
       userId: this._id,
       error: error.message,
     });
-    // captureException(error);
+    captureException(error);
     return this;
   }
 };
@@ -358,7 +359,7 @@ userSchema.methods.resetLoginAttempts = async function () {
       userId: this._id,
       error: error.message,
     });
-    // captureException(error);
+    captureException(error);
     return this;
   }
 };
@@ -378,7 +379,7 @@ userSchema.statics.findByEmail = async function (
       error: error.message,
       email: email.substring(0, 3) + "***", // Anonymisation partielle
     });
-    // captureException(error);
+    captureException(error);
     return null;
   }
 };
@@ -420,7 +421,7 @@ userSchema.methods.createPasswordResetToken = async function () {
       userId: this._id,
       error: error.message,
     });
-    // captureException(error);
+    captureException(error);
     throw new Error("Failed to generate reset token");
   }
 };
