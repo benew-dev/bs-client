@@ -272,59 +272,27 @@ userSchema.pre("save", async function (next) {
     // Enregistrer la date de changement de mot de passe
     this.passwordChangedAt = Date.now() - 1000;
 
-    // Hasher le mot de passe
+    // Hasher le mot de passe avec un coût adaptatif
+    // En production, on pourrait augmenter à 12 pour plus de sécurité
     const saltRounds = process.env.NODE_ENV === "production" ? 12 : 10;
-    console.log("Starting hash...");
+    console.log("We are here starting the hash");
     this.password = await bcrypt.hash(this.password, saltRounds);
-    console.log("Hash completed:", this.password);
+    console.log("Finished Hash");
+    console.log("password hash", this.password);
 
-    console.log("Calling next()...");
-    next();
-    console.log("next() completed");
+    // next();
   } catch (error) {
-    console.log("CATCH BLOCK - Error type:", error.constructor.name);
-    console.log("CATCH BLOCK - Error message:", error.message);
-    console.log("CATCH BLOCK - Error stack:", error.stack);
-
-    // NE PAS appeler captureException pour le test
-    // captureException(error, {...});
-
+    console.log("Error in hash password model", error);
+    logger.error("Error hashing password", {
+      userId: this._id,
+      error: error.message,
+    });
+    captureException(error, {
+      tags: { component: "user-model", operation: "password-hashing" },
+    });
     next(error);
   }
 });
-
-// Middleware avant la sauvegarde
-// userSchema.pre("save", async function (next) {
-//   try {
-//     // Si le mot de passe n'a pas été modifié, passer à la suite
-//     if (!this.isModified("password")) {
-//       return next();
-//     }
-
-//     // Enregistrer la date de changement de mot de passe
-//     this.passwordChangedAt = Date.now() - 1000;
-
-//     // Hasher le mot de passe avec un coût adaptatif
-//     // En production, on pourrait augmenter à 12 pour plus de sécurité
-//     const saltRounds = process.env.NODE_ENV === "production" ? 12 : 10;
-//     console.log("We are here starting the hash");
-//     this.password = await bcrypt.hash(this.password, saltRounds);
-//     console.log("Finished Hash");
-//     console.log("password hash", this.password);
-
-//     next();
-//   } catch (error) {
-//     console.log("Error in hash password model", error);
-//     logger.error("Error hashing password", {
-//       userId: this._id,
-//       error: error.message,
-//     });
-//     captureException(error, {
-//       tags: { component: "user-model", operation: "password-hashing" },
-//     });
-//     next(error);
-//   }
-// });
 
 // Middleware avant la mise à jour
 userSchema.pre("findOneAndUpdate", function (next) {
