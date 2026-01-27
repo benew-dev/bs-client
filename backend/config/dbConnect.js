@@ -321,7 +321,7 @@ const dbConnect = async (forceNew = false) => {
     heartbeatFrequencyMS: 20000,
     autoIndex: process.env.NODE_ENV !== "production",
     retryWrites: true,
-    // ssl: process.env.NODE_ENV === "production",
+    ssl: process.env.NODE_ENV === "production",
   };
 
   mongoose.set("strictQuery", true);
