@@ -75,35 +75,24 @@ cartSchema.statics.findByUser = function (userId) {
     .sort({ createdAt: -1 });
 };
 
-// Middleware pre-save pour valider la disponibilité du stock
-cartSchema.pre("save", async function (next) {
+/// Middleware pre-save unique : validation du stock + mise à jour de updatedAt
+cartSchema.pre("save", async function () {
+  // 1. Validation de la disponibilité du stock
   if (this.isNew || this.isModified("quantity")) {
-    // Vous pourriez vérifier ici si le stock est suffisant
-    // Ce code dépend de votre modèle Product
-    try {
-      const Product = mongoose.model("Product");
-      const product = await Product.findById(this.product);
+    const Product = mongoose.model("Product");
+    const product = await Product.findById(this.product);
 
-      if (!product) {
-        return next(new Error("Produit non trouvé"));
-      }
+    if (!product) {
+      throw new Error("Produit non trouvé");
+    }
 
-      if (product.stock < this.quantity) {
-        return next(
-          new Error(`Stock insuffisant. Disponible: ${product.stock}`),
-        );
-      }
-    } catch (error) {
-      return next(error);
+    if (product.stock < this.quantity) {
+      throw new Error(`Stock insuffisant. Disponible: ${product.stock}`);
     }
   }
-  next();
-});
 
-// Middleware pour mettre à jour le champ updatedAt automatiquement
-cartSchema.pre("save", function (next) {
+  // 2. Mise à jour du champ updatedAt
   this.updatedAt = Date.now();
-  next();
 });
 
 // Middleware pour supprimer les articles expirés
