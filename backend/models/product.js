@@ -93,17 +93,15 @@ productSchema.index({ category: 1, price: 1 });
 productSchema.index({ name: "text", category: 1, price: 1 });
 
 // Middleware pre-save pour mettre à jour le champ updatedAt
-productSchema.pre("save", function (next) {
+productSchema.pre("save", function () {
   this.updatedAt = Date.now();
-  next();
 });
 
 // Middleware pour vérifier le stock avant de sauvegarder
-productSchema.pre("save", function (next) {
+productSchema.pre("save", function () {
   if (this.isModified("stock") && this.stock < 0) {
     this.stock = 0;
   }
-  next();
 });
 
 // Méthode pour vérifier si un produit est en stock

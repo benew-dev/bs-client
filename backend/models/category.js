@@ -60,9 +60,8 @@ categorySchema.index({ categoryName: "text" });
 // });
 
 // Middleware pre-save pour mettre à jour le champ updatedAt
-categorySchema.pre("save", function (next) {
+categorySchema.pre("save", function () {
   this.updatedAt = Date.now();
-  next();
 });
 
 // Assurer que les modèles ne sont pas redéfinis en cas de hot-reload
