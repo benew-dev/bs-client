@@ -1,3 +1,5 @@
+// utils/inputSanitizer.js
+
 /**
  * Sanitisation simple des entrées - Complément minimal à Yup
  * Adapté pour 500 visiteurs/jour

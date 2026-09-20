@@ -1,3 +1,5 @@
+// helpers/validation/index.js
+
 /**
  * Point d'entrée principal pour la validation
  * Version simplifiée pour 500 visiteurs/jour

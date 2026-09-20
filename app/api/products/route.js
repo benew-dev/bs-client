@@ -1,3 +1,5 @@
+// app/api/products/route.js
+
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import dbConnect from "@/backend/config/dbConnect";

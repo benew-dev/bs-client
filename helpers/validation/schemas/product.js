@@ -1,3 +1,5 @@
+// helpers/validation/schemas/product.js
+
 /**
  * Schémas de validation pour les produits et recherche
  */

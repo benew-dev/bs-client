@@ -1,3 +1,5 @@
+// helpers/validation/core/utils.js
+
 /**
  * Utilitaires de validation simplifiés
  * Adapté pour 500 visiteurs/jour

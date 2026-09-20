@@ -1,3 +1,5 @@
+// next.config.mjs
+
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 
