@@ -1,32 +1,28 @@
-// app/api/products/[id]/route.js
+// app/api/v1/products/[id]/route.js
 
 import { NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
 import dbConnect from "@/backend/config/dbConnect";
 import Product from "@/backend/models/product";
-import Category from "@/backend/models/category";
+import Category from "@/backend/models/category"; // Nécessaire pour populate("category")
 import { captureException } from "@/monitoring/sentry";
 import { withIntelligentRateLimit } from "@/utils/rateLimit";
 
 /**
- * GET /api/products/[id]
- * Récupère un produit par son ID avec produits similaires
- * Rate limit: Configuration intelligente - publicRead (100 req/min) ou authenticatedRead (200 req/min)
+ * GET /api/v1/products/[id]
+ * Version mobile : récupère un produit par son ID avec produits similaires
+ * Route publique, aucune authentification requise.
+ * Rate limit: publicRead (100 req/min)
  *
- * Headers de sécurité gérés par next.config.mjs pour /api/products/* :
- * - Cache-Control: public, max-age=300, stale-while-revalidate=600
- * - CDN-Cache-Control: max-age=600
- * - X-Content-Type-Options: nosniff
- * - Vary: Accept-Encoding
- *
- * Optimisé pour ~500 visiteurs/jour
- * Les utilisateurs authentifiés bénéficient automatiquement de limites doublées
+ * Headers de cache gérés par next.config.mjs pour /api/v1/products/*
+ * et complétés dans la réponse (ETag, Vary).
  */
 export const GET = withIntelligentRateLimit(
   async function (req, { params }) {
+    // Next.js 15 : params est une Promise
+    const { id } = await params;
+
     try {
       // Validation simple de l'ID MongoDB
-      const { id } = params;
       if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
         return NextResponse.json(
           {
@@ -106,8 +102,8 @@ export const GET = withIntelligentRateLimit(
         captureException(error, {
           tags: {
             component: "api",
-            route: "products/[id]/GET",
-            productId: params.id,
+            route: "v1/products/[id]/GET",
+            productId: id,
           },
         });
       }
@@ -128,30 +124,5 @@ export const GET = withIntelligentRateLimit(
   {
     category: "api",
     action: "publicRead",
-    extractUserInfo: async (req) => {
-      try {
-        const cookieName =
-          process.env.NODE_ENV === "production"
-            ? "__Secure-next-auth.session-token"
-            : "next-auth.session-token";
-
-        const token = await getToken({
-          req,
-          secret: process.env.NEXTAUTH_SECRET,
-          cookieName,
-        });
-
-        return {
-          userId: token?.user?._id || token?.user?.id || token?.sub,
-          email: token?.user?.email,
-        };
-      } catch (error) {
-        console.error(
-          "[PRODUCTS] Error extracting user from JWT:",
-          error.message,
-        );
-        return {};
-      }
-    },
   },
 );
